@@ -1,8 +1,8 @@
 version: '3.8'
-services: 
+services:
   client:
     container_name: zahn-frontend
-    image: FRONTEND_IMAGE_PLACEHOLDER
+    image: IMAGE_PLACEHOLDER
     ports:
       - "3005:80"
     restart: always

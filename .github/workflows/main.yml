@@ -29,18 +29,67 @@ jobs:
           IMAGE_TAG="${{ github.run_number }}"
 
           # Derive registry and repo from the full ECR image URI secret
-          REGISTRY="${ECR_IMAGE_URI%/*}"   # 5790....dkr.ecr.eu-north-1.amazonaws.com
-          REPO="${ECR_IMAGE_URI##*/}"      # zahn-care-frontend
+          REGISTRY="${ECR_IMAGE_URI%/*}"   
+          REPO="${ECR_IMAGE_URI##*/}"     
 
           # Authenticate docker to ECR (login to the REGISTRY only, not the repo path)
           aws ecr get-login-password --region "$AWS_REGION" \
             | docker login --username AWS --password-stdin "$REGISTRY"
 
-          # Build local image (name it with repo + tag)
-          docker build -t "$REPO:$IMAGE_TAG" .
+          # Build local image (name it with repo + tag) and bake API base URL
+          # Supply your backend URL via secret APP_API_BASE_URL (e.g., https://server.example.com/api or http://<hostname>:3000/api)
+          docker build --build-arg VITE_APP_API_BASE_URL="${{ secrets.APP_API_BASE_URL }}" -t "$REPO:$IMAGE_TAG" .
 
           # Tag to full ECR URI
           docker tag "$REPO:$IMAGE_TAG" "$ECR_IMAGE_URI:$IMAGE_TAG"
 
           # Push
           docker push "$ECR_IMAGE_URI:$IMAGE_TAG"
+
+  Deploy:
+    name: Deploy to EC2 via SSH
+    needs: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: SSH into EC2 and deploy
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOSTNAME }}
+          username: ${{ secrets.USER_NAME }}
+          key: ${{ secrets.PRIVATE_KEY }}
+          script: |
+            set -euo pipefail
+
+            AWS_REGION='${{ secrets.AWS_REGION }}'
+            ECR_IMAGE_URI='${{ secrets.ECR_IMAGE_URI }}'
+            IMAGE_TAG='${{ github.run_number }}'
+
+            # Derive registry for ECR login
+            REGISTRY="${ECR_IMAGE_URI%/*}"
+
+            # Configure AWS credentials (for ECR login on EC2)
+            aws configure set aws_access_key_id '${{ secrets.AWS_ACCESS_KEY_ID }}'
+            aws configure set aws_secret_access_key '${{ secrets.AWS_SECRET_ACCESS_KEY }}'
+            aws configure set region "$AWS_REGION"
+
+            # Prepare a clean working directory
+            APP_DIR="zahn-frontend-deploy"
+            rm -rf "$APP_DIR" || true
+            git clone "https://x-access-token:${{ secrets.TOKEN }}@github.com/${{ github.repository }}.git" "$APP_DIR"
+            cd "$APP_DIR"
+
+            # Inject the ECR image with the current tag into compose
+            sed -i "s|IMAGE_PLACEHOLDER|$ECR_IMAGE_URI:$IMAGE_TAG|g" docker-compose.yml
+
+            # Login to ECR on EC2 and deploy
+            aws ecr get-login-password --region "$AWS_REGION" | docker login --username AWS --password-stdin "$REGISTRY"
+
+            if docker compose version >/dev/null 2>&1; then
+              docker compose pull
+              docker compose up -d
+            else
+              docker-compose pull
+              docker-compose up -d
+            fi
+
+            docker image prune -af
