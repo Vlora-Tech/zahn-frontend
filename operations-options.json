@@ -1,0 +1,1157 @@
+{
+  "68ace428585ef0460cffc6f4": {
+    "mode": "single",
+    "parents": [
+      {
+        "label": "Präp-Art",
+        "value": "Präp-Art",
+        "onlyShowChildrenIfSelected": true,
+        "children": [
+          {
+            "type": "select",
+            "label": "Auswhälen",
+            "options": [
+              {
+                "label": "B.O.P.T / Verti-Prep",
+                "value": "B.O.P.T / Verti-Prep"
+              },
+              {
+                "label": "mit Präpgenze",
+                "value": "mit Präpgenze"
+              }
+            ]
+          },
+          {
+            "type": "drawing",
+            "label": ""
+          },
+          {
+            "type": "select",
+            "label": "Zahnform Auswhälen",
+            "options": [
+              {
+                "label": "oval",
+                "value": "oval"
+              },
+              {
+                "label": "natural",
+                "value": "natural"
+              },
+              {
+                "label": "aggressive",
+                "value": "aggressive"
+              }
+            ]
+          },
+          {
+            "type": "select",
+            "label": "Transluzentart Auswhälen",
+            "options": [
+              {
+                "label": "kein transluzent",
+                "value": "kein transluzent"
+              },
+              {
+                "label": "gering transluzent",
+                "value": "gering transluzent"
+              },
+              {
+                "label": "mittel transluzent",
+                "value": "mittel transluzent"
+              },
+              {
+                "label": "hoch transluzent",
+                "value": "hoch transluzent"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "label": "Implantatgetragen",
+        "value": "Implantatgetragen",
+        "onlyShowChildrenIfSelected": true,
+        "children": [
+          {
+            "type": "select",
+            "label": "Auswhälen",
+            "options": [
+              {
+                "label": "individuelles Abutment",
+                "value": "individuelles Abutment"
+              },
+              {
+                "label": "okklusal Verschraubt",
+                "value": "okklusal Verschraubt"
+              }
+            ]
+          },
+          {
+            "type": "text",
+            "label": "Implantatsystem"
+          },
+          {
+            "type": "text",
+            "label": "Implantatdurchmesser"
+          },
+          {
+            "type": "text",
+            "label": "Scanbody"
+          },
+          {
+            "type": "text",
+            "label": "Zahnfleischhöhe"
+          },
+          {
+            "type": "drawing",
+            "label": ""
+          },
+          {
+            "type": "select",
+            "label": "Zahnform Auswhälen",
+            "options": [
+              {
+                "label": "oval",
+                "value": "oval"
+              },
+              {
+                "label": "natural",
+                "value": "natural"
+              },
+              {
+                "label": "aggressive",
+                "value": "aggressive"
+              }
+            ]
+          },
+          {
+            "type": "select",
+            "label": "Transluzentart Auswhälen",
+            "options": [
+              {
+                "label": "kein transluzent",
+                "value": "kein transluzent"
+              },
+              {
+                "label": "gering transluzent",
+                "value": "gering transluzent"
+              },
+              {
+                "label": "mittel transluzent",
+                "value": "mittel transluzent"
+              },
+              {
+                "label": "hoch transluzent",
+                "value": "hoch transluzent"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "68ace484318c93ccf0f48e83": {
+    "mode": "single",
+    "parents": [
+      {
+        "label": "Präp-Art",
+        "value": "Präp-Art",
+        "onlyShowChildrenIfSelected": true,
+        "children": [
+          {
+            "type": "select",
+            "label": "Auswhälen",
+            "options": [
+              {
+                "label": "B.O.P.T / Verti-Prep",
+                "value": "B.O.P.T / Verti-Prep"
+              },
+              {
+                "label": "mit Präpgenze",
+                "value": "mit Präpgenze"
+              }
+            ]
+          },
+          {
+            "type": "drawing",
+            "label": ""
+          },
+          {
+            "type": "select",
+            "label": "Zahnform Auswhälen",
+            "options": [
+              {
+                "label": "oval",
+                "value": "oval"
+              },
+              {
+                "label": "natural",
+                "value": "natural"
+              },
+              {
+                "label": "aggressive",
+                "value": "aggressive"
+              }
+            ]
+          },
+          {
+            "type": "select",
+            "label": "Transluzentart Auswhälen",
+            "options": [
+              {
+                "label": "kein transluzent",
+                "value": "kein transluzent"
+              },
+              {
+                "label": "gering transluzent",
+                "value": "gering transluzent"
+              },
+              {
+                "label": "mittel transluzent",
+                "value": "mittel transluzent"
+              },
+              {
+                "label": "hoch transluzent",
+                "value": "hoch transluzent"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "label": "Implantatgetragen",
+        "value": "Implantatgetragen",
+        "onlyShowChildrenIfSelected": true,
+        "children": [
+          {
+            "type": "select",
+            "label": "Auswhälen",
+            "options": [
+              {
+                "label": "individuelles Abutment",
+                "value": "individuelles Abutment"
+              },
+              {
+                "label": "okklusal Verschraubt",
+                "value": "okklusal Verschraubt"
+              }
+            ]
+          },
+          {
+            "type": "text",
+            "label": "Implantatsystem"
+          },
+          {
+            "type": "text",
+            "label": "Implantatdurchmesser"
+          },
+          {
+            "type": "text",
+            "label": "Scanbody"
+          },
+          {
+            "type": "text",
+            "label": "Zahnfleischhöhe"
+          },
+          {
+            "type": "drawing",
+            "label": ""
+          },
+          {
+            "type": "select",
+            "label": "Zahnform Auswhälen",
+            "options": [
+              {
+                "label": "oval",
+                "value": "oval"
+              },
+              {
+                "label": "natural",
+                "value": "natural"
+              },
+              {
+                "label": "aggressive",
+                "value": "aggressive"
+              }
+            ]
+          },
+          {
+            "type": "select",
+            "label": "Transluzentart Auswhälen",
+            "options": [
+              {
+                "label": "kein transluzent",
+                "value": "kein transluzent"
+              },
+              {
+                "label": "gering transluzent",
+                "value": "gering transluzent"
+              },
+              {
+                "label": "mittel transluzent",
+                "value": "mittel transluzent"
+              },
+              {
+                "label": "hoch transluzent",
+                "value": "hoch transluzent"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "68acec8e50ac8ebaab66c98a": {
+    "mode": "all",
+    "parents": [
+      {
+        "label": "",
+        "value": "Brückenglieder",
+        "onlyShowChildrenIfSelected": false,
+        "children": [
+          {
+            "type": "select",
+            "label": "Auswhälen",
+            "options": [
+              {
+                "label": "Tangential",
+                "value": "Tangential"
+              },
+              {
+                "label": "Eiförmig",
+                "value": "Eiförmig"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "68acec9b50ac8ebaab66c98e": {
+    "mode": "all",
+    "parents": [
+      {
+        "label": "",
+        "value": "Brückenglieder",
+        "onlyShowChildrenIfSelected": false,
+        "children": [
+          {
+            "type": "select",
+            "label": "Auswhälen",
+            "options": [
+              {
+                "label": "Tangential",
+                "value": "Tangential"
+              },
+              {
+                "label": "Eiförmig",
+                "value": "Eiförmig"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "68acecd550ac8ebaab66c99e": {
+    "mode": "all",
+    "parents": [
+      {
+        "label": "",
+        "value": "Zahnform",
+        "onlyShowChildrenIfSelected": true,
+        "children": [
+          {
+            "type": "drawing",
+            "label": ""
+          },
+          {
+            "type": "select",
+            "label": "Auswhälen",
+            "options": [
+              {
+                "label": "oval",
+                "value": "oval"
+              },
+              {
+                "label": "natural",
+                "value": "natural"
+              },
+              {
+                "label": "aggressive",
+                "value": "aggressive"
+              }
+            ]
+          },
+          {
+            "type": "select",
+            "label": "Transluzentart",
+            "options": [
+              {
+                "label": "kein transluzent",
+                "value": "kein transluzent"
+              },
+              {
+                "label": "gering transluzent",
+                "value": "gering transluzent"
+              },
+              {
+                "label": "mittel transluzent",
+                "value": "mittel transluzent"
+              },
+              {
+                "label": "hoch transluzent",
+                "value": "hoch transluzent"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "68acece450ac8ebaab66c9a2": {
+    "mode": "all",
+    "parents": [
+      {
+        "label": "",
+        "value": "Zahnform",
+        "onlyShowChildrenIfSelected": true,
+        "children": [
+          {
+            "type": "drawing",
+            "label": ""
+          },
+          {
+            "type": "select",
+            "label": "Auswhälen",
+            "options": [
+              {
+                "label": "oval",
+                "value": "oval"
+              },
+              {
+                "label": "natural",
+                "value": "natural"
+              },
+              {
+                "label": "aggressive",
+                "value": "aggressive"
+              }
+            ]
+          },
+          {
+            "type": "select",
+            "label": "Transluzentart",
+            "options": [
+              {
+                "label": "kein transluzent",
+                "value": "kein transluzent"
+              },
+              {
+                "label": "gering transluzent",
+                "value": "gering transluzent"
+              },
+              {
+                "label": "mittel transluzent",
+                "value": "mittel transluzent"
+              },
+              {
+                "label": "hoch transluzent",
+                "value": "hoch transluzent"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "68acecf750ac8ebaab66c9a6": {
+    "mode": "all",
+    "parents": [
+      {
+        "label": "Behandlungsschritte",
+        "value": "Behandlungsschritte",
+        "onlyShowChildrenIfSelected": true,
+        "children": [
+          {
+            "type": "select",
+            "label": "Auswhälen",
+            "options": [
+              {
+                "label": "individueller Löffel",
+                "value": "individueller Löffel"
+              },
+              {
+                "label": "Bisswall",
+                "value": "Bisswall"
+              },
+              {
+                "label": "individueller Löffel + Bisswall",
+                "value": "individueller Löffel + Bisswall"
+              },
+              {
+                "label": "Wachseinprobe",
+                "value": "Wachseinprobe"
+              },
+              {
+                "label": "Fertigstellung",
+                "value": "Fertigstellung"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "label": "Zahnform",
+        "value": "Zahnform",
+        "onlyShowChildrenIfSelected": true,
+        "children": [
+          {
+            "type": "drawing",
+            "label": ""
+          },
+          {
+            "type": "select",
+            "label": "Auswhälen",
+            "options": [
+              {
+                "label": "oval",
+                "value": "oval"
+              },
+              {
+                "label": "natural",
+                "value": "natural"
+              },
+              {
+                "label": "aggressive",
+                "value": "aggressive"
+              }
+            ]
+          },
+          {
+            "type": "select",
+            "label": "Transluzentart",
+            "options": [
+              {
+                "label": "kein transluzent",
+                "value": "kein transluzent"
+              },
+              {
+                "label": "gering transluzent",
+                "value": "gering transluzent"
+              },
+              {
+                "label": "mittel transluzent",
+                "value": "mittel transluzent"
+              },
+              {
+                "label": "hoch transluzent",
+                "value": "hoch transluzent"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "68acecfe50ac8ebaab66c9aa": {
+    "mode": "all",
+    "parents": [
+      {
+        "label": "Behandlungsschritte",
+        "value": "Behandlungsschritte",
+        "onlyShowChildrenIfSelected": true,
+        "children": [
+          {
+            "type": "select",
+            "label": "Auswhälen",
+            "options": [
+              {
+                "label": "individueller Löffel",
+                "value": "individueller Löffel"
+              },
+              {
+                "label": "Bisswall",
+                "value": "Bisswall"
+              },
+              {
+                "label": "individueller Löffel + Bisswall",
+                "value": "individueller Löffel + Bisswall"
+              },
+              {
+                "label": "Wachseinprobe",
+                "value": "Wachseinprobe"
+              },
+              {
+                "label": "Fertigstellung",
+                "value": "Fertigstellung"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "label": "Zahnform",
+        "value": "Zahnform",
+        "onlyShowChildrenIfSelected": true,
+        "children": [
+          {
+            "type": "drawing",
+            "label": ""
+          },
+          {
+            "type": "select",
+            "label": "Auswhälen",
+            "options": [
+              {
+                "label": "oval",
+                "value": "oval"
+              },
+              {
+                "label": "natural",
+                "value": "natural"
+              },
+              {
+                "label": "aggressive",
+                "value": "aggressive"
+              }
+            ]
+          },
+          {
+            "type": "select",
+            "label": "Transluzentart",
+            "options": [
+              {
+                "label": "kein transluzent",
+                "value": "kein transluzent"
+              },
+              {
+                "label": "gering transluzent",
+                "value": "gering transluzent"
+              },
+              {
+                "label": "mittel transluzent",
+                "value": "mittel transluzent"
+              },
+              {
+                "label": "hoch transluzent",
+                "value": "hoch transluzent"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "68aced0550ac8ebaab66c9ae": {
+    "mode": "single",
+    "parents": [
+      {
+        "label": "Präp-Art",
+        "value": "Präp-Art",
+        "onlyShowChildrenIfSelected": true,
+        "children": [
+          {
+            "type": "select",
+            "label": "Auswhälen",
+            "options": [
+              {
+                "label": "B.O.P.T / Verti-Prep",
+                "value": "B.O.P.T / Verti-Prep"
+              },
+              {
+                "label": "mit Präpgenze",
+                "value": "mit Präpgenze"
+              }
+            ]
+          },
+          {
+            "type": "select",
+            "label": "Behandlungsschritte",
+            "options": [
+              {
+                "label": "Fertigstellung + individueller Löffel",
+                "value": "Fertigstellung + individueller Löffel"
+              },
+              {
+                "label": "Fertigstellung",
+                "value": "Fertigstellung"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "label": "Implantatgetragen",
+        "value": "Implantatgetragen",
+        "onlyShowChildrenIfSelected": true,
+        "children": [
+          {
+            "type": "select",
+            "label": "Auswhälen",
+            "options": [
+              {
+                "label": "individuelles Abutment",
+                "value": "individuelles Abutment"
+              },
+              {
+                "label": "okklusal Verschraubt",
+                "value": "okklusal Verschraubt"
+              }
+            ]
+          },
+          {
+            "type": "text",
+            "label": "Implantatsystem"
+          },
+          {
+            "type": "text",
+            "label": "Implantatdurchmesser"
+          },
+          {
+            "type": "text",
+            "label": "Scanbody"
+          },
+          {
+            "type": "text",
+            "label": "Zahnfleischhöhe"
+          },
+          {
+            "type": "select",
+            "label": "Behandlungsschritte",
+            "options": [
+              {
+                "label": "Fertigstellung + individueller Löffel",
+                "value": "Fertigstellung + individueller Löffel"
+              },
+              {
+                "label": "Fertigstellung",
+                "value": "Fertigstellung"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "68aced0e50ac8ebaab66c9b2": {
+    "mode": "all",
+    "parents": [
+      {
+        "label": "Behandlungsschritte",
+        "value": "Behandlungsschritte",
+        "onlyShowChildrenIfSelected": true,
+        "children": [
+          {
+            "type": "select",
+            "label": "Auswhälen",
+            "options": [
+              {
+                "label": "Bisswall + Gerüsteinprobe",
+                "value": "Bisswall + Gerüsteinprobe"
+              },
+              {
+                "label": "Gerüsteinprobe",
+                "value": "Gerüsteinprobe"
+              },
+              {
+                "label": "Bisswall",
+                "value": "Bisswall"
+              },
+              {
+                "label": "Wachseinprobe",
+                "value": "Wachseinprobe"
+              },
+              {
+                "label": "Fertigstellung",
+                "value": "Fertigstellung"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "label": "Zahnform",
+        "value": "Zahnform",
+        "onlyShowChildrenIfSelected": true,
+        "children": [
+          {
+            "type": "drawing",
+            "label": ""
+          },
+          {
+            "type": "select",
+            "label": "Auswhälen",
+            "options": [
+              {
+                "label": "oval",
+                "value": "oval"
+              },
+              {
+                "label": "natural",
+                "value": "natural"
+              },
+              {
+                "label": "aggressive",
+                "value": "aggressive"
+              }
+            ]
+          },
+          {
+            "type": "select",
+            "label": "Transluzentart",
+            "options": [
+              {
+                "label": "kein transluzent",
+                "value": "kein transluzent"
+              },
+              {
+                "label": "gering transluzent",
+                "value": "gering transluzent"
+              },
+              {
+                "label": "mittel transluzent",
+                "value": "mittel transluzent"
+              },
+              {
+                "label": "hoch transluzent",
+                "value": "hoch transluzent"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "68aced2a50ac8ebaab66c9be": {
+    "mode": "all",
+    "parents": [
+      {
+        "label": "",
+        "value": "",
+        "onlyShowChildrenIfSelected": false,
+        "children": [{ "type": "file-upload", "label": "" }]
+      }
+    ]
+  },
+  "68aced3050ac8ebaab66c9c2": {
+    "mode": "single",
+    "parents": [
+      {
+        "label": "ohne Provisorium",
+        "value": "ohne Provisorium",
+        "onlyShowChildrenIfSelected": true,
+        "children": [{ "type": "file-upload", "label": "Datei Hochladen" }]
+      },
+      {
+        "label": "mit Provisorium",
+        "value": "mit Provisorium",
+        "onlyShowChildrenIfSelected": true,
+        "children": [
+          { "type": "file-upload", "label": "Datei Hochladen" },
+          {
+            "type": "drawing",
+            "label": ""
+          },
+          {
+            "type": "select",
+            "label": "Zahnform Auswhälen",
+            "options": [
+              {
+                "label": "oval",
+                "value": "oval"
+              },
+              {
+                "label": "natural",
+                "value": "natural"
+              },
+              {
+                "label": "aggressive",
+                "value": "aggressive"
+              }
+            ]
+          },
+          {
+            "type": "select",
+            "label": "Transluzentart",
+            "options": [
+              {
+                "label": "kein transluzent",
+                "value": "kein transluzent"
+              },
+              {
+                "label": "gering transluzent",
+                "value": "gering transluzent"
+              },
+              {
+                "label": "mittel transluzent",
+                "value": "mittel transluzent"
+              },
+              {
+                "label": "hoch transluzent",
+                "value": "hoch transluzent"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "68aced3950ac8ebaab66c9c6": {
+    "mode": "single",
+    "parents": [
+      {
+        "label": "ohne Provisorium",
+        "value": "ohne Provisorium",
+        "onlyShowChildrenIfSelected": true,
+        "children": [{ "type": "file-upload", "label": "Datei Hochladen" }]
+      },
+      {
+        "label": "mit Provisorium",
+        "value": "mit Provisorium",
+        "onlyShowChildrenIfSelected": true,
+        "children": [
+          { "type": "file-upload", "label": "Datei Hochladen" },
+          {
+            "type": "drawing",
+            "label": ""
+          },
+          {
+            "type": "select",
+            "label": "Zahnform Auswhälen",
+            "options": [
+              {
+                "label": "oval",
+                "value": "oval"
+              },
+              {
+                "label": "natural",
+                "value": "natural"
+              },
+              {
+                "label": "aggressive",
+                "value": "aggressive"
+              }
+            ]
+          },
+          {
+            "type": "select",
+            "label": "Transluzentart",
+            "options": [
+              {
+                "label": "kein transluzent",
+                "value": "kein transluzent"
+              },
+              {
+                "label": "gering transluzent",
+                "value": "gering transluzent"
+              },
+              {
+                "label": "mittel transluzent",
+                "value": "mittel transluzent"
+              },
+              {
+                "label": "hoch transluzent",
+                "value": "hoch transluzent"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "68aced4950ac8ebaab66c9ca": {
+    "mode": "single",
+    "parents": [
+      {
+        "label": "Präp-Art",
+        "value": "Präp-Art",
+        "onlyShowChildrenIfSelected": true,
+        "children": [
+          {
+            "type": "select",
+            "label": "Auswhälen",
+            "options": [
+              {
+                "label": "B.O.P.T / Verti-Prep",
+                "value": "B.O.P.T / Verti-Prep"
+              },
+              {
+                "label": "mit Präpgenze",
+                "value": "mit Präpgenze"
+              }
+            ]
+          },
+          {
+            "type": "select",
+            "label": "Behandlungsschritte Auswhälen",
+            "options": [
+              {
+                "label": "Einprobe",
+                "value": "Einprobe"
+              },
+              {
+                "label": "Fertigstellung",
+                "value": "Fertigstellung"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "label": "Implantatgetragen",
+        "value": "Implantatgetragen",
+        "onlyShowChildrenIfSelected": true,
+        "children": [
+          {
+            "type": "select",
+            "label": "Auswhälen",
+            "options": [
+              {
+                "label": "individuelles Abutment",
+                "value": "individuelles Abutment"
+              },
+              {
+                "label": "okklusal Verschraubt",
+                "value": "okklusal Verschraubt"
+              }
+            ]
+          },
+          {
+            "type": "text",
+            "label": "Implantatsystem"
+          },
+          {
+            "type": "text",
+            "label": "Implantatdurchmesser"
+          },
+          {
+            "type": "text",
+            "label": "Scanbody"
+          },
+          {
+            "type": "text",
+            "label": "Zahnfleischhöhe"
+          },
+          {
+            "type": "select",
+            "label": "Behandlungsschritte Auswhälen",
+            "options": [
+              {
+                "label": "Einprobe",
+                "value": "Einprobe"
+              },
+              {
+                "label": "Fertigstellung",
+                "value": "Fertigstellung"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "68aced5150ac8ebaab66c9ce": {
+    "mode": "all",
+    "parents": [
+      {
+        "label": "Behandlungsschritte",
+        "value": "Behandlungsschritte",
+        "onlyShowChildrenIfSelected": true,
+        "children": [
+          {
+            "type": "select",
+            "label": "Auswhälen",
+            "options": [
+              {
+                "label": "Einprobe",
+                "value": "Einprobe"
+              },
+              {
+                "label": "Fertigstellung",
+                "value": "Fertigstellung"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "68aced5950ac8ebaab66c9d2": {
+    "mode": "all",
+    "parents": [
+      {
+        "label": "Behandlungsschritte",
+        "value": "Behandlungsschritte",
+        "onlyShowChildrenIfSelected": true,
+        "children": [
+          {
+            "type": "select",
+            "label": "Auswhälen",
+            "options": [
+              {
+                "label": "Einprobe",
+                "value": "Einprobe"
+              },
+              {
+                "label": "Fertigstellung",
+                "value": "Fertigstellung"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "label": "Zahnform",
+        "value": "Zahnform",
+        "onlyShowChildrenIfSelected": true,
+        "children": [
+          {
+            "type": "drawing",
+            "label": ""
+          },
+          {
+            "type": "select",
+            "label": "Auswhälen",
+            "options": [
+              {
+                "label": "oval",
+                "value": "oval"
+              },
+              {
+                "label": "natural",
+                "value": "natural"
+              },
+              {
+                "label": "aggressive",
+                "value": "aggressive"
+              }
+            ]
+          },
+          {
+            "type": "select",
+            "label": "Transluzentart",
+            "options": [
+              {
+                "label": "kein transluzent",
+                "value": "kein transluzent"
+              },
+              {
+                "label": "gering transluzent",
+                "value": "gering transluzent"
+              },
+              {
+                "label": "mittel transluzent",
+                "value": "mittel transluzent"
+              },
+              {
+                "label": "hoch transluzent",
+                "value": "hoch transluzent"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
