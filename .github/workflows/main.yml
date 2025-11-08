@@ -1,35 +1,46 @@
-name: Build & Deploy from github to aws 
+name: Build & Deploy from github to aws
 
-
-
-on: 
+on:
   push:
     branches: [ main ]
+
 jobs:
   Build:
-    name: Build,tag, push docker iamge
-    runs-on: Ubuntu-latest
+    name: Build, tag, push docker image
+    runs-on: ubuntu-latest
+    env:
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      ECR_IMAGE_URI: ${{ secrets.ECR_IMAGE_URI }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Configure AWS credentials (static keys)
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region:            ${{ env.AWS_REGION }}
-      - name: Build,tag,push to ECR
+          aws-region:            ${{ secrets.AWS_REGION }} 
+
+      - name: Build, tag, and push to ECR
         run: |
-          set -e 
-          IMAGE_NAME = zahn-care-frontend
+          set -euo pipefail
+
           IMAGE_TAG="${{ github.run_number }}"
-          
-           aws ecr get-login-password --region "$AWS_REGION" \
-            | docker login --username AWS --password-stdin "579035389417.dkr.ecr.eu-north-1.amazonaws.com/zahn-care-frontend"
 
-          #Build
-          docker build -t $IMAGE_TAG:IMAGE_TAG .
-          docker tag $IMAGE_TAG:$IMAGE_TAG $ECR_IMAGE
+          # Derive registry and repo from the full ECR image URI secret
+          REGISTRY="${ECR_IMAGE_URI%/*}"   # 5790....dkr.ecr.eu-north-1.amazonaws.com
+          REPO="${ECR_IMAGE_URI##*/}"      # zahn-care-frontend
 
-          docker push $ECR_IMAGE
+          # Authenticate docker to ECR (login to the REGISTRY only, not the repo path)
+          aws ecr get-login-password --region "$AWS_REGION" \
+            | docker login --username AWS --password-stdin "$REGISTRY"
 
+          # Build local image (name it with repo + tag)
+          docker build -t "$REPO:$IMAGE_TAG" .
+
+          # Tag to full ECR URI
+          docker tag "$REPO:$IMAGE_TAG" "$ECR_IMAGE_URI:$IMAGE_TAG"
+
+          # Push
+          docker push "$ECR_IMAGE_URI:$IMAGE_TAG"
