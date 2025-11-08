@@ -23,10 +23,9 @@ jobs:
           set -e 
           IMAGE_NAME = zahn-care-frontend
           IMAGE_TAG="${{ github.run_number }}"
-          ECR_IMAGE="${{ECR_IMAGE_URI}}"
           
            aws ecr get-login-password --region "$AWS_REGION" \
-            | docker login --username AWS --password-stdin "$ECR_IMAGE"
+            | docker login --username AWS --password-stdin "579035389417.dkr.ecr.eu-north-1.amazonaws.com/zahn-care-frontend"
 
           #Build
           docker build -t $IMAGE_TAG:IMAGE_TAG .
