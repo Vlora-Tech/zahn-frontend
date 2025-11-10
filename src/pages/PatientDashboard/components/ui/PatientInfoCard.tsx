@@ -67,7 +67,7 @@ const PatientInfoCard: React.FC<{
               label: "Geburtstag",
               value: `${new Date(patientData.birthDate).toLocaleDateString(
                 "de-DE"
-              )} ( ${isoDateToAge(patientData.birthDate)} J. )`,
+              )} ( ${isoDateToAge(patientData.birthDate)} )`,
             },
           ].map((item) => (
             <Stack key={item.label} sx={{ textAlign: "left", width: "250px" }}>

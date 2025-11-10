@@ -267,7 +267,7 @@ const PatientList = () => {
                                   patient.birthDate
                                 ).toLocaleDateString("de-DE")} ( ${isoDateToAge(
                                   patient.birthDate
-                                )} J. )`
+                                )} )`
                               : "-"}
                           </TableCell>
                           <TableCell>

@@ -442,7 +442,7 @@ export default function RequestDetails() {
                 </Typography>
                 <Typography variant="body1" sx={{ mt: 1 }}>
                   {new Date(patientData?.birthDate).toLocaleDateString("de-DE")}{" "}
-                  ( {isoDateToAge(patientData?.birthDate)} J. )
+                  ( {isoDateToAge(patientData?.birthDate)} )
                 </Typography>
               </Grid>
             </Grid>

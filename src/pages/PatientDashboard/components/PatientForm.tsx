@@ -166,7 +166,7 @@ const PatientInformation = (props) => {
                   birthDate
                     ? `${new Date(birthDate).toLocaleDateString(
                         "de-DE"
-                      )} ( ${isoDateToAge(birthDate)} J. )`
+                      )} ( ${isoDateToAge(birthDate)} )`
                     : ""
                 }
               />

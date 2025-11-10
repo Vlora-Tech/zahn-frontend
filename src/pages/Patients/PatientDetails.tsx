@@ -79,7 +79,7 @@ export default function PatientDetails() {
               value: patient?.birthDate
                 ? `${new Date(patient.birthDate).toLocaleDateString(
                     "de-DE"
-                  )} ( ${isoDateToAge(patient.birthDate)} J. )`
+                  )} ( ${isoDateToAge(patient.birthDate)} )`
                 : "",
             },
             {
