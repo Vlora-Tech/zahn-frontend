@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import {
   Box,
@@ -132,15 +131,22 @@ interface OperationsApiResponse {
   };
 }
 
-
 const validationSchema = Yup.object({
   name: Yup.string().required("Name is required"),
-  type: Yup.string().oneOf(["radio", "switch" , "selection" , "input"], "Type must be radio or switch").required("Type is required"),
+  type: Yup.string()
+    .oneOf(
+      ["radio", "switch", "selection", "input"],
+      "Type must be radio or switch"
+    )
+    .required("Type is required"),
   values: Yup.array()
     .of(Yup.string())
     .when("type", {
       is: (val: string) => val !== "input", // only validate if not input
-      then: (schema) => schema.min(1, "At least one value is required").required("At least one value is required"),
+      then: (schema) =>
+        schema
+          .min(1, "At least one value is required")
+          .required("At least one value is required"),
       otherwise: (schema) => schema.notRequired(),
     }),
   operation: Yup.string().required("Operation is required"),
@@ -159,8 +165,16 @@ const OptionsManagement: React.FC = () => {
   const [page, setPage] = useState(1);
 
   const queryClient = useQueryClient();
-  const { data: optionsResponse, isLoading } = useGetOptions({ page, limit: 10, sortBy: orderBy, sortOrder: order });
-  const { data: operationsResponse } = useGetOperations({ page: 1, limit: 100 }); // Get all operations for dropdown
+  const { data: optionsResponse, isLoading } = useGetOptions({
+    page,
+    limit: 10,
+    sortBy: orderBy,
+    sortOrder: order,
+  });
+  const { data: operationsResponse } = useGetOperations({
+    page: 1,
+    limit: 100,
+  }); // Get all operations for dropdown
   const createMutation = useCreateOption();
   const updateMutation = useUpdateOption();
   const deleteMutation = useDeleteOption();
@@ -170,9 +184,9 @@ const OptionsManagement: React.FC = () => {
   const options = typedOptionsResponse?.data || [];
   const pagination = typedOptionsResponse?.pagination;
 
-  const typedOperationsResponse = operationsResponse as unknown as OperationsApiResponse;
+  const typedOperationsResponse =
+    operationsResponse as unknown as OperationsApiResponse;
   const allOperations = typedOperationsResponse?.data || [];
-
 
   const handleOpenDialog = (option?: Option) => {
     setEditingOption(option || null);
@@ -193,12 +207,14 @@ const OptionsManagement: React.FC = () => {
   }) => {
     console.log("=== OPTION FORM SUBMISSION STARTED ===");
     console.log("Form submitted with values:", values);
-    
+
     try {
       const optionData: OptionRequestBody = {
         name: values.name,
         type: values.type as "selection" | "input",
-        ...(values.type === "input" ? {values:[]} : {values: values.values.filter((v: string) => v.trim() !== "")}),
+        ...(values.type === "input"
+          ? { values: [] }
+          : { values: values.values.filter((v: string) => v.trim() !== "") }),
         operation: values.operation,
         // material: values.material || "",
       };
@@ -217,14 +233,17 @@ const OptionsManagement: React.FC = () => {
         const result = await createMutation.mutateAsync(optionData);
         console.log("Create result:", result);
       }
-      
+
       queryClient.invalidateQueries({ queryKey: ["options"] });
       handleCloseDialog();
       console.log("Option saved successfully");
     } catch (error) {
       console.error("=== ERROR SAVING OPTION ===");
       console.error("Error details:", error);
-      alert("Failed to save option: " + (error instanceof Error ? error.message : 'Unknown error'));
+      alert(
+        "Failed to save option: " +
+          (error instanceof Error ? error.message : "Unknown error")
+      );
     }
   };
 
@@ -290,7 +309,7 @@ const OptionsManagement: React.FC = () => {
 
   const initialValues = {
     name: editingOption?.name || "",
-    type: editingOption?.type || "selection" as const,
+    type: editingOption?.type || ("selection" as const),
     values: editingOption?.values || [""],
     operation: editingOption?.operation?._id || "",
     material: editingOption?.material?._id || "",
@@ -299,7 +318,12 @@ const OptionsManagement: React.FC = () => {
   if (isLoading) {
     return (
       <ThemeProvider theme={theme}>
-        <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+        <Box
+          display="flex"
+          justifyContent="center"
+          alignItems="center"
+          minHeight="400px"
+        >
           <CircularProgress />
         </Box>
       </ThemeProvider>
@@ -311,7 +335,11 @@ const OptionsManagement: React.FC = () => {
       <Box sx={{ p: 3 }}>
         <Stack spacing={3}>
           {/* Header */}
-          <Box display="flex" justifyContent="space-between" alignItems="center">
+          <Box
+            display="flex"
+            justifyContent="space-between"
+            alignItems="center"
+          >
             <Box>
               <Typography
                 variant="h4"
@@ -351,7 +379,11 @@ const OptionsManagement: React.FC = () => {
           </Box>
 
           {/* Search and Actions */}
-          <Box display="flex" justifyContent="space-between" alignItems="center">
+          <Box
+            display="flex"
+            justifyContent="space-between"
+            alignItems="center"
+          >
             <TextField
               placeholder="Search options..."
               value={searchTerm}
@@ -400,10 +432,12 @@ const OptionsManagement: React.FC = () => {
                       <Checkbox
                         color="primary"
                         indeterminate={
-                          selected.length > 0 && selected.length < options.length
+                          selected.length > 0 &&
+                          selected.length < options.length
                         }
                         checked={
-                          options.length > 0 && selected.length === options.length
+                          options.length > 0 &&
+                          selected.length === options.length
                         }
                         onChange={handleSelectAllClick}
                       />
@@ -440,10 +474,7 @@ const OptionsManagement: React.FC = () => {
                         sx={{ cursor: "pointer" }}
                       >
                         <TableCell padding="checkbox">
-                          <Checkbox
-                            color="primary"
-                            checked={isItemSelected}
-                          />
+                          <Checkbox color="primary" checked={isItemSelected} />
                         </TableCell>
                         <TableCell>
                           <Typography variant="body2" fontWeight={500}>
@@ -455,8 +486,10 @@ const OptionsManagement: React.FC = () => {
                             label={option.type}
                             size="small"
                             sx={{
-                              backgroundColor: option.type === "radio" ? "#fff3e0" : "#e8f5e9",
-                              color: option.type === "radio" ? "#f57c00" : "#2e7d32",
+                              backgroundColor:
+                                option.type === "radio" ? "#fff3e0" : "#e8f5e9",
+                              color:
+                                option.type === "radio" ? "#f57c00" : "#2e7d32",
                               fontSize: "12px",
                             }}
                           />
@@ -494,7 +527,9 @@ const OptionsManagement: React.FC = () => {
                         </TableCell>
                         <TableCell>
                           <Typography variant="body2" color="text.secondary">
-                            {new Date(option.createdAt).toLocaleDateString()}
+                            {new Date(option.createdAt).toLocaleDateString(
+                              "de-DE"
+                            )}
                           </Typography>
                         </TableCell>
                         <TableCell>
@@ -543,7 +578,12 @@ const OptionsManagement: React.FC = () => {
         </Stack>
 
         {/* Add/Edit Dialog */}
-        <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="md" fullWidth>
+        <Dialog
+          open={dialogOpen}
+          onClose={handleCloseDialog}
+          maxWidth="md"
+          fullWidth
+        >
           <DialogTitle sx={{ fontWeight: 600 }}>
             {editingOption ? "Edit Option" : "Add New Option"}
           </DialogTitle>
@@ -553,82 +593,98 @@ const OptionsManagement: React.FC = () => {
             onSubmit={handleSubmit}
             enableReinitialize
           >
-            {({ values, errors, touched, handleChange, handleBlur, isSubmitting, setFieldValue }) => {
+            {({
+              values,
+              errors,
+              touched,
+              handleChange,
+              handleBlur,
+              isSubmitting,
+              setFieldValue,
+            }) => {
               console.log(errors);
               return (
-              <Form>
-                <DialogContent>
-                  <Stack spacing={3}>
-                    <TextField
-                      fullWidth
-                      name="name"
-                      label="Option Name"
-                      value={values.name}
-                      onChange={handleChange}
-                      onBlur={handleBlur}
-                      error={touched.name && Boolean(errors.name)}
-                      helperText={touched.name && errors.name}
-                      sx={{
-                        "& .MuiOutlinedInput-root": {
-                          borderRadius: "8px",
-                        },
-                      }}
-                    />
-                    
-                    <FormControl fullWidth>
-                      <InputLabel>Type</InputLabel>
-                      <Select
-                        name="type"
-                        value={values.type}
+                <Form>
+                  <DialogContent>
+                    <Stack spacing={3}>
+                      <TextField
+                        fullWidth
+                        name="name"
+                        label="Option Name"
+                        value={values.name}
                         onChange={handleChange}
-                        label="Type"
-                        error={touched.type && Boolean(errors.type)}
+                        onBlur={handleBlur}
+                        error={touched.name && Boolean(errors.name)}
+                        helperText={touched.name && errors.name}
                         sx={{
                           "& .MuiOutlinedInput-root": {
                             borderRadius: "8px",
                           },
                         }}
-                      >
-                        {/* <MenuItem value="radio">Radio</MenuItem>
+                      />
+
+                      <FormControl fullWidth>
+                        <InputLabel>Type</InputLabel>
+                        <Select
+                          name="type"
+                          value={values.type}
+                          onChange={handleChange}
+                          label="Type"
+                          error={touched.type && Boolean(errors.type)}
+                          sx={{
+                            "& .MuiOutlinedInput-root": {
+                              borderRadius: "8px",
+                            },
+                          }}
+                        >
+                          {/* <MenuItem value="radio">Radio</MenuItem>
                         <MenuItem value="switch">Switch</MenuItem> */}
-                         <MenuItem value="selection">Select</MenuItem>
-                        <MenuItem value="input">Input</MenuItem>
-                      </Select>
-                      {touched.type && errors.type && (
-                        <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.5 }}>
-                          {errors.type}
-                        </Typography>
-                      )}
-                    </FormControl>
+                          <MenuItem value="selection">Select</MenuItem>
+                          <MenuItem value="input">Input</MenuItem>
+                        </Select>
+                        {touched.type && errors.type && (
+                          <Typography
+                            variant="caption"
+                            color="error"
+                            sx={{ mt: 0.5, ml: 1.5 }}
+                          >
+                            {errors.type}
+                          </Typography>
+                        )}
+                      </FormControl>
 
-                    <FormControl fullWidth>
-                      <InputLabel>Operation</InputLabel>
-                      <Select
-                        name="operation"
-                        value={values.operation}
-                        onChange={handleChange}
-                        label="Operation"
-                        error={touched.operation && Boolean(errors.operation)}
-                        sx={{
-                          "& .MuiOutlinedInput-root": {
-                            borderRadius: "8px",
-                          },
-                        }}
-                      >
-                        {allOperations.map((operation) => (
-                          <MenuItem key={operation._id} value={operation._id}>
-                            {operation.name}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                      {touched.operation && errors.operation && (
-                        <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.5 }}>
-                          {errors.operation}
-                        </Typography>
-                      )}
-                    </FormControl>
+                      <FormControl fullWidth>
+                        <InputLabel>Operation</InputLabel>
+                        <Select
+                          name="operation"
+                          value={values.operation}
+                          onChange={handleChange}
+                          label="Operation"
+                          error={touched.operation && Boolean(errors.operation)}
+                          sx={{
+                            "& .MuiOutlinedInput-root": {
+                              borderRadius: "8px",
+                            },
+                          }}
+                        >
+                          {allOperations.map((operation) => (
+                            <MenuItem key={operation._id} value={operation._id}>
+                              {operation.name}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                        {touched.operation && errors.operation && (
+                          <Typography
+                            variant="caption"
+                            color="error"
+                            sx={{ mt: 0.5, ml: 1.5 }}
+                          >
+                            {errors.operation}
+                          </Typography>
+                        )}
+                      </FormControl>
 
-                    {/*<FormControl fullWidth>
+                      {/*<FormControl fullWidth>
                       <InputLabel>Material (Optional)</InputLabel>
                       <Select
                         name="material"
@@ -650,94 +706,113 @@ const OptionsManagement: React.FC = () => {
                       </Select>
                     </FormControl>*/}
 
-                    {values?.type !== "input" && <Box>
-                      <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
-                        Option Values
-                      </Typography>
-                      <FieldArray name="values">
-                        {({ push, remove }) => (
-                          <Stack spacing={2}>
-                            {values.values.map((value, index) => (
-                              <Box key={index} display="flex" alignItems="center" gap={1}>
-                                <TextField
-                                  fullWidth
-                                  label={`Value ${index + 1}`}
-                                  value={value}
-                                  onChange={(e) => setFieldValue(`values.${index}`, e.target.value)}
-                                  sx={{
-                                    "& .MuiOutlinedInput-root": {
-                                      borderRadius: "8px",
-                                    },
-                                  }}
-                                />
-                                {values.values.length > 1 && (
-                                  <IconButton
-                                    onClick={() => remove(index)}
-                                    color="error"
-                                    size="small"
+                      {values?.type !== "input" && (
+                        <Box>
+                          <Typography
+                            variant="subtitle2"
+                            sx={{ mb: 1, fontWeight: 600 }}
+                          >
+                            Option Values
+                          </Typography>
+                          <FieldArray name="values">
+                            {({ push, remove }) => (
+                              <Stack spacing={2}>
+                                {values.values.map((value, index) => (
+                                  <Box
+                                    key={index}
+                                    display="flex"
+                                    alignItems="center"
+                                    gap={1}
                                   >
-                                    <Remove />
-                                  </IconButton>
-                                )}
-                              </Box>
-                            ))}
-                            <Button
-                              variant="outlined"
-                              onClick={() => push("")}
-                              startIcon={<Add />}
-                              size="small"
-                              sx={{
-                                borderRadius: "20px",
-                                textTransform: "none",
-                              }}
-                            >
-                              Add Value
-                            </Button>
-                          </Stack>
-                        )}
-                      </FieldArray>
-                    </Box>}
-                  </Stack>
-                </DialogContent>
-                <DialogActions sx={{ p: 3 }}>
-                  <Button
-                    onClick={handleCloseDialog}
-                    sx={{
-                      borderRadius: "20px",
-                      textTransform: "none",
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                  <ButtonBlock
-                    type="submit"
-                    disabled={isSubmitting}
-                    style={{
-                      background: "linear-gradient(90deg, #87C133 0%, #68C9F2 100%)",
-                      borderRadius: "20px",
-                      height: "36px",
-                      color: "white",
-                      fontSize: "14px",
-                      fontWeight: "500",
-                      padding: "0 20px",
-                    }}
-                  >
-                    {isSubmitting ? "Saving..." : "Save"}
-                  </ButtonBlock>
-                </DialogActions>
-              </Form>
+                                    <TextField
+                                      fullWidth
+                                      label={`Value ${index + 1}`}
+                                      value={value}
+                                      onChange={(e) =>
+                                        setFieldValue(
+                                          `values.${index}`,
+                                          e.target.value
+                                        )
+                                      }
+                                      sx={{
+                                        "& .MuiOutlinedInput-root": {
+                                          borderRadius: "8px",
+                                        },
+                                      }}
+                                    />
+                                    {values.values.length > 1 && (
+                                      <IconButton
+                                        onClick={() => remove(index)}
+                                        color="error"
+                                        size="small"
+                                      >
+                                        <Remove />
+                                      </IconButton>
+                                    )}
+                                  </Box>
+                                ))}
+                                <Button
+                                  variant="outlined"
+                                  onClick={() => push("")}
+                                  startIcon={<Add />}
+                                  size="small"
+                                  sx={{
+                                    borderRadius: "20px",
+                                    textTransform: "none",
+                                  }}
+                                >
+                                  Add Value
+                                </Button>
+                              </Stack>
+                            )}
+                          </FieldArray>
+                        </Box>
+                      )}
+                    </Stack>
+                  </DialogContent>
+                  <DialogActions sx={{ p: 3 }}>
+                    <Button
+                      onClick={handleCloseDialog}
+                      sx={{
+                        borderRadius: "20px",
+                        textTransform: "none",
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <ButtonBlock
+                      type="submit"
+                      disabled={isSubmitting}
+                      style={{
+                        background:
+                          "linear-gradient(90deg, #87C133 0%, #68C9F2 100%)",
+                        borderRadius: "20px",
+                        height: "36px",
+                        color: "white",
+                        fontSize: "14px",
+                        fontWeight: "500",
+                        padding: "0 20px",
+                      }}
+                    >
+                      {isSubmitting ? "Saving..." : "Save"}
+                    </ButtonBlock>
+                  </DialogActions>
+                </Form>
               );
             }}
           </Formik>
         </Dialog>
 
         {/* Delete Confirmation Dialog */}
-        <Dialog open={deleteConfirmOpen} onClose={() => setDeleteConfirmOpen(false)}>
+        <Dialog
+          open={deleteConfirmOpen}
+          onClose={() => setDeleteConfirmOpen(false)}
+        >
           <DialogTitle sx={{ fontWeight: 600 }}>Confirm Delete</DialogTitle>
           <DialogContent>
             <Typography>
-              Are you sure you want to delete the option "{optionToDelete?.name}"?
-              This action cannot be undone.
+              Are you sure you want to delete the option "{optionToDelete?.name}
+              "? This action cannot be undone.
             </Typography>
           </DialogContent>
           <DialogActions sx={{ p: 3 }}>
@@ -769,4 +844,4 @@ const OptionsManagement: React.FC = () => {
   );
 };
 
-export default OptionsManagement; 
+export default OptionsManagement;

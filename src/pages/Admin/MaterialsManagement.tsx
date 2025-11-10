@@ -102,8 +102,12 @@ const MaterialsManagement: React.FC = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingMaterial, setEditingMaterial] = useState<Material | null>(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [materialToDelete, setMaterialToDelete] = useState<Material | null>(null);
-  const [uploadedFile, setUploadedFile] = useState<S3UploadResponse | null>(null);
+  const [materialToDelete, setMaterialToDelete] = useState<Material | null>(
+    null
+  );
+  const [uploadedFile, setUploadedFile] = useState<S3UploadResponse | null>(
+    null
+  );
   const [selected, setSelected] = useState<string[]>([]);
   const [order, setOrder] = useState<"asc" | "desc">("asc");
   const [orderBy, setOrderBy] = useState<string>("name");
@@ -112,7 +116,12 @@ const MaterialsManagement: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const queryClient = useQueryClient();
-  const { data: materialsResponse, isLoading } = useGetMaterials({ page, limit: 10, sortBy: orderBy, sortOrder: order });
+  const { data: materialsResponse, isLoading } = useGetMaterials({
+    page,
+    limit: 10,
+    sortBy: orderBy,
+    sortOrder: order,
+  });
   const createMutation = useCreateMaterial();
   const updateMutation = useUpdateMaterial();
   const deleteMutation = useDeleteMaterial();
@@ -137,7 +146,7 @@ const MaterialsManagement: React.FC = () => {
   const handleSubmit = async (values: { name: string }) => {
     console.log("Form submitted with values:", values);
     console.log("Uploaded file:", uploadedFile);
-    
+
     try {
       const materialData: MaterialRequestBody = {
         name: values.name,
@@ -158,7 +167,7 @@ const MaterialsManagement: React.FC = () => {
         const result = await createMutation.mutateAsync(materialData);
         console.log("Create result:", result);
       }
-      
+
       queryClient.invalidateQueries({ queryKey: ["materials"] });
       handleCloseDialog();
       console.log("Material saved successfully");
@@ -241,7 +250,12 @@ const MaterialsManagement: React.FC = () => {
   if (isLoading) {
     return (
       <ThemeProvider theme={theme}>
-        <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+        <Box
+          display="flex"
+          justifyContent="center"
+          alignItems="center"
+          minHeight="400px"
+        >
           <CircularProgress />
         </Box>
       </ThemeProvider>
@@ -253,7 +267,11 @@ const MaterialsManagement: React.FC = () => {
       <Box sx={{ p: 3 }}>
         <Stack spacing={3}>
           {/* Header */}
-          <Box display="flex" justifyContent="space-between" alignItems="center">
+          <Box
+            display="flex"
+            justifyContent="space-between"
+            alignItems="center"
+          >
             <Box>
               <Typography
                 variant="h4"
@@ -293,7 +311,11 @@ const MaterialsManagement: React.FC = () => {
           </Box>
 
           {/* Search and Actions */}
-          <Box display="flex" justifyContent="space-between" alignItems="center">
+          <Box
+            display="flex"
+            justifyContent="space-between"
+            alignItems="center"
+          >
             <TextField
               placeholder="Search materials..."
               value={searchTerm}
@@ -342,10 +364,12 @@ const MaterialsManagement: React.FC = () => {
                       <Checkbox
                         color="primary"
                         indeterminate={
-                          selected.length > 0 && selected.length < materials.length
+                          selected.length > 0 &&
+                          selected.length < materials.length
                         }
                         checked={
-                          materials.length > 0 && selected.length === materials.length
+                          materials.length > 0 &&
+                          selected.length === materials.length
                         }
                         onChange={handleSelectAllClick}
                       />
@@ -379,10 +403,7 @@ const MaterialsManagement: React.FC = () => {
                         sx={{ cursor: "pointer" }}
                       >
                         <TableCell padding="checkbox">
-                          <Checkbox
-                            color="primary"
-                            checked={isItemSelected}
-                          />
+                          <Checkbox color="primary" checked={isItemSelected} />
                         </TableCell>
                         <TableCell>
                           <Typography variant="body2" fontWeight={500}>
@@ -391,21 +412,32 @@ const MaterialsManagement: React.FC = () => {
                         </TableCell>
                         <TableCell>
                           <Stack direction="row" spacing={0.5} flexWrap="wrap">
-                            {material.operations?.slice(0, 2).map((operation: { _id: string; name: string; category: string }, index: number) => (
-                              <Chip
-                                key={index}
-                                label={operation.name}
-                                size="small"
-                                sx={{
-                                  backgroundColor: "#e8f5e9",
-                                  color: "#2e7d32",
-                                  fontSize: "12px",
-                                }}
-                              />
-                            ))}
+                            {material.operations?.slice(0, 2).map(
+                              (
+                                operation: {
+                                  _id: string;
+                                  name: string;
+                                  category: string;
+                                },
+                                index: number
+                              ) => (
+                                <Chip
+                                  key={index}
+                                  label={operation.name}
+                                  size="small"
+                                  sx={{
+                                    backgroundColor: "#e8f5e9",
+                                    color: "#2e7d32",
+                                    fontSize: "12px",
+                                  }}
+                                />
+                              )
+                            )}
                             {material.operations?.length > 2 && (
                               <Chip
-                                label={`+${material.operations.length - 2} more`}
+                                label={`+${
+                                  material.operations.length - 2
+                                } more`}
                                 size="small"
                                 variant="outlined"
                                 sx={{ fontSize: "12px" }}
@@ -415,7 +447,9 @@ const MaterialsManagement: React.FC = () => {
                         </TableCell>
                         <TableCell>
                           <Typography variant="body2" color="text.secondary">
-                            {new Date(material.createdAt).toLocaleDateString()}
+                            {new Date(material.createdAt).toLocaleDateString(
+                              "de-DE"
+                            )}
                           </Typography>
                         </TableCell>
                         <TableCell>
@@ -471,7 +505,12 @@ const MaterialsManagement: React.FC = () => {
         </Stack>
 
         {/* Add/Edit Dialog */}
-        <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
+        <Dialog
+          open={dialogOpen}
+          onClose={handleCloseDialog}
+          maxWidth="sm"
+          fullWidth
+        >
           <DialogTitle sx={{ fontWeight: 600 }}>
             {editingMaterial ? "Edit Material" : "Add New Material"}
           </DialogTitle>
@@ -481,7 +520,14 @@ const MaterialsManagement: React.FC = () => {
             onSubmit={handleSubmit}
             enableReinitialize
           >
-            {({ values, errors, touched, handleChange, handleBlur, isSubmitting }) => (
+            {({
+              values,
+              errors,
+              touched,
+              handleChange,
+              handleBlur,
+              isSubmitting,
+            }) => (
               <Form>
                 <DialogContent>
                   <Stack spacing={3}>
@@ -500,14 +546,19 @@ const MaterialsManagement: React.FC = () => {
                         },
                       }}
                     />
-                    
+
                     <Box>
-                      <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
+                      <Typography
+                        variant="subtitle2"
+                        sx={{ mb: 1, fontWeight: 600 }}
+                      >
                         Material Image (Optional)
                       </Typography>
                       <S3FileUpload
                         onUploadSuccess={handleFileUpload}
-                        onUploadError={(error) => console.error("Upload error:", error)}
+                        onUploadError={(error) =>
+                          console.error("Upload error:", error)
+                        }
                         acceptedFileTypes="image/*"
                         maxFileSize={5 * 1024 * 1024} // 5MB
                         currentFile={uploadedFile}
@@ -531,7 +582,8 @@ const MaterialsManagement: React.FC = () => {
                     type="submit"
                     disabled={isSubmitting}
                     style={{
-                      background: "linear-gradient(90deg, #87C133 0%, #68C9F2 100%)",
+                      background:
+                        "linear-gradient(90deg, #87C133 0%, #68C9F2 100%)",
                       borderRadius: "20px",
                       height: "36px",
                       color: "white",
@@ -549,12 +601,15 @@ const MaterialsManagement: React.FC = () => {
         </Dialog>
 
         {/* Delete Confirmation Dialog */}
-        <Dialog open={deleteConfirmOpen} onClose={() => setDeleteConfirmOpen(false)}>
+        <Dialog
+          open={deleteConfirmOpen}
+          onClose={() => setDeleteConfirmOpen(false)}
+        >
           <DialogTitle sx={{ fontWeight: 600 }}>Confirm Delete</DialogTitle>
           <DialogContent>
             <Typography>
-              Are you sure you want to delete the material "{materialToDelete?.name}"?
-              This action cannot be undone.
+              Are you sure you want to delete the material "
+              {materialToDelete?.name}"? This action cannot be undone.
             </Typography>
           </DialogContent>
           <DialogActions sx={{ p: 3 }}>
@@ -586,4 +641,4 @@ const MaterialsManagement: React.FC = () => {
   );
 };
 
-export default MaterialsManagement; 
+export default MaterialsManagement;

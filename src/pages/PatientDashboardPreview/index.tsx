@@ -4,7 +4,6 @@ import TeethSelection from "../../components/TeethSelection";
 import { useNavigate, useParams } from "react-router-dom";
 import { useGetTreatmentRequests } from "../../api/treatment-requests/hooks";
 import LoadingSpinner from "../../components/atoms/LoadingSpinner";
-import EmptyTableState from "../../components/molecules/EmptyTableState";
 import PatientDetails from "../Patients/PatientDetails";
 import { Add } from "@mui/icons-material";
 import { useMemo } from "react";
@@ -13,13 +12,14 @@ const RequestCards = (props) => {
   const { request } = props;
   const navigate = useNavigate();
 
-  const selectedTeeth = request?.operations?.flatMap(
-    (operation) => operation?.selectedTeeth || []
-  ) || [];
+  const selectedTeeth =
+    request?.operations?.flatMap(
+      (operation) => operation?.selectedTeeth || []
+    ) || [];
 
-  const selectedConnectors = request?.operations?.flatMap(
-    (operation) => operation?.connectors || []
-  ) || [];
+  const selectedConnectors =
+    request?.operations?.flatMap((operation) => operation?.connectors || []) ||
+    [];
 
   // Create a mapping of teeth to their operation colors
   const teethColorMap = useMemo(() => {
@@ -48,7 +48,7 @@ const RequestCards = (props) => {
 
   return (
     <Grid
-      key={request?._id || 'unknown'}
+      key={request?._id || "unknown"}
       size={4}
       onClick={() => request?._id && navigate(`/requests/${request._id}`)}
       sx={{
@@ -106,9 +106,10 @@ const RequestCards = (props) => {
           color: "rgba(120, 120, 120, 0.65)",
         }}
       >
-        {request?.createdAt 
-          ? new Date(request.createdAt).toLocaleDateString("de-DE") 
-          : "-"} - {request?.status || "-"}
+        {request?.createdAt
+          ? new Date(request.createdAt).toLocaleDateString("de-DE")
+          : "-"}{" "}
+        - {request?.status || "-"}
       </Typography>
     </Grid>
   );
@@ -119,7 +120,11 @@ export default function PatientDashboardPreview() {
 
   const navigate = useNavigate();
 
-  const { data: treatmentRequests, isLoading, error } = useGetTreatmentRequests({
+  const {
+    data: treatmentRequests,
+    isLoading,
+    error,
+  } = useGetTreatmentRequests({
     patient: id,
   });
 
@@ -142,14 +147,14 @@ export default function PatientDashboardPreview() {
           >
             Patienten-Auftragensliste
           </Typography>
-          
+
           {/* Error Alert */}
           {error && (
             <Alert severity="error" sx={{ mb: 2 }}>
               Fehler beim Laden der Aufträge. Bitte versuchen Sie es erneut.
             </Alert>
           )}
-          
+
           <Paper
             sx={{
               borderRadius: "10px",
@@ -180,7 +185,10 @@ export default function PatientDashboardPreview() {
                     <Typography variant="h6" sx={{ fontWeight: 500 }}>
                       Keine Aufträge vorhanden
                     </Typography>
-                    <Typography variant="body2" sx={{ textAlign: "center", opacity: 0.7 }}>
+                    <Typography
+                      variant="body2"
+                      sx={{ textAlign: "center", opacity: 0.7 }}
+                    >
                       Dieser Patient hat noch keine Behandlungsaufträge.
                       <br />
                       Erstellen Sie den ersten Auftrag.
@@ -209,7 +217,7 @@ export default function PatientDashboardPreview() {
                 navigate(`/patients/${id}/requests/create`);
               }}
             >
-              Neu Auftrag
+              Neuer Auftrag
             </ButtonBlock>
           </Paper>
         </Box>

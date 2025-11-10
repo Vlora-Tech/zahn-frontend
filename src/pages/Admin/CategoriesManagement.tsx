@@ -97,7 +97,9 @@ const CategoriesManagement: React.FC = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
+  const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(
+    null
+  );
   const [selected, setSelected] = useState<string[]>([]);
   const [order, setOrder] = useState<"asc" | "desc">("asc");
   const [orderBy, setOrderBy] = useState<string>("name");
@@ -106,7 +108,12 @@ const CategoriesManagement: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const queryClient = useQueryClient();
-  const { data: categoriesResponse, isLoading } = useGetCategories({ page, limit: 10, sortBy: orderBy, sortOrder: order });
+  const { data: categoriesResponse, isLoading } = useGetCategories({
+    page,
+    limit: 10,
+    sortBy: orderBy,
+    sortOrder: order,
+  });
   const createMutation = useCreateCategory();
   const updateMutation = useUpdateCategory();
   const deleteMutation = useDeleteCategory();
@@ -128,7 +135,7 @@ const CategoriesManagement: React.FC = () => {
 
   const handleSubmit = async (values: CreateCategoryDto) => {
     console.log("Form submitted with values:", values);
-    
+
     try {
       const categoryData: CreateCategoryDto = {
         name: values.name,
@@ -149,7 +156,7 @@ const CategoriesManagement: React.FC = () => {
         const result = await createMutation.mutateAsync(categoryData);
         console.log("Create result:", result);
       }
-      
+
       queryClient.invalidateQueries({ queryKey: ["categories"] });
       handleCloseDialog();
       console.log("Category saved successfully");
@@ -225,7 +232,12 @@ const CategoriesManagement: React.FC = () => {
   if (isLoading) {
     return (
       <ThemeProvider theme={theme}>
-        <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+        <Box
+          display="flex"
+          justifyContent="center"
+          alignItems="center"
+          minHeight="400px"
+        >
           <CircularProgress />
         </Box>
       </ThemeProvider>
@@ -237,7 +249,11 @@ const CategoriesManagement: React.FC = () => {
       <Box sx={{ p: 3 }}>
         <Stack spacing={3}>
           {/* Header */}
-          <Box display="flex" justifyContent="space-between" alignItems="center">
+          <Box
+            display="flex"
+            justifyContent="space-between"
+            alignItems="center"
+          >
             <Box>
               <Typography
                 variant="h4"
@@ -277,7 +293,11 @@ const CategoriesManagement: React.FC = () => {
           </Box>
 
           {/* Search and Actions */}
-          <Box display="flex" justifyContent="space-between" alignItems="center">
+          <Box
+            display="flex"
+            justifyContent="space-between"
+            alignItems="center"
+          >
             <TextField
               placeholder="Search categories..."
               value={searchTerm}
@@ -326,10 +346,12 @@ const CategoriesManagement: React.FC = () => {
                       <Checkbox
                         color="primary"
                         indeterminate={
-                          selected.length > 0 && selected.length < categories.length
+                          selected.length > 0 &&
+                          selected.length < categories.length
                         }
                         checked={
-                          categories.length > 0 && selected.length === categories.length
+                          categories.length > 0 &&
+                          selected.length === categories.length
                         }
                         onChange={handleSelectAllClick}
                       />
@@ -363,10 +385,7 @@ const CategoriesManagement: React.FC = () => {
                         sx={{ cursor: "pointer" }}
                       >
                         <TableCell padding="checkbox">
-                          <Checkbox
-                            color="primary"
-                            checked={isItemSelected}
-                          />
+                          <Checkbox color="primary" checked={isItemSelected} />
                         </TableCell>
                         <TableCell>
                           <Typography variant="body2" fontWeight={500}>
@@ -380,7 +399,9 @@ const CategoriesManagement: React.FC = () => {
                         </TableCell>
                         <TableCell>
                           <Typography variant="body2" color="text.secondary">
-                            {new Date(category.createdAt).toLocaleDateString()}
+                            {new Date(category.createdAt).toLocaleDateString(
+                              "de-DE"
+                            )}
                           </Typography>
                         </TableCell>
                         <TableCell>
@@ -436,7 +457,12 @@ const CategoriesManagement: React.FC = () => {
         </Stack>
 
         {/* Add/Edit Dialog */}
-        <Dialog open={dialogOpen} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
+        <Dialog
+          open={dialogOpen}
+          onClose={handleCloseDialog}
+          maxWidth="sm"
+          fullWidth
+        >
           <DialogTitle sx={{ fontWeight: 600 }}>
             {editingCategory ? "Edit Category" : "Add New Category"}
           </DialogTitle>
@@ -448,7 +474,14 @@ const CategoriesManagement: React.FC = () => {
             }}
             enableReinitialize
           >
-            {({ values, errors, touched, handleChange, handleBlur, isSubmitting }) => (
+            {({
+              values,
+              errors,
+              touched,
+              handleChange,
+              handleBlur,
+              isSubmitting,
+            }) => (
               <Form>
                 <DialogContent>
                   <Stack spacing={3}>
@@ -467,7 +500,7 @@ const CategoriesManagement: React.FC = () => {
                         },
                       }}
                     />
-                    
+
                     <TextField
                       fullWidth
                       name="description"
@@ -501,7 +534,8 @@ const CategoriesManagement: React.FC = () => {
                     type="submit"
                     disabled={isSubmitting}
                     style={{
-                      background: "linear-gradient(90deg, #87C133 0%, #68C9F2 100%)",
+                      background:
+                        "linear-gradient(90deg, #87C133 0%, #68C9F2 100%)",
                       borderRadius: "20px",
                       height: "36px",
                       color: "white",
@@ -519,12 +553,15 @@ const CategoriesManagement: React.FC = () => {
         </Dialog>
 
         {/* Delete Confirmation Dialog */}
-        <Dialog open={deleteConfirmOpen} onClose={() => setDeleteConfirmOpen(false)}>
+        <Dialog
+          open={deleteConfirmOpen}
+          onClose={() => setDeleteConfirmOpen(false)}
+        >
           <DialogTitle sx={{ fontWeight: 600 }}>Confirm Delete</DialogTitle>
           <DialogContent>
             <Typography>
-              Are you sure you want to delete the category "{categoryToDelete?.name}"?
-              This action cannot be undone.
+              Are you sure you want to delete the category "
+              {categoryToDelete?.name}"? This action cannot be undone.
             </Typography>
           </DialogContent>
           <DialogActions sx={{ p: 3 }}>
@@ -556,4 +593,4 @@ const CategoriesManagement: React.FC = () => {
   );
 };
 
-export default CategoriesManagement; 
+export default CategoriesManagement;

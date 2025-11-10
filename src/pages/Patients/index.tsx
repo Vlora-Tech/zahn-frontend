@@ -34,6 +34,7 @@ import StyledLink from "../../components/atoms/StyledLink";
 import TableRowsLoader from "../../components/molecules/TableRowsLoader";
 import EmptyTableState from "../../components/molecules/EmptyTableState";
 import { useAuth } from "../../context/AuthContext";
+import { isoDateToAge } from "../../utils/isoDateToAge";
 
 const PatientList = () => {
   const navigate = useNavigate();
@@ -44,15 +45,19 @@ const PatientList = () => {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
-  const {user} = useAuth()
+  const { user } = useAuth();
 
-  const { data: patients, isLoading, error } = useGetPatients({
+  const {
+    data: patients,
+    isLoading,
+    error,
+  } = useGetPatients({
     page,
     sortBy: orderBy,
     sortOrder: order,
     search,
-    ...(user?.role === "doctor" ? {doctor: user?.id} : {}),
-    ...(user?.role === "nurse" ? {clinic: user?.clinic?._id} : {}),
+    ...(user?.role === "doctor" ? { doctor: user?.id } : {}),
+    ...(user?.role === "nurse" ? { clinic: user?.clinic?._id } : {}),
   });
 
   // Debounced search function
@@ -119,14 +124,14 @@ const PatientList = () => {
       >
         Patientenliste
       </Typography>
-      
+
       {/* Error Alert */}
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
           Fehler beim Laden der Patienten. Bitte versuchen Sie es erneut.
         </Alert>
       )}
-      
+
       <Paper
         sx={{
           borderRadius: "10px",
@@ -219,72 +224,63 @@ const PatientList = () => {
                     </TableSortLabel>
                   </TableCell>
                   <TableCell>Geburtstag</TableCell>
-                  <TableCell>
-                    <TableSortLabel
-                      active={orderBy === "doctor"}
-                      direction={orderBy === "doctor" ? order : "asc"}
-                      onClick={() => handleSort("doctor")}
-                    >
-                      Zahnarzt
-                    </TableSortLabel>
-                  </TableCell>
                   <TableCell></TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-              {isLoading ? (
+                {isLoading ? (
                   <TableRowsLoader rowsNum={10} colNums={7} />
-              ) : !hasData ? (
-                  <EmptyTableState 
-                    colSpan={7} 
-                    message={search ? "Keine Patienten gefunden" : "Keine Patienten vorhanden. Fügen Sie einen neuen Patienten hinzu."}
+                ) : !hasData ? (
+                  <EmptyTableState
+                    colSpan={7}
+                    message={
+                      search
+                        ? "Keine Patienten gefunden"
+                        : "Keine Patienten vorhanden. Fügen Sie einen neuen Patienten hinzu."
+                    }
                   />
-              ) : (
-                <>
-                  {patients?.data?.map((patient) => {
-                    const isItemSelected = isSelected(patient._id);
-                    return (
-                      <TableRow
-                        key={patient._id}
-                        hover
-                        onClick={() => handleClick(patient._id)}
-                        role="checkbox"
-                        aria-checked={isItemSelected}
-                        tabIndex={-1}
-                        selected={isItemSelected}
-                      >
-                        <TableCell padding="checkbox">
-                          <Checkbox checked={isItemSelected} />
-                        </TableCell>
-                        <TableCell>
-                          {patient?.firstName} {patient?.lastName}
-                        </TableCell>
-                        <TableCell>{patient?.patientNumber || "-"}</TableCell>
-                        <TableCell>{patient?.patientType || "-"}</TableCell>
-                        <TableCell>
-                          {patient?.birthDate
-                            ? new Date(patient.birthDate).toLocaleDateString(
-                                "de-DE"
-                              )
-                            : "-"}
-                        </TableCell>
-                        <TableCell>
-                          {patient?.doctor?.firstName && patient?.doctor?.lastName
-                            ? `${patient.doctor.firstName} ${patient.doctor.lastName}`
-                            : "-"}
-                        </TableCell>
-                        <TableCell>
-                          <StyledLink to={`/patients/${patient._id}`}>
-                            <Visibility />
-                          </StyledLink>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </>
-              )}
-                 </TableBody>
-
+                ) : (
+                  <>
+                    {patients?.data?.map((patient) => {
+                      const isItemSelected = isSelected(patient._id);
+                      return (
+                        <TableRow
+                          key={patient._id}
+                          hover
+                          onClick={() => handleClick(patient._id)}
+                          role="checkbox"
+                          aria-checked={isItemSelected}
+                          tabIndex={-1}
+                          selected={isItemSelected}
+                        >
+                          <TableCell padding="checkbox">
+                            <Checkbox checked={isItemSelected} />
+                          </TableCell>
+                          <TableCell>
+                            {patient?.firstName} {patient?.lastName}
+                          </TableCell>
+                          <TableCell>{patient?.patientNumber || "-"}</TableCell>
+                          <TableCell>{patient?.patientType || "-"}</TableCell>
+                          <TableCell>
+                            {patient?.birthDate
+                              ? `${new Date(
+                                  patient.birthDate
+                                ).toLocaleDateString("de-DE")} ( ${isoDateToAge(
+                                  patient.birthDate
+                                )} J. )`
+                              : "-"}
+                          </TableCell>
+                          <TableCell>
+                            <StyledLink to={`/patients/${patient._id}`}>
+                              <Visibility />
+                            </StyledLink>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </>
+                )}
+              </TableBody>
             </Table>
           </TableContainer>
           {hasData && patients?.pagination && (

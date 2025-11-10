@@ -26,6 +26,7 @@ import RequestSummary from "../PatientDashboard/components/RequestSummary";
 import ButtonBlock from "../../components/atoms/ButtonBlock";
 import LoadingSpinner from "../../components/atoms/LoadingSpinner";
 import { OperationSchema } from "../PatientDashboard";
+import { isoDateToAge } from "../../utils/isoDateToAge";
 
 export default function RequestDetails() {
   const params = useParams();
@@ -406,7 +407,8 @@ export default function RequestDetails() {
                   Geburtstag
                 </Typography>
                 <Typography variant="body1" sx={{ mt: 1 }}>
-                  {new Date(patientData?.birthDate).toLocaleDateString()}
+                  {new Date(patientData?.birthDate).toLocaleDateString("de-DE")}{" "}
+                  ( {isoDateToAge(patientData?.birthDate)} J. )
                 </Typography>
               </Grid>
             </Grid>
@@ -444,9 +446,9 @@ export default function RequestDetails() {
                     Liefertermin
                   </Typography>
                   <Typography variant="body1" sx={{ mt: 1 }}>
-                    {new Date(
-                      treatmentRequest.deliveryDate
-                    ).toLocaleDateString()}
+                    {new Date(treatmentRequest.deliveryDate).toLocaleDateString(
+                      "de-DE"
+                    )}
                   </Typography>
                 </Grid>
               )}

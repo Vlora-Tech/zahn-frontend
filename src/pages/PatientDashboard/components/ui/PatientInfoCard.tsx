@@ -2,6 +2,7 @@ import { Grid, Paper, Stack, Typography } from "@mui/material";
 import ButtonBlock from "../../../../components/atoms/ButtonBlock";
 import { Edit } from "@mui/icons-material";
 import TextFieldBlockNoForm from "../../../../components/molecules/form-fields/TextFieldBlockNoForm";
+import { isoDateToAge } from "../../../../utils/isoDateToAge";
 
 export interface PatientInfo {
   id: string;
@@ -64,9 +65,9 @@ const PatientInfoCard: React.FC<{
             { label: "Geschlecht", value: patientData.gender },
             {
               label: "Geburtstag",
-              value: new Date(patientData.birthDate).toLocaleDateString(
+              value: `${new Date(patientData.birthDate).toLocaleDateString(
                 "de-DE"
-              ),
+              )} ( ${isoDateToAge(patientData.birthDate)} J. )`,
             },
           ].map((item) => (
             <Stack key={item.label} sx={{ textAlign: "left", width: "250px" }}>

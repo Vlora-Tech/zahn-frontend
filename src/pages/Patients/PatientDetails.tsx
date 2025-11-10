@@ -3,6 +3,7 @@ import ButtonBlock from "../../components/atoms/ButtonBlock";
 import { useNavigate, useParams } from "react-router-dom";
 import { useDeletePatient, useGetPatientById } from "../../api/patients/hooks";
 import LoadingSpinner from "../../components/atoms/LoadingSpinner";
+import { isoDateToAge } from "../../utils/isoDateToAge";
 
 export default function PatientDetails() {
   const params = useParams();
@@ -76,7 +77,9 @@ export default function PatientDetails() {
             {
               label: "Geburtstag",
               value: patient?.birthDate
-                ? new Date(patient.birthDate).toLocaleDateString("de-DE")
+                ? `${new Date(patient.birthDate).toLocaleDateString(
+                    "de-DE"
+                  )} ( ${isoDateToAge(patient.birthDate)} J. )`
                 : "",
             },
             {
