@@ -103,6 +103,35 @@ export default function RequestDetails() {
     }));
   }, [treatmentRequest]);
 
+  const selectedTeethRequest =
+    configuredOperations?.flatMap((operation) => operation.selectedTeeth) ?? [];
+
+  const selectedConnectorsRequest =
+    configuredOperations?.flatMap((operation) => operation.connectors) ?? [];
+
+  // Create a mapping of teeth to their operation colors
+  const teethRequestColorMap = useMemo(() => {
+    const map: Record<number, string> = {};
+    configuredOperations?.forEach((operation) => {
+      operation.selectedTeeth?.forEach((tooth) => {
+        map[tooth] = operation.operation?.color || "#c3c3c3";
+      });
+    });
+    return map;
+  }, [configuredOperations]);
+
+  // Create a mapping of connectors to their operation colors
+  const connectorsRequestColorMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    configuredOperations?.forEach((operation) => {
+      operation.connectors?.forEach((connector) => {
+        const connectorKey = `${connector[0]}-${connector[1]}`;
+        map[connectorKey] = operation.operation?.color || "#c3c3c3";
+      });
+    });
+    return map;
+  }, [configuredOperations]);
+
   const handleApprove = () => {
     setApproveDialogOpen(true);
   };
@@ -204,6 +233,11 @@ export default function RequestDetails() {
               selectedShade={treatmentRequest.shade}
               selectedImpression={treatmentRequest.impression}
               configuredOperations={configuredOperations}
+              selectedTeethRequest={selectedTeethRequest}
+              selectedConnectorsRequest={selectedConnectorsRequest}
+              teethRequestColorMap={teethRequestColorMap}
+              connectorsRequestColorMap={connectorsRequestColorMap}
+              attachment={treatmentRequest?.attachment}
               handleEditOperation={() => {}} // Disabled in view mode
               handleDeleteOperation={() => {}} // Disabled in view mode
               handleEditPatientInfo={() => {}} // Disabled in view mode

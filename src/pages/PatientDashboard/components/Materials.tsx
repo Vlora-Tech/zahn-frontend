@@ -16,6 +16,7 @@ interface MaterialProps {
   onSelect?: (material: any) => void;
   selectedMaterial?: any;
   selectedOperation?: any;
+  operations?: any;
 }
 
 // Helper function to generate color based on material name
@@ -36,6 +37,7 @@ const generateMaterialColor = (name: string): string => {
 };
 
 const Materials: React.FC<MaterialProps> = ({
+  operations,
   onSelect,
   selectedMaterial,
   selectedOperation,
@@ -61,6 +63,118 @@ const Materials: React.FC<MaterialProps> = ({
       return [];
     }
   }, [materialsData]);
+
+  // crown and bridge must have same material
+  //
+  const crownOrBridgeOperation = operations?.find(
+    (op) =>
+      op.operation.category === "Festsitzend" ||
+      op.operation.category === "Brückenglieder"
+  );
+
+  console.log(operations[0]);
+
+  if (crownOrBridgeOperation) {
+    const preselectedMaterial = crownOrBridgeOperation.material;
+
+    return (
+      <Stack flex="1" gap="20px">
+        <Typography
+          variant="h2"
+          sx={{
+            fontWeight: "600",
+            fontSize: "24px",
+            color: "rgba(146, 146, 146, 1)",
+          }}
+        >
+          {"Materialien"}
+        </Typography>
+        <Paper
+          sx={{
+            borderRadius: "10px",
+            background: "rgba(255, 255, 255, 1)",
+            padding: "26px 40px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "20px",
+            alignItems: "center",
+            height: "100%",
+          }}
+        >
+          <Grid container spacing={"24px"} sx={{ width: "100%" }}>
+            <Grid size={3}>
+              <Card
+                sx={{
+                  borderRadius: "8px",
+                  border: "1px solid rgba(10, 77, 130, 1)",
+                  backgroundColor: preselectedMaterial.color,
+                  width: "100%",
+                  height: "100%",
+                  transition: "all 0.2s ease",
+                  "&:hover": {
+                    backgroundColor: preselectedMaterial.color,
+                    opacity: "0.8",
+                  },
+                  boxShadow: "none",
+                }}
+              >
+                <CardActionArea
+                  sx={{
+                    padding: "16px",
+                    textAlign: "center",
+                    width: "100%",
+                    height: "100%",
+                  }}
+                >
+                  <Box
+                    sx={{
+                      width: "60px",
+                      height: "60px",
+                      borderRadius: "50%",
+                      backgroundColor: preselectedMaterial.color,
+                      margin: "0 auto 8px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    {preselectedMaterial.image && (
+                      <img
+                        src={preselectedMaterial.image}
+                        alt={preselectedMaterial.name}
+                        style={{
+                          width: "40px",
+                          height: "40px",
+                          borderRadius: "50%",
+                          objectFit: "cover",
+                        }}
+                        onError={(e) => {
+                          // Hide broken images
+                          (e.target as HTMLImageElement).style.display = "none";
+                        }}
+                      />
+                    )}
+                  </Box>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      fontFamily: "Montserrat",
+                      fontWeight: "600",
+                      marginTop: "8px",
+                      fontSize: "14px",
+                      color: "rgba(10, 77, 130, 1)",
+                    }}
+                  >
+                    {preselectedMaterial.name}
+                  </Typography>
+                </CardActionArea>
+              </Card>
+            </Grid>
+          </Grid>
+        </Paper>
+      </Stack>
+    );
+  }
 
   return (
     <Stack flex="1" gap="20px">

@@ -22,12 +22,19 @@ import {
 import TeethSelection from "../../../components/TeethSelection";
 import PatientInfoCard from "./ui/PatientInfoCard";
 import ValueFieldBlock from "../../../components/molecules/form-fields/ValueFieldBlock";
-import { Delete, Edit, ExpandMore, HorizontalRule } from "@mui/icons-material";
+import {
+  Delete,
+  Edit,
+  ExpandMore,
+  HorizontalRule,
+  SimCardDownload,
+} from "@mui/icons-material";
 import OperationChip from "./ui/OperationChip";
 import { isEmpty } from "lodash";
 import ButtonBlock from "../../../components/atoms/ButtonBlock";
 import { OperationSchema } from "..";
 import { useState } from "react";
+import client from "../../../services/axiosClient";
 
 const RequestSummary = (props) => {
   const {
@@ -45,6 +52,7 @@ const RequestSummary = (props) => {
     selectedImpression,
     notes,
     setNotes,
+    attachment,
   } = props;
 
   // State for delete confirmation dialog
@@ -184,64 +192,68 @@ const RequestSummary = (props) => {
                     >
                       Material
                     </Typography>
-                    <Card
-                      sx={{
-                        borderRadius: "8px",
-                        border: "1px solid rgba(10, 77, 130, 1)",
-                        backgroundColor: configuredOperation?.material?.color,
-                        boxShadow: "none",
-                        width: "200px",
-                      }}
-                    >
+                    {configuredOperation?.material ? (
                       <Card
                         sx={{
-                          padding: "16px",
-                          textAlign: "center",
+                          borderRadius: "8px",
+                          border: "1px solid rgba(10, 77, 130, 1)",
+                          backgroundColor: configuredOperation?.material?.color,
+                          boxShadow: "none",
+                          width: "200px",
                         }}
                       >
-                        <Box
+                        <Card
                           sx={{
-                            width: "60px",
-                            height: "60px",
-                            borderRadius: "50%",
-                            backgroundColor:
-                              configuredOperation?.material?.color,
-                            margin: "0 auto 8px",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
+                            padding: "16px",
+                            textAlign: "center",
                           }}
                         >
-                          {configuredOperation?.material?.image && (
-                            <img
-                              src={configuredOperation?.material?.image}
-                              alt={configuredOperation?.material?.name}
-                              style={{
-                                width: "40px",
-                                height: "40px",
-                                borderRadius: "50%",
-                                objectFit: "cover",
-                              }}
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).style.display =
-                                  "none";
-                              }}
-                            />
-                          )}
-                        </Box>
-                        <Typography
-                          variant="body2"
-                          sx={{
-                            fontWeight: "600",
-                            marginTop: "8px",
-                            fontSize: "14px",
-                            color: "rgba(10, 77, 130, 1)",
-                          }}
-                        >
-                          {configuredOperation?.material?.name}
-                        </Typography>
+                          <Box
+                            sx={{
+                              width: "60px",
+                              height: "60px",
+                              borderRadius: "50%",
+                              backgroundColor:
+                                configuredOperation?.material?.color,
+                              margin: "0 auto 8px",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                            }}
+                          >
+                            {configuredOperation?.material?.image && (
+                              <img
+                                src={configuredOperation?.material?.image}
+                                alt={configuredOperation?.material?.name}
+                                style={{
+                                  width: "40px",
+                                  height: "40px",
+                                  borderRadius: "50%",
+                                  objectFit: "cover",
+                                }}
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).style.display =
+                                    "none";
+                                }}
+                              />
+                            )}
+                          </Box>
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              fontWeight: "600",
+                              marginTop: "8px",
+                              fontSize: "14px",
+                              color: "rgba(10, 77, 130, 1)",
+                            }}
+                          >
+                            {configuredOperation?.material?.name}
+                          </Typography>
+                        </Card>
                       </Card>
-                    </Card>
+                    ) : (
+                      <HorizontalRule />
+                    )}
                   </Stack>
                   <Stack sx={{ textAlign: "left" }}>
                     <Typography
@@ -275,6 +287,8 @@ const RequestSummary = (props) => {
                                 <TableCell>
                                   {opt.includes("_drawing") ? (
                                     <img src={param} alt={`${opt}_img`} />
+                                  ) : opt.includes("datei") ? (
+                                    param.originalName
                                   ) : (
                                     param ?? <HorizontalRule />
                                   )}
@@ -329,6 +343,35 @@ const RequestSummary = (props) => {
               />
               <ValueFieldBlock label="Zahnfarbe" value={selectedShade} />
             </Stack>
+          </Paper>
+          <Paper
+            sx={{
+              borderRadius: "10px",
+              background: "rgba(255, 255, 255, 1)",
+              boxShadow: "0px 4px 8px 0px rgba(0, 0, 0, 0.25)",
+              padding: "26px 40px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "20px",
+              alignItems: "center",
+              height: "100%",
+              opacity: 1,
+              cursor: "pointer",
+            }}
+            onClick={async () => {
+              const { data } = await client.get(
+                `https://${attachment.bucket}.s3.eu-north-1.amazonaws.com/${attachment.key}`
+              );
+              window.open(data.url, "_self");
+            }}
+          >
+            <SimCardDownload
+              sx={{
+                fontSize: "48px",
+              }}
+            />
+            <Typography>{attachment?.originalName}</Typography>
+            <Typography>Anhang herunterladen</Typography>
           </Paper>
         </Stack>
       </Stack>

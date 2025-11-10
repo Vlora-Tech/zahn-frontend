@@ -14,6 +14,11 @@ const ValueFieldBlock: React.FC<ValueFieldBlockProps> = ({ label, value }) => {
         gap: "8px",
       }}
     >
+      <style>
+        {`.summary-value::first-letter {
+            text-transform: uppercase;
+          }`}
+      </style>
       <Typography
         sx={{
           fontWeight: "400",
@@ -29,7 +34,7 @@ const ValueFieldBlock: React.FC<ValueFieldBlockProps> = ({ label, value }) => {
           fontSize: "16px",
         }}
       >
-        {value}
+        <div className="summary-value">{value}</div>
       </Typography>
     </Box>
   );

@@ -15,6 +15,9 @@ import { Fragment, useMemo, useEffect } from "react";
 import SelectBlock from "../../../components/atoms/SelectBlock";
 import InputBlockNoForm from "../../../components/atoms/InputBlockNoForm";
 import { isoDateToAge } from "../../../utils/isoDateToAge";
+import S3FileUpload, {
+  S3UploadResponse,
+} from "../../../components/S3FileUpload";
 
 const PatientInformation = (props) => {
   const {
@@ -32,6 +35,8 @@ const PatientInformation = (props) => {
     selectedImpression,
     onEmptyDataChange, // New prop to communicate empty state to parent
     disabled = false, // New prop to disable all fields
+    attachment,
+    setAttachment,
   } = props;
 
   const { patientNumber, firstName, lastName, gender, birthDate } =
@@ -139,9 +144,6 @@ const PatientInformation = (props) => {
             borderRadius: "10px",
             background: "rgba(255, 255, 255, 1)",
             padding: "26px 40px",
-            display: "flex",
-            flexDirection: "column",
-            flex: "1",
           }}
         >
           <Grid container spacing={2}>
@@ -169,17 +171,6 @@ const PatientInformation = (props) => {
                 }
               />
             </Grid>
-            {/* <Grid size={12}>
-              <TextFieldBlockNoForm
-                name="notes"
-                label="Notizen"
-                placeholder="Enter notes"
-                multiline={true}
-                minRows={7}
-                value={notes}
-                onChange={setNotes}
-              />
-            </Grid> */}
           </Grid>
         </Paper>
         <Typography
@@ -197,9 +188,24 @@ const PatientInformation = (props) => {
             borderRadius: "10px",
             background: "rgba(255, 255, 255, 1)",
             padding: "26px 40px",
+          }}
+        >
+          <S3FileUpload
+            onUploadSuccess={(uploadRes: S3UploadResponse) =>
+              setAttachment(uploadRes)
+            }
+            onRemove={() => setAttachment(null)}
+            onUploadError={(error) => console.error("Upload error:", error)}
+            currentFile={attachment}
+          />
+        </Paper>
+        <Paper
+          sx={{
+            borderRadius: "10px",
+            background: "rgba(255, 255, 255, 1)",
+            padding: "26px 40px",
             display: "flex",
             flexDirection: "column",
-            flex: "1",
           }}
         >
           <Grid container spacing={2}>
@@ -308,7 +314,6 @@ const PatientInformation = (props) => {
             padding: "26px 40px",
             display: "flex",
             flexDirection: "column",
-            flex: "1",
           }}
         >
           <Grid container spacing={2}>

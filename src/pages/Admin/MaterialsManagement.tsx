@@ -559,8 +559,6 @@ const MaterialsManagement: React.FC = () => {
                         onUploadError={(error) =>
                           console.error("Upload error:", error)
                         }
-                        acceptedFileTypes="image/*"
-                        maxFileSize={5 * 1024 * 1024} // 5MB
                         currentFile={uploadedFile}
                         onRemove={handleFileRemove}
                         label="Upload Material Image"

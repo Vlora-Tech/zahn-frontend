@@ -21,7 +21,6 @@ import {
   OptionsSchemaParent,
 } from "../../../api/operations/types";
 import { DrawingPad } from "../../../components/DrawingPad";
-import UploadParameter from "./UploadParameter";
 import { FC, useEffect, useMemo } from "react";
 
 const DRAWING_SUFFIX = "__drawing";
@@ -287,21 +286,6 @@ const OperationOptions: FC<OperationOptionsProps> = ({
             strokeWidth={2}
           />
         </Box>
-      );
-    }
-
-    if (ch.type === "file-upload") {
-      const key = slug(ch.label);
-
-      const accept = (ch.accept || []).join(",");
-
-      return (
-        <UploadParameter
-          key={key}
-          accept={accept}
-          label={ch.label}
-          handleDefineOptionsParameters={handleDefineOptionsParameters}
-        />
       );
     }
 

@@ -38,7 +38,7 @@ export type OperationSchema = {
   selectedTeeth: Array<number>;
   operation: any;
   material: any;
-  optionsAndParameters: Record<string, string>;
+  optionsAndParameters: Record<string, string> | Record<string, any>;
   connectors: Array<[number, number]>;
 };
 
@@ -85,6 +85,7 @@ export default function PatientDashboard() {
   const [selectedOperationOptions, setSelectedOperationOptions] = useState<
     Record<string, string>
   >({});
+  const [attachment, setAttachment] = useState(null);
 
   const [showOnlyEditPatientInfoForm, setShowOnlyEditPatientInfoForm] =
     useState<boolean>(false);
@@ -382,10 +383,11 @@ export default function PatientDashboard() {
         selectedTeeth: operation?.selectedTeeth,
         connectors: operation?.connectors,
         operation: operation?.operation?.id,
-        material: operation?.material?.id,
+        material: operation?.material?.id ?? null,
         optionsAndParameters: operation?.optionsAndParameters,
       })),
       shade: selectedShade,
+      attachment: attachment,
     };
 
     if (isEditMode) {
@@ -481,17 +483,19 @@ export default function PatientDashboard() {
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mb: 2 }}>
             {!emptyDataState.hasDoctors && (
               <Alert severity="warning">
-                Keine Ärzte verfügbar. Bitte wenden Sie sich an den Administrator, um Ärzte hinzuzufügen.
+                Keine Ärzte verfügbar. Bitte wenden Sie sich an den
+                Administrator, um Ärzte hinzuzufügen.
               </Alert>
             )}
             {!emptyDataState.hasClinics && (
               <Alert severity="warning">
-                Keine Praxen verfügbar. Bitte wenden Sie sich an den Administrator, um Praxen hinzuzufügen.
+                Keine Praxen verfügbar. Bitte wenden Sie sich an den
+                Administrator, um Praxen hinzuzufügen.
               </Alert>
             )}
           </Box>
         )}
-        
+
         <Stack flexDirection={"row"} flex={1} gap="20px">
           {dashboardState === 1 && (
             <Fragment>
@@ -510,6 +514,8 @@ export default function PatientDashboard() {
                 selectedImpression={selectedImpression}
                 onEmptyDataChange={handleEmptyDataChange}
                 disabled={emptyDataState.hasEmptyData}
+                attachment={attachment}
+                setAttachment={setAttachment}
               />
               {!showOnlyEditPatientInfoForm && (
                 <OperationTeeth
@@ -566,6 +572,7 @@ export default function PatientDashboard() {
                   onSelect={handleSelectMaterial}
                   selectedMaterial={selectedMaterial}
                   selectedOperation={selectedOperation}
+                  operations={configuredOperations}
                 />
                 {optionsData[selectedOperation?.id] && (
                   <OperationOptions
@@ -601,6 +608,7 @@ export default function PatientDashboard() {
                 selectedImpression={selectedImpression}
                 setNotes={setNotes}
                 notes={notes}
+                attachment={attachment}
               />
             </Stack>
           )}

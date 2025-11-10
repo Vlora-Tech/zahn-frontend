@@ -38,6 +38,7 @@ export interface CreateRequestDto {
   patient: string;
   impression: string;
   shade: string;
+  attachment: string;
 }
 
 export type UpdateRequestDto = Partial<CreateRequestDto>;
@@ -60,6 +61,7 @@ export interface TreatmentRequest {
   status: string;
   notes: string;
   data: any[];
+  attachment: any;
   insurance: string;
   deliveryDate: string;
   isDoctorApprovalNeeded: boolean;
