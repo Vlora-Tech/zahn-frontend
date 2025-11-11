@@ -367,7 +367,7 @@ const PatientInformation = (props) => {
                   Zahnfarbe *
                 </FormLabel>
                 <SelectBlock
-                  enableClear={false}
+                  enableClear={true}
                   placeholder={"Zahnfarbe auswählen"}
                   options={[
                     { label: "A1", value: "a1" },
