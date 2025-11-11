@@ -364,7 +364,7 @@ const PatientInformation = (props) => {
                     color: "rgba(10, 77, 130, 1)",
                   }}
                 >
-                  Zahnfarbe *
+                  Zahnfarbe
                 </FormLabel>
                 <SelectBlock
                   enableClear={true}
