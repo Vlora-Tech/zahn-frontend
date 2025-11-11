@@ -204,7 +204,6 @@ export default function PatientDashboard() {
         selectedDoctor &&
         selectedClinic &&
         deliveryDate &&
-        selectedShade &&
         selectedImpression
     );
   }, [
@@ -212,7 +211,6 @@ export default function PatientDashboard() {
     selectedDoctor,
     selectedClinic,
     deliveryDate,
-    selectedShade,
     selectedImpression,
   ]);
 
