@@ -60,7 +60,7 @@ export default function CreateDoctor() {
             console.log("Clinic created successfully:", data);
             openSnackbar({
               type: "success",
-              message: "Artzt erfolgreich erstellt",
+              message: "Arztt erfolgreich erstellt",
             });
 
             resetForm();
@@ -72,7 +72,7 @@ export default function CreateDoctor() {
           onError: (error) => {
             const errorMessage =
               (error.response?.data as { message?: string })?.message ||
-              "Artzt konnte nicht erstellt werden";
+              "Arztt konnte nicht erstellt werden";
 
             openSnackbar({
               type: "error",
@@ -99,7 +99,7 @@ export default function CreateDoctor() {
               color: "rgba(146, 146, 146, 1)",
             }}
           >
-            Neu Artzt
+            Neu Arztt
           </Typography>
 
           <Paper

@@ -44,9 +44,13 @@ const Doctors = () => {
 
   const navigate = useNavigate();
 
-  const { data: doctors, isLoading, error } = useGetDoctors({ 
-    page, 
-    sortBy: orderBy, 
+  const {
+    data: doctors,
+    isLoading,
+    error,
+  } = useGetDoctors({
+    page,
+    sortBy: orderBy,
     sortOrder: order,
     search,
   });
@@ -115,14 +119,14 @@ const Doctors = () => {
       >
         Ärzteliste
       </Typography>
-      
+
       {/* Error Alert */}
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
           Fehler beim Laden der Ärzte. Bitte versuchen Sie es erneut.
         </Alert>
       )}
-      
+
       <Paper
         sx={{
           borderRadius: "10px",
@@ -174,7 +178,7 @@ const Doctors = () => {
                 navigate("/doctors/create");
               }}
             >
-              Artz hinzufügen
+              Arzt hinzufügen
             </ButtonBlock>
             <IconButton>
               <Print />
@@ -221,40 +225,44 @@ const Doctors = () => {
                 {isLoading ? (
                   <TableRowsLoader rowsNum={10} colNums={5} />
                 ) : !hasData ? (
-                  <EmptyTableState 
-                    colSpan={5} 
-                    message={search ? "Keine Ärzte gefunden" : "Keine Ärzte vorhanden. Fügen Sie einen neuen Arzt hinzu."}
+                  <EmptyTableState
+                    colSpan={5}
+                    message={
+                      search
+                        ? "Keine Ärzte gefunden"
+                        : "Keine Ärzte vorhanden. Fügen Sie einen neuen Arzt hinzu."
+                    }
                   />
                 ) : (
                   <>
-                {doctors?.data?.map((doctor) => {
-                  const isItemSelected = isSelected(doctor._id);
-                  return (
-                    <TableRow
-                      key={doctor._id}
-                      hover
-                      onClick={() => handleClick(doctor._id)}
-                      role="checkbox"
-                      aria-checked={isItemSelected}
-                      tabIndex={-1}
-                      selected={isItemSelected}
-                    >
-                      <TableCell padding="checkbox">
-                        <Checkbox checked={isItemSelected} />
-                      </TableCell>
-                      <TableCell>
-                        {doctor?.firstName} {doctor?.lastName}
-                      </TableCell>
-                      <TableCell>{doctor?.clinic?.name || "-"}</TableCell>
-                      <TableCell>{doctor?.username || "-"}</TableCell>
-                      <TableCell>
-                        <StyledLink to={`/doctors/${doctor._id}`}>
-                          <Visibility />
-                        </StyledLink>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
+                    {doctors?.data?.map((doctor) => {
+                      const isItemSelected = isSelected(doctor._id);
+                      return (
+                        <TableRow
+                          key={doctor._id}
+                          hover
+                          onClick={() => handleClick(doctor._id)}
+                          role="checkbox"
+                          aria-checked={isItemSelected}
+                          tabIndex={-1}
+                          selected={isItemSelected}
+                        >
+                          <TableCell padding="checkbox">
+                            <Checkbox checked={isItemSelected} />
+                          </TableCell>
+                          <TableCell>
+                            {doctor?.firstName} {doctor?.lastName}
+                          </TableCell>
+                          <TableCell>{doctor?.clinic?.name || "-"}</TableCell>
+                          <TableCell>{doctor?.username || "-"}</TableCell>
+                          <TableCell>
+                            <StyledLink to={`/doctors/${doctor._id}`}>
+                              <Visibility />
+                            </StyledLink>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </>
                 )}
               </TableBody>
