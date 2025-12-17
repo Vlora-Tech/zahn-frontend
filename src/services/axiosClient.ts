@@ -1,7 +1,8 @@
 import axios, { AxiosInstance } from "axios";
 
 // Environment variables
-const apiBaseUrl = "http://16.170.59.228/api";
+const apiBaseUrl = "/api";
+
 
 // Create an Axios instance with default configurations
 const client: AxiosInstance = axios.create({
