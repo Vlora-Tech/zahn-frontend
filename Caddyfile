@@ -1,0 +1,3 @@
+zahn-care.zahnder.com {
+  reverse_proxy client:80
+}
