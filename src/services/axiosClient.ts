@@ -1,7 +1,7 @@
 import axios, { AxiosInstance } from "axios";
 
 // Environment variables
-const apiBaseUrl = "/api";
+const apiBaseUrl = "https://zahn-care.zahnder.com/api";
 
 
 // Create an Axios instance with default configurations
