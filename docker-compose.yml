@@ -3,7 +3,7 @@ version: "3.8"
 services:
   client:
     container_name: zahn-frontend
-    image: 579035389417.dkr.ecr.eu-north-1.amazonaws.com/zahn-care-frontend:17
+    image: IMAGE_PLACEHOLDER
     expose:
       - "80"
     extra_hosts:
@@ -21,6 +21,8 @@ services:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
+    depends_on:
+      - client
 
 volumes:
   caddy_data:
