@@ -53,9 +53,13 @@ const LabTechnicians = () => {
 
   const { data: clinics } = useGetClinics({ limit: 100 });
 
-  const { data: labTechnicians, isLoading, error } = useGetLabTechnicians({ 
-    page, 
-    sortBy: orderBy, 
+  const {
+    data: labTechnicians,
+    isLoading,
+    error,
+  } = useGetLabTechnicians({
+    page,
+    sortBy: orderBy,
     sortOrder: order,
     search,
     ...(clinicFilter !== "all" && { clinic: clinicFilter }),
@@ -67,7 +71,7 @@ const LabTechnicians = () => {
       setSearch(searchTerm);
       setPage(1); // Reset to first page when searching
     }, 500), // 500ms delay
-    []
+    [],
   );
 
   // Effect to trigger debounced search when searchInput changes
@@ -101,7 +105,7 @@ const LabTechnicians = () => {
     } else if (selectedIndex > 0) {
       newSelected = newSelected.concat(
         selected.slice(0, selectedIndex),
-        selected.slice(selectedIndex + 1)
+        selected.slice(selectedIndex + 1),
       );
     }
     setSelected(newSelected);
@@ -130,14 +134,14 @@ const LabTechnicians = () => {
       >
         Labortechniker
       </Typography>
-      
+
       {/* Error Alert */}
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
           Fehler beim Laden der Labortechniker. Bitte versuchen Sie es erneut.
         </Alert>
       )}
-      
+
       <Paper
         sx={{
           borderRadius: "10px",
@@ -159,7 +163,7 @@ const LabTechnicians = () => {
             <TextField
               variant="outlined"
               size="small"
-              placeholder="Name oder Benutzername suchen..."
+              placeholder="Name oder Pflegefachkraftname suchen..."
               value={searchInput}
               sx={{ minWidth: 500 }}
               InputProps={{
@@ -178,7 +182,10 @@ const LabTechnicians = () => {
                 displayEmpty
                 startAdornment={
                   <InputAdornment position="start">
-                    <FilterAlt fontSize="small" sx={{ color: "rgba(104, 201, 242, 1)" }} />
+                    <FilterAlt
+                      fontSize="small"
+                      sx={{ color: "rgba(104, 201, 242, 1)" }}
+                    />
                   </InputAdornment>
                 }
               >
@@ -256,40 +263,48 @@ const LabTechnicians = () => {
                 {isLoading ? (
                   <TableRowsLoader rowsNum={10} colNums={5} />
                 ) : !hasData ? (
-                  <EmptyTableState 
-                    colSpan={5} 
-                    message={search ? "Keine Labortechniker gefunden" : "Keine Labortechniker vorhanden. Fügen Sie einen neuen Labortechniker hinzu."}
+                  <EmptyTableState
+                    colSpan={5}
+                    message={
+                      search
+                        ? "Keine Labortechniker gefunden"
+                        : "Keine Labortechniker vorhanden. Fügen Sie einen neuen Labortechniker hinzu."
+                    }
                   />
                 ) : (
                   <>
-                {labTechnicians?.data?.map((technician) => {
-                  const isItemSelected = isSelected(technician._id);
-                  return (
-                    <TableRow
-                      key={technician._id}
-                      hover
-                      onClick={() => handleClick(technician._id)}
-                      role="checkbox"
-                      aria-checked={isItemSelected}
-                      tabIndex={-1}
-                      selected={isItemSelected}
-                    >
-                      <TableCell padding="checkbox">
-                        <Checkbox checked={isItemSelected} />
-                      </TableCell>
-                      <TableCell>
-                        {technician?.firstName} {technician?.lastName}
-                      </TableCell>
-                      <TableCell>{technician?.clinic?.name || "-"}</TableCell>
-                      <TableCell>{technician?.username || "-"}</TableCell>
-                      <TableCell>
-                        <StyledLink to={`/lab-technicians/${technician._id}`}>
-                          <Visibility />
-                        </StyledLink>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
+                    {labTechnicians?.data?.map((technician) => {
+                      const isItemSelected = isSelected(technician._id);
+                      return (
+                        <TableRow
+                          key={technician._id}
+                          hover
+                          onClick={() => handleClick(technician._id)}
+                          role="checkbox"
+                          aria-checked={isItemSelected}
+                          tabIndex={-1}
+                          selected={isItemSelected}
+                        >
+                          <TableCell padding="checkbox">
+                            <Checkbox checked={isItemSelected} />
+                          </TableCell>
+                          <TableCell>
+                            {technician?.firstName} {technician?.lastName}
+                          </TableCell>
+                          <TableCell>
+                            {technician?.clinic?.name || "-"}
+                          </TableCell>
+                          <TableCell>{technician?.username || "-"}</TableCell>
+                          <TableCell>
+                            <StyledLink
+                              to={`/lab-technicians/${technician._id}`}
+                            >
+                              <Visibility />
+                            </StyledLink>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </>
                 )}
               </TableBody>

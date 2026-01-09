@@ -7,6 +7,8 @@ export interface CreateDoctorDto {
   role?: string;
   username: string;
   password: string;
+  email: string;
+  phoneNumber: string;
   clinic: string;
   notes?: string;
 }
@@ -17,6 +19,8 @@ export interface UpdateDoctorDto {
   gender?: "male" | "female" | "other";
   role?: string;
   username?: string;
+  email?: string;
+  phoneNumber?: string;
   clinic?: string;
   notes?: string;
 }
@@ -28,6 +32,8 @@ export interface Doctor {
   gender: string;
   role: string;
   username: string;
+  email?: string;
+  phoneNumber?: string;
   clinic: {
     _id: string;
     name: string;
@@ -52,7 +58,8 @@ export interface DoctorRequestBody {
   gender: "male" | "female" | "other";
   username: string;
   password: string;
+  email: string;
+  phoneNumber: string;
   clinic: string;
   notes?: string;
 }
-

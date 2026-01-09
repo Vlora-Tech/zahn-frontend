@@ -96,9 +96,9 @@ const LabStatusCell: React.FC<{
     rejectionDetails?: string;
   };
 }> = ({ requestStatus, isDoctorApprovalNeeded, labRequest }) => {
-  // Show lab status for approved requests OR auto-approved requests (isDoctorApprovalNeeded = false)
+  // Show lab status for any request that's not pending or rejected
   const shouldShowLabStatus =
-    requestStatus === "approved" || !isDoctorApprovalNeeded;
+    requestStatus !== "pending_approval" && requestStatus !== "rejected";
 
   // Don't show anything for requests that don't have lab status
   if (!shouldShowLabStatus) {

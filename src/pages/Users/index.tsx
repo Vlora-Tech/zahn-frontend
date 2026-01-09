@@ -53,11 +53,16 @@ const Nurses = () => {
 
   const { data: clinics } = useGetClinics({ limit: 100 });
 
-  const { data: nurses, isLoading, error } = useGetUsers({
+  const {
+    data: nurses,
+    isLoading,
+    error,
+  } = useGetUsers({
     page,
     sortBy: orderBy,
     sortOrder: order,
     search,
+    role: "staff",
     ...(clinicFilter !== "all" && { clinic: clinicFilter }),
   });
 
@@ -67,7 +72,7 @@ const Nurses = () => {
       setSearch(searchTerm);
       setPage(1); // Reset to first page when searching
     }, 500), // 500ms delay
-    []
+    [],
   );
 
   // Effect to trigger debounced search when searchInput changes
@@ -101,7 +106,7 @@ const Nurses = () => {
     } else if (selectedIndex > 0) {
       newSelected = newSelected.concat(
         selected.slice(0, selectedIndex),
-        selected.slice(selectedIndex + 1)
+        selected.slice(selectedIndex + 1),
       );
     }
     setSelected(newSelected);
@@ -130,14 +135,14 @@ const Nurses = () => {
       >
         Pflegefachkräfte
       </Typography>
-      
+
       {/* Error Alert */}
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
           Fehler beim Laden der Pflegefachkräfte. Bitte versuchen Sie es erneut.
         </Alert>
       )}
-      
+
       <Paper
         sx={{
           borderRadius: "10px",
@@ -178,7 +183,10 @@ const Nurses = () => {
                 displayEmpty
                 startAdornment={
                   <InputAdornment position="start">
-                    <FilterAlt fontSize="small" sx={{ color: "rgba(104, 201, 242, 1)" }} />
+                    <FilterAlt
+                      fontSize="small"
+                      sx={{ color: "rgba(104, 201, 242, 1)" }}
+                    />
                   </InputAdornment>
                 }
               >
@@ -264,9 +272,13 @@ const Nurses = () => {
                 {isLoading ? (
                   <TableRowsLoader rowsNum={10} colNums={5} />
                 ) : !hasData ? (
-                  <EmptyTableState 
-                    colSpan={5} 
-                    message={search ? "Keine Pflegefachkräfte gefunden" : "Keine Pflegefachkräfte vorhanden. Fügen Sie eine neue Pflegefachkraft hinzu."}
+                  <EmptyTableState
+                    colSpan={5}
+                    message={
+                      search
+                        ? "Keine Pflegefachkräfte gefunden"
+                        : "Keine Pflegefachkräfte vorhanden. Fügen Sie eine neue Pflegefachkraft hinzu."
+                    }
                   />
                 ) : (
                   <>

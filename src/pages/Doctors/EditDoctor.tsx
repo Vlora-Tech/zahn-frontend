@@ -19,6 +19,8 @@ export const validationSchema = yup.object({
   clinic: yup.string().required(),
   username: yup.string().required(),
   password: yup.string(),
+  email: yup.string().email("Ungültige E-Mail-Adresse").required(),
+  phoneNumber: yup.string().required(),
   notizen: yup.string(), // Assuming 'Notzin' is optional notes
 });
 
@@ -30,6 +32,8 @@ export const initialValues = {
   clinic: "",
   username: "",
   password: "",
+  email: "",
+  phoneNumber: "",
   notes: "",
 };
 
@@ -40,7 +44,7 @@ export default function EditDoctor() {
   const { openSnackbar } = useSnackbar();
   const { data: clinics } = useGetClinics();
   const { data: doctorData, isLoading: isDoctorLoading } = useGetDoctorById(
-    id || ""
+    id || "",
   );
 
   // Prepare form initial values from doctor data
@@ -53,6 +57,8 @@ export default function EditDoctor() {
       clinic: doctorData.clinic || "",
       username: doctorData.username || "",
       password: "", // Don't pre-fill password for security
+      email: doctorData.email || "",
+      phoneNumber: doctorData.phoneNumber || "",
       notes: doctorData.notes || "",
     };
   }, [doctorData]);
@@ -108,7 +114,7 @@ export default function EditDoctor() {
               });
               console.error("Error updating doctor:", error);
             },
-          }
+          },
         );
       }}
     >
@@ -188,6 +194,14 @@ export default function EditDoctor() {
                   label="Passwort (leer lassen, um unverändert zu lassen)"
                   type="password"
                 />
+              </Grid>
+
+              <Grid size={6}>
+                <TextFieldBlock name="email" label="E-Mail *" type="email" />
+              </Grid>
+
+              <Grid size={6}>
+                <TextFieldBlock name="phoneNumber" label="Telefonnummer *" />
               </Grid>
 
               <Grid size={12}>

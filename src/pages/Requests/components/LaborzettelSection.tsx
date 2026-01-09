@@ -67,7 +67,7 @@ const LaborzettelSection: React.FC<LaborzettelSectionProps> = ({
       ["Zahnarzt", doctor ? `${doctor.firstName} ${doctor.lastName}` : "-"],
       ["Patient", patient ? `${patient.firstName} ${patient.lastName}` : "-"],
       ["Patientennummer", patient?.patientNumber || "-"],
-      ["Anfrage Nr.", request?.requestNumber || "-"],
+      ["Auftrag Nr.", request?.requestNumber || "-"],
       ["Abformung", request?.impression || "-"],
       ["Zahnfarbe", request?.shade || "-"],
       ["Versicherung", request?.insurance === "private" ? "Privat" : "GKV"],

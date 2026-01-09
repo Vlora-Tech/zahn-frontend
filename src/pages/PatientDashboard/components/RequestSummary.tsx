@@ -117,7 +117,7 @@ const RequestSummary = (props) => {
                         boxShadow: "1px 2px 1px 0px rgba(0, 0, 0, 0.25)",
                       }}
                     >
-                      löschen
+                      Löschen
                     </ButtonBlock>
                     <ButtonBlock
                       startIcon={<Edit />}
@@ -168,7 +168,7 @@ const RequestSummary = (props) => {
                         configuredOperation?.connectors
                           ?.map(
                             (connector) =>
-                              `[Zahn ${connector[0]}, Zahn ${connector[1]}]`
+                              `[Zahn ${connector[0]}, Zahn ${connector[1]}]`,
                           )
                           .join(", ")
                       ) : (
@@ -264,7 +264,7 @@ const RequestSummary = (props) => {
                           </TableHead>
                           <TableBody>
                             {Object.entries(
-                              configuredOperation?.optionsAndParameters
+                              configuredOperation?.optionsAndParameters,
                             )?.map(([opt, param]) => (
                               <TableRow key={opt}>
                                 <TableCell
@@ -276,7 +276,7 @@ const RequestSummary = (props) => {
                                   {opt.includes("_drawing") ? (
                                     <img src={param} alt={`${opt}_img`} />
                                   ) : (
-                                    param ?? <HorizontalRule />
+                                    (param ?? <HorizontalRule />)
                                   )}
                                 </TableCell>
                               </TableRow>
@@ -325,9 +325,17 @@ const RequestSummary = (props) => {
             >
               <ValueFieldBlock
                 label="Abformungsart"
-                value={selectedImpression ? selectedImpression.charAt(0).toUpperCase() + selectedImpression.slice(1) : ""}
+                value={
+                  selectedImpression
+                    ? selectedImpression.charAt(0).toUpperCase() +
+                      selectedImpression.slice(1)
+                    : ""
+                }
               />
-              <ValueFieldBlock label="Zahnfarbe" value={selectedShade ? selectedShade.toUpperCase() : ""} />
+              <ValueFieldBlock
+                label="Zahnfarbe"
+                value={selectedShade ? selectedShade.toUpperCase() : ""}
+              />
             </Stack>
           </Paper>
         </Stack>

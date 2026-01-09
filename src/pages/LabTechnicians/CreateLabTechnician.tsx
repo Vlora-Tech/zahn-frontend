@@ -18,6 +18,11 @@ const validationSchema = yup.object({
   clinic: yup.string().required("Labor ist erforderlich"),
   username: yup.string().required("Username ist erforderlich"),
   password: yup.string().required("Passwort ist erforderlich"),
+  email: yup
+    .string()
+    .email("Ungültige E-Mail-Adresse")
+    .required("E-Mail ist erforderlich"),
+  phoneNumber: yup.string().required("Telefonnummer ist erforderlich"),
   notes: yup.string(),
 });
 
@@ -29,6 +34,8 @@ const initialValues = {
   clinic: "",
   username: "",
   password: "",
+  email: "",
+  phoneNumber: "",
   notes: "",
 };
 
@@ -51,6 +58,8 @@ export default function CreateLabTechnician() {
           gender: values.gender as "male" | "female" | "other",
           username: values.username,
           password: values.password,
+          email: values.email,
+          phoneNumber: values.phoneNumber,
           clinic: values.clinic,
           notes: values.notes || undefined,
         };
@@ -149,7 +158,19 @@ export default function CreateLabTechnician() {
               </Grid>
 
               <Grid size={6}>
-                <TextFieldBlock name="password" label="Passwort *" type="password" />
+                <TextFieldBlock
+                  name="password"
+                  label="Passwort *"
+                  type="password"
+                />
+              </Grid>
+
+              <Grid size={6}>
+                <TextFieldBlock name="email" label="E-Mail *" type="email" />
+              </Grid>
+
+              <Grid size={6}>
+                <TextFieldBlock name="phoneNumber" label="Telefonnummer *" />
               </Grid>
 
               <Grid size={12}>

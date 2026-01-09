@@ -15,7 +15,6 @@ import { Fragment, useMemo, useEffect } from "react";
 import SelectBlock from "../../../components/atoms/SelectBlock";
 import InputBlockNoForm from "../../../components/atoms/InputBlockNoForm";
 import { isoDateToAge } from "../../../utils/dateToAge";
-import { formatDateDE } from "../../../utils/formatDate";
 import DateText from "../../../components/atoms/DateText";
 
 const PatientInformation = (props) => {
@@ -157,23 +156,33 @@ const PatientInformation = (props) => {
               <ValueFieldBlock label="Patientennummer" value={patientNumber} />
             </Grid>
             <Grid size={6}>
-              <ValueFieldBlock 
-                label="Geschlecht" 
+              <ValueFieldBlock
+                label="Geschlecht"
                 value={
-                  gender === "male" ? "Männlich" : 
-                  gender === "female" ? "Weiblich" : 
-                  gender === "other" ? "Divers" : 
-                  gender ? gender.charAt(0).toUpperCase() + gender.slice(1) : ""
-                } 
+                  gender === "male"
+                    ? "Männlich"
+                    : gender === "female"
+                      ? "Weiblich"
+                      : gender === "other"
+                        ? "Divers"
+                        : gender
+                          ? gender.charAt(0).toUpperCase() + gender.slice(1)
+                          : ""
+                }
               />
             </Grid>
             <Grid size={6}>
               <ValueFieldBlock
                 label="Geburtstag"
                 value={
-                  birthDate
-                    ? <><DateText date={birthDate} /> ( {isoDateToAge(birthDate)} J. )</>
-                    : ""
+                  birthDate ? (
+                    <>
+                      <DateText date={birthDate} /> ( {isoDateToAge(birthDate)}{" "}
+                      J. )
+                    </>
+                  ) : (
+                    ""
+                  )
                 }
               />
             </Grid>
@@ -198,7 +207,7 @@ const PatientInformation = (props) => {
             color: "rgba(146, 146, 146, 1)",
           }}
         >
-          Anfragedaten
+          Auftragendaten
         </Typography>
         <Paper
           sx={{
@@ -234,7 +243,7 @@ const PatientInformation = (props) => {
                   options={doctorsOptions}
                   onChange={(e) => {
                     const _selectedDoctor = doctorsOptions.find(
-                      (doctor) => doctor.value === e.target.value
+                      (doctor) => doctor.value === e.target.value,
                     );
                     setSelectedDoctor(_selectedDoctor);
                   }}
@@ -267,7 +276,7 @@ const PatientInformation = (props) => {
                   options={clinicsOptions}
                   onChange={(e) => {
                     const _selectedClinic = clinicsOptions.find(
-                      (clinic) => clinic.value === e.target.value
+                      (clinic) => clinic.value === e.target.value,
                     );
                     setSelectedClinic(_selectedClinic);
                   }}

@@ -5,7 +5,10 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useMemo } from "react";
 import TextFieldBlock from "../../components/molecules/form-fields/TextFieldBlock";
 import ButtonBlock from "../../components/atoms/ButtonBlock";
-import { useUpdateLabTechnician, useGetLabTechnicianById } from "../../api/lab-technicians/hooks";
+import {
+  useUpdateLabTechnician,
+  useGetLabTechnicianById,
+} from "../../api/lab-technicians/hooks";
 import SelectFieldBlock from "../../components/molecules/form-fields/SelectFieldBlock";
 import { useGetClinics } from "../../api/clinics/hooks";
 import { useSnackbar } from "../../context/SnackbarContext";
@@ -19,6 +22,11 @@ const validationSchema = yup.object({
   clinic: yup.string().required("Labor ist erforderlich"),
   username: yup.string().required("Username ist erforderlich"),
   password: yup.string(),
+  email: yup
+    .string()
+    .email("Ungültige E-Mail-Adresse")
+    .required("E-Mail ist erforderlich"),
+  phoneNumber: yup.string().required("Telefonnummer ist erforderlich"),
   notes: yup.string(),
 });
 
@@ -30,6 +38,8 @@ const initialValues = {
   clinic: "",
   username: "",
   password: "",
+  email: "",
+  phoneNumber: "",
   notes: "",
 };
 
@@ -39,7 +49,9 @@ export default function EditLabTechnician() {
   const { mutate: updateLabTechnician, isPending } = useUpdateLabTechnician();
   const { openSnackbar } = useSnackbar();
   const { data: clinics } = useGetClinics();
-  const { data: labTechnicianData, isLoading } = useGetLabTechnicianById(id || "");
+  const { data: labTechnicianData, isLoading } = useGetLabTechnicianById(
+    id || "",
+  );
 
   // Prepare form initial values from data
   const formInitialValues = useMemo(() => {
@@ -48,11 +60,14 @@ export default function EditLabTechnician() {
       firstName: labTechnicianData.firstName || "",
       lastName: labTechnicianData.lastName || "",
       gender: labTechnicianData.gender || "",
-      clinic: typeof labTechnicianData.clinic === "object" 
-        ? labTechnicianData.clinic._id 
-        : labTechnicianData.clinic || "",
+      clinic:
+        typeof labTechnicianData.clinic === "object"
+          ? labTechnicianData.clinic._id
+          : labTechnicianData.clinic || "",
       username: labTechnicianData.username || "",
       password: "",
+      email: labTechnicianData.email || "",
+      phoneNumber: labTechnicianData.phoneNumber || "",
       notes: labTechnicianData.notes || "",
     };
   }, [labTechnicianData]);
@@ -108,7 +123,7 @@ export default function EditLabTechnician() {
               });
               console.error("Error updating lab technician:", error);
             },
-          }
+          },
         );
       }}
     >
@@ -188,6 +203,14 @@ export default function EditLabTechnician() {
                   label="Passwort (leer lassen, um unverändert zu lassen)"
                   type="password"
                 />
+              </Grid>
+
+              <Grid size={6}>
+                <TextFieldBlock name="email" label="E-Mail *" type="email" />
+              </Grid>
+
+              <Grid size={6}>
+                <TextFieldBlock name="phoneNumber" label="Telefonnummer *" />
               </Grid>
 
               <Grid size={12}>

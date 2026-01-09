@@ -21,6 +21,8 @@ export const validationSchema = yup.object({
   clinic: yup.string().required(),
   username: yup.string().required(),
   password: yup.string().required(),
+  email: yup.string().email("Ungültige E-Mail-Adresse").required(),
+  phoneNumber: yup.string().required(),
   notizen: yup.string(), // Assuming 'Notzin' is optional notes
 });
 
@@ -33,6 +35,8 @@ export const initialValues: UserRequestBody = {
   clinic: "",
   username: "",
   password: "",
+  email: "",
+  phoneNumber: "",
   notes: "",
 };
 
@@ -60,7 +64,7 @@ export default function CreateUser() {
             console.log("Clinic created successfully:", data);
             openSnackbar({
               type: "success",
-              message: "Benutzer erfolgreich erstellt",
+              message: "Pflegefachkraft erfolgreich erstellt",
             });
 
             resetForm();
@@ -73,7 +77,7 @@ export default function CreateUser() {
               type: "error",
               message:
                 (error.response?.data as { message?: string })?.message ||
-                "Benutzer konnte nicht erstellt werden",
+                "Pflegefachkraft konnte nicht erstellt werden",
             });
           },
         });
@@ -152,6 +156,14 @@ export default function CreateUser() {
 
               <Grid size={6}>
                 <TextFieldBlock name="password" label="Passwort *" />
+              </Grid>
+
+              <Grid size={6}>
+                <TextFieldBlock name="email" label="E-Mail *" type="email" />
+              </Grid>
+
+              <Grid size={6}>
+                <TextFieldBlock name="phoneNumber" label="Telefonnummer *" />
               </Grid>
 
               <Grid size={12}>

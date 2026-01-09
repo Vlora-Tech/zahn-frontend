@@ -39,7 +39,7 @@ export default function UserDetails() {
         alignItems="center"
         minHeight="400px"
       >
-        <Typography>Benutzer nicht gefunden</Typography>
+        <Typography>Pflegefachkraft nicht gefunden</Typography>
       </Box>
     );
   }
@@ -61,7 +61,7 @@ export default function UserDetails() {
           color: "rgba(146, 146, 146, 1)",
         }}
       >
-        Benutzerinformationen
+        Pflegefachkraftinformationen
       </Typography>
 
       <Paper
@@ -75,19 +75,41 @@ export default function UserDetails() {
         <Stack gap="42px">
           {[
             {
-              label: "Vorname",
-              value: user?.firstName,
-            },
-            {
-              label: "Nachname",
-              value: user?.lastName,
+              label: "Name",
+              value: user?.firstName + " " + user?.lastName,
             },
             {
               label: "Geschlecht",
-              value: user?.gender,
+              value:
+                user?.gender === "male"
+                  ? "Männlich"
+                  : user?.gender === "female"
+                    ? "Weiblich"
+                    : user?.gender,
+            },
+            {
+              label: "Klinik",
+              value:
+                typeof user?.clinic === "object" ? user?.clinic?.name : "-",
+            },
+            {
+              label: "Username",
+              value: user?.username,
+            },
+            {
+              label: "E-Mail",
+              value: user?.email || "-",
+            },
+            {
+              label: "Telefonnummer",
+              value: user?.phoneNumber || "-",
+            },
+            {
+              label: "Notizen",
+              value: user?.notes || "-",
             },
           ].map(({ label, value }) => (
-            <Stack gap="16px">
+            <Stack gap="16px" key={label}>
               <Typography
                 variant="h4"
                 sx={{
@@ -155,7 +177,7 @@ export default function UserDetails() {
               }}
               onClick={handleDeleteUser}
             >
-              löschen
+              Löschen
             </ButtonBlock>
 
             <ButtonBlock

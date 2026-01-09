@@ -1,7 +1,10 @@
 import { Box, Paper, Stack, Typography } from "@mui/material";
 import ButtonBlock from "../../components/atoms/ButtonBlock";
 import { useNavigate, useParams } from "react-router-dom";
-import { useDeleteLabTechnician, useGetLabTechnicianById } from "../../api/lab-technicians/hooks";
+import {
+  useDeleteLabTechnician,
+  useGetLabTechnicianById,
+} from "../../api/lab-technicians/hooks";
 import LoadingSpinner from "../../components/atoms/LoadingSpinner";
 
 export default function LabTechnicianDetails() {
@@ -60,7 +63,7 @@ export default function LabTechnicianDetails() {
           color: "rgba(146, 146, 146, 1)",
         }}
       >
-        Labortechniker Informationen
+        Labortechniker-Informationen
       </Typography>
 
       <Paper
@@ -79,7 +82,12 @@ export default function LabTechnicianDetails() {
             },
             {
               label: "Geschlecht",
-              value: labTechnician?.gender === "male" ? "Männlich" : labTechnician?.gender === "female" ? "Weiblich" : labTechnician?.gender,
+              value:
+                labTechnician?.gender === "male"
+                  ? "Männlich"
+                  : labTechnician?.gender === "female"
+                    ? "Weiblich"
+                    : labTechnician?.gender,
             },
             {
               label: "Labor",
@@ -90,12 +98,16 @@ export default function LabTechnicianDetails() {
               value: labTechnician?.username,
             },
             {
-              label: "Passwort",
-              value: "******",
+              label: "E-Mail",
+              value: labTechnician?.email || "-",
+            },
+            {
+              label: "Telefonnummer",
+              value: labTechnician?.phoneNumber || "-",
             },
             {
               label: "Notizen",
-              value: labTechnician?.notes || "Keine Notizen",
+              value: labTechnician?.notes || "-",
             },
           ].map(({ label, value }) => (
             <Stack gap="16px" key={label}>

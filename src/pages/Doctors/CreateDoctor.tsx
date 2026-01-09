@@ -19,6 +19,8 @@ const validationSchema = yup.object({
   clinic: yup.string().required(),
   username: yup.string().required(),
   password: yup.string().required(),
+  email: yup.string().email("Ungültige E-Mail-Adresse").required(),
+  phoneNumber: yup.string().required(),
   notizen: yup.string(), // Assuming 'Notzin' is optional notes
 });
 
@@ -30,6 +32,8 @@ const initialValues = {
   clinic: "",
   username: "",
   password: "",
+  email: "",
+  phoneNumber: "",
   notes: "",
 };
 
@@ -52,6 +56,8 @@ export default function CreateDoctor() {
           gender: values.gender as "male" | "female" | "other",
           username: values.username,
           password: values.password,
+          email: values.email,
+          phoneNumber: values.phoneNumber,
           clinic: values.clinic,
           notes: values.notes || undefined,
         };
@@ -155,6 +161,14 @@ export default function CreateDoctor() {
 
               <Grid size={6}>
                 <TextFieldBlock name="password" label="Passwort *" />
+              </Grid>
+
+              <Grid size={6}>
+                <TextFieldBlock name="email" label="E-Mail *" type="email" />
+              </Grid>
+
+              <Grid size={6}>
+                <TextFieldBlock name="phoneNumber" label="Telefonnummer *" />
               </Grid>
 
               <Grid size={12}>

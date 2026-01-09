@@ -257,7 +257,12 @@ const LaborzettelForm = () => {
     // Title
     doc.setFontSize(18);
     doc.setFont("helvetica", "bold");
-    doc.text("Laborzettel", pageWidth / 2, yPos, { align: "center" });
+    doc.text(
+      `Laborzettel ${existingLaborzettel?.laborzettelNumber || ""}`,
+      pageWidth / 2,
+      yPos,
+      { align: "center" },
+    );
     yPos += 15;
 
     // Header Section
@@ -276,7 +281,7 @@ const LaborzettelForm = () => {
       ["Zahnarzt", doctor ? `${doctor.firstName} ${doctor.lastName}` : "-"],
       ["Patient", patient ? `${patient.firstName} ${patient.lastName}` : "-"],
       ["Patientennummer", patient?.patientNumber || "-"],
-      ["Anfrage Nr.", request?.requestNumber || "-"],
+      ["Auftrag Nr.", request?.requestNumber || "-"],
       ["Abformung", request?.impression || "-"],
       ["Zahnfarbe", request?.shade || "-"],
       ["Versicherung", request?.insurance === "private" ? "Privat" : "GKV"],

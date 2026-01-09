@@ -169,7 +169,7 @@ export default function ClinicDetails() {
               onClick={handleDeleteClinic}
               //   disabled={isPending}
             >
-              löschen
+              Löschen
             </ButtonBlock>
 
             <ButtonBlock

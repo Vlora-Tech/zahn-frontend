@@ -6,6 +6,8 @@ export interface CreateLabTechnicianDto {
   gender: "male" | "female" | "other";
   username: string;
   password: string;
+  email: string;
+  phoneNumber: string;
   clinic: string;
   notes?: string;
 }
@@ -15,6 +17,8 @@ export interface UpdateLabTechnicianDto {
   lastName?: string;
   gender?: "male" | "female" | "other";
   username?: string;
+  email?: string;
+  phoneNumber?: string;
   clinic?: string;
   notes?: string;
 }
@@ -26,6 +30,8 @@ export interface LabTechnician {
   gender: string;
   role: string;
   username: string;
+  email?: string;
+  phoneNumber?: string;
   clinic: {
     _id: string;
     name: string;

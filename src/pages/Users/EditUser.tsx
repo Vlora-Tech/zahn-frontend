@@ -22,6 +22,8 @@ const validationSchema = yup.object({
   clinic: yup.string().required(),
   username: yup.string().required(),
   password: yup.string(),
+  email: yup.string().email("Ungültige E-Mail-Adresse").required(),
+  phoneNumber: yup.string().required(),
   notizen: yup.string(), // Assuming 'Notzin' is optional notes
 });
 
@@ -34,6 +36,8 @@ const initialValues: UserRequestBody = {
   clinic: "",
   username: "",
   password: "",
+  email: "",
+  phoneNumber: "",
   notes: "",
 };
 
@@ -64,6 +68,8 @@ export default function EditUser() {
       clinic: userData.clinic || "",
       username: userData.username || "",
       password: "", // Don't pre-fill password for security
+      email: userData.email || "",
+      phoneNumber: userData.phoneNumber || "",
       notes: userData.notes || "",
     };
   }, [userData]);
@@ -80,7 +86,7 @@ export default function EditUser() {
         alignItems="center"
         minHeight="400px"
       >
-        <Typography>Benutzer nicht gefunden</Typography>
+        <Typography>Pflegefachkraft nicht gefunden</Typography>
       </Box>
     );
   }
@@ -106,7 +112,7 @@ export default function EditUser() {
               console.log("User updated successfully:", data);
               openSnackbar({
                 type: "success",
-                message: "Benutzer erfolgreich aktualisiert",
+                message: "Pflegefachkraft erfolgreich aktualisiert",
               });
               resetForm();
               navigate("/nurses");
@@ -117,10 +123,10 @@ export default function EditUser() {
                 type: "error",
                 message:
                   (error.response?.data as { message?: string })?.message ||
-                  "Benutzer konnte nicht aktualisiert werden",
+                  "Pflegefachkraft konnte nicht aktualisiert werden",
               });
             },
-          }
+          },
         );
       }}
     >
@@ -202,6 +208,14 @@ export default function EditUser() {
                 />
               </Grid>
 
+              <Grid size={6}>
+                <TextFieldBlock name="email" label="E-Mail *" type="email" />
+              </Grid>
+
+              <Grid size={6}>
+                <TextFieldBlock name="phoneNumber" label="Telefonnummer *" />
+              </Grid>
+
               <Grid size={12}>
                 <Divider />
               </Grid>
@@ -224,7 +238,7 @@ export default function EditUser() {
               gap="10px"
             >
               <ButtonBlock
-                onClick={() => navigate("/users")}
+                onClick={() => navigate("/nurses")}
                 style={{
                   borderRadius: "40px",
                   height: "40px",

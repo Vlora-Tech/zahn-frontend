@@ -80,22 +80,36 @@ export default function DoctorDetails() {
             },
             {
               label: "Geschlecht",
-              value: doctor?.gender,
+              value:
+                doctor?.gender === "male"
+                  ? "Männlich"
+                  : doctor?.gender === "female"
+                    ? "Weiblich"
+                    : doctor?.gender,
             },
             {
-              label: "Rolle",
-              value: doctor?.role,
+              label: "Klinik",
+              value:
+                typeof doctor?.clinic === "object" ? doctor?.clinic?.name : "-",
             },
             {
               label: "Username",
               value: doctor?.username,
             },
             {
-              label: "Passwort",
-              value: "******", // Masked for security
+              label: "E-Mail",
+              value: doctor?.email || "-",
+            },
+            {
+              label: "Telefonnummer",
+              value: doctor?.phoneNumber || "-",
+            },
+            {
+              label: "Notizen",
+              value: doctor?.notes || "-",
             },
           ].map(({ label, value }) => (
-            <Stack gap="16px">
+            <Stack gap="16px" key={label}>
               <Typography
                 variant="h4"
                 sx={{
@@ -163,7 +177,7 @@ export default function DoctorDetails() {
               }}
               onClick={handleDeleteDoctor}
             >
-              löschen
+              Löschen
             </ButtonBlock>
 
             <ButtonBlock
