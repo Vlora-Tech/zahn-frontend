@@ -8,7 +8,7 @@ import ListItem from "@mui/material/ListItem";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import logo from "../assets/logo.svg";
-import headerLogo from "../assets/header-logo.svg";
+import headerLogo from "../assets/zahn-care-logo-wide.png";
 import { Divider, Paper, Stack, Toolbar, Typography } from "@mui/material";
 import { Warehouse } from "@mui/icons-material";
 import SvgIcon from "./SvgIcon";

@@ -1,5 +1,5 @@
 import { Form, Formik } from "formik";
-import headerLogo from "../../assets/header-logo.svg";
+import headerLogo from "../../assets/zahn-care-logo-wide.png";
 import { Box, Paper, Stack } from "@mui/material";
 import TextFieldBlock from "../../components/molecules/form-fields/TextFieldBlock";
 import ButtonBlock from "../../components/atoms/ButtonBlock";
