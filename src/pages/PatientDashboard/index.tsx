@@ -10,6 +10,8 @@ import {
   FormControlLabel,
   Checkbox,
   Alert,
+  Backdrop,
+  CircularProgress,
 } from "@mui/material";
 import ButtonBlock from "../../components/atoms/ButtonBlock";
 import { useState, useMemo, Fragment, useEffect, useCallback } from "react";
@@ -38,7 +40,7 @@ export type OperationSchema = {
   selectedTeeth: Array<number>;
   operation: any;
   material: any;
-  optionsAndParameters: Record<string, string> | Record<string, any>;
+  optionsAndParameters: Record<string, string>;
   connectors: Array<[number, number]>;
 };
 
@@ -55,8 +57,10 @@ export default function PatientDashboard() {
     isEditMode ? requestId || "" : ""
   );
 
-  const { mutate: createTreatmentRequest } = useCreateTreatmentRequest();
-  const { mutate: updateTreatmentRequest } = useUpdateTreatmentRequest();
+  const { mutate: createTreatmentRequest, isPending: isCreating } = useCreateTreatmentRequest();
+  const { mutate: updateTreatmentRequest, isPending: isUpdating } = useUpdateTreatmentRequest();
+
+  const isSubmitting = isCreating || isUpdating;
 
   const [dashboardState, setDashboardState] = useState<number>(1);
   const [currentOperationIndex, setCurrentOperationIndex] = useState("");
@@ -85,7 +89,6 @@ export default function PatientDashboard() {
   const [selectedOperationOptions, setSelectedOperationOptions] = useState<
     Record<string, string>
   >({});
-  const [attachment, setAttachment] = useState(null);
 
   const [showOnlyEditPatientInfoForm, setShowOnlyEditPatientInfoForm] =
     useState<boolean>(false);
@@ -191,6 +194,10 @@ export default function PatientDashboard() {
 
       setNotes(existingRequest.notes || "");
 
+      setSelectedImpression(existingRequest.impression || "");
+
+      setSelectedShade(existingRequest.shade || "");
+
       // Set dashboard to summary state if we have operations
       if (transformedOperations.length > 0) {
         setDashboardState(4);
@@ -204,6 +211,7 @@ export default function PatientDashboard() {
         selectedDoctor &&
         selectedClinic &&
         deliveryDate &&
+        selectedShade &&
         selectedImpression
     );
   }, [
@@ -211,11 +219,16 @@ export default function PatientDashboard() {
     selectedDoctor,
     selectedClinic,
     deliveryDate,
+    selectedShade,
     selectedImpression,
   ]);
 
   const isNextButtonValid = useMemo(() => {
     if (dashboardState === 1) {
+      // When editing patient info only, don't require teeth selection
+      if (showOnlyEditPatientInfoForm) {
+        return Boolean(isPatientInfoComplete);
+      }
       return Boolean(isPatientInfoComplete && selectedTeeth?.length > 0);
     }
 
@@ -381,11 +394,10 @@ export default function PatientDashboard() {
         selectedTeeth: operation?.selectedTeeth,
         connectors: operation?.connectors,
         operation: operation?.operation?.id,
-        material: operation?.material?.id ?? null,
+        material: operation?.material?.id,
         optionsAndParameters: operation?.optionsAndParameters,
       })),
       shade: selectedShade,
-      attachment: attachment,
     };
 
     if (isEditMode) {
@@ -481,19 +493,17 @@ export default function PatientDashboard() {
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mb: 2 }}>
             {!emptyDataState.hasDoctors && (
               <Alert severity="warning">
-                Keine Ärzte verfügbar. Bitte wenden Sie sich an den
-                Administrator, um Ärzte hinzuzufügen.
+                Keine Ärzte verfügbar. Bitte wenden Sie sich an den Administrator, um Ärzte hinzuzufügen.
               </Alert>
             )}
             {!emptyDataState.hasClinics && (
               <Alert severity="warning">
-                Keine Praxen verfügbar. Bitte wenden Sie sich an den
-                Administrator, um Praxen hinzuzufügen.
+                Keine Praxen verfügbar. Bitte wenden Sie sich an den Administrator, um Praxen hinzuzufügen.
               </Alert>
             )}
           </Box>
         )}
-
+        
         <Stack flexDirection={"row"} flex={1} gap="20px">
           {dashboardState === 1 && (
             <Fragment>
@@ -512,8 +522,6 @@ export default function PatientDashboard() {
                 selectedImpression={selectedImpression}
                 onEmptyDataChange={handleEmptyDataChange}
                 disabled={emptyDataState.hasEmptyData}
-                attachment={attachment}
-                setAttachment={setAttachment}
               />
               {!showOnlyEditPatientInfoForm && (
                 <OperationTeeth
@@ -570,7 +578,6 @@ export default function PatientDashboard() {
                   onSelect={handleSelectMaterial}
                   selectedMaterial={selectedMaterial}
                   selectedOperation={selectedOperation}
-                  operations={configuredOperations}
                 />
                 {optionsData[selectedOperation?.id] && (
                   <OperationOptions
@@ -606,7 +613,6 @@ export default function PatientDashboard() {
                 selectedImpression={selectedImpression}
                 setNotes={setNotes}
                 notes={notes}
-                attachment={attachment}
               />
             </Stack>
           )}
@@ -846,6 +852,18 @@ export default function PatientDashboard() {
             </ButtonBlock>
           </DialogActions>
         </Dialog>
+
+        {/* Full-page Loading Overlay */}
+        <Backdrop
+          sx={{
+            color: "#fff",
+            zIndex: (theme) => theme.zIndex.drawer + 1,
+            backgroundColor: "rgba(0, 0, 0, 0.7)",
+          }}
+          open={isSubmitting}
+        >
+          <CircularProgress color="inherit" size={60} />
+        </Backdrop>
       </Stack>
     </Formik>
   );

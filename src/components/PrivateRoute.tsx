@@ -4,7 +4,7 @@ import { Navigate } from 'react-router-dom'
 import { useGetCurrentUserInformation } from "../api/auth/hooks";
 import { GetCurrentUserResponse } from "../api/auth/types";
 
-export type Role = "superadmin" | "doctor" | "nurse" | "staff";
+export type Role = "superadmin" | "doctor" | "nurse" | "staff" | "lab_technician";
 
 interface PrivateRouteProps {
     children: React.ReactNode

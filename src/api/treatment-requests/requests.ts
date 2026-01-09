@@ -15,7 +15,8 @@ export interface GetTreatmentRequestsParams {
   limit?: number;
   sortBy?: string;
   sortOrder?: "asc" | "desc";
-  status?: "pending" | "approved" | "rejected";
+  status?: "pending_approval" | "approved" | "rejected" | "received_from_lab" | "delivered_to_patient";
+  labStatus?: "new" | "notified" | "read" | "in_progress" | "completed" | "rejected" | "dispatched";
   clinic?: string;
   doctor?: string;
   patient?: string;
@@ -54,6 +55,7 @@ export const getTreatmentRequests = async (
   if (params.sortBy) queryParams.append("sortBy", params.sortBy);
   if (params.sortOrder) queryParams.append("sortOrder", params.sortOrder);
   if (params.status) queryParams.append("status", params.status);
+  if (params.labStatus) queryParams.append("labStatus", params.labStatus);
   if (params.clinic) queryParams.append("clinic", params.clinic);
   if (params.doctor) queryParams.append("doctor", params.doctor);
   if (params.patient) queryParams.append("patient", params.patient);
@@ -136,5 +138,21 @@ export const rejectTreatmentRequest = async (
   data: RejectRequestDto
 ): Promise<TreatmentRequest> => {
   const response = await client.patch<TreatmentRequest>(`/requests/${requestId}/reject`, data);
+  return response.data;
+};
+
+// Mark treatment request as received from lab
+export const markReceivedFromLab = async (
+  requestId: string
+): Promise<TreatmentRequest> => {
+  const response = await client.patch<TreatmentRequest>(`/requests/${requestId}/received-from-lab`);
+  return response.data;
+};
+
+// Mark treatment request as delivered to patient
+export const markDeliveredToPatient = async (
+  requestId: string
+): Promise<TreatmentRequest> => {
+  const response = await client.patch<TreatmentRequest>(`/requests/${requestId}/delivered-to-patient`);
   return response.data;
 };

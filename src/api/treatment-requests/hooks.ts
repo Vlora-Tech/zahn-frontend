@@ -25,6 +25,8 @@ import {
   deleteTreatmentRequest,
   approveTreatmentRequest,
   rejectTreatmentRequest,
+  markReceivedFromLab,
+  markDeliveredToPatient,
   GetTreatmentRequestsParams,
   GetPendingRequestsByDoctorParams,
   GetTreatmentRequestStatsParams,
@@ -130,5 +132,30 @@ export const useRejectTreatmentRequest = (): UseMutationResult<
 > => {
   return useMutation({
     mutationFn: ({ requestId, data }) => rejectTreatmentRequest(requestId, data),
+  });
+};
+
+
+// Mark Treatment Request as Received from Lab
+export const useMarkReceivedFromLab = (): UseMutationResult<
+  TreatmentRequest,
+  AxiosError,
+  string,
+  unknown
+> => {
+  return useMutation({
+    mutationFn: (requestId) => markReceivedFromLab(requestId),
+  });
+};
+
+// Mark Treatment Request as Delivered to Patient
+export const useMarkDeliveredToPatient = (): UseMutationResult<
+  TreatmentRequest,
+  AxiosError,
+  string,
+  unknown
+> => {
+  return useMutation({
+    mutationFn: (requestId) => markDeliveredToPatient(requestId),
   });
 };

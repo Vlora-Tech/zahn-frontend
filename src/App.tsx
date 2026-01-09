@@ -1,5 +1,5 @@
 import React from "react";
-import { Route, Routes, useLocation } from "react-router-dom";
+import { Route, Routes, useLocation, Navigate } from "react-router-dom";
 import "./App.css";
 import Layout from "./components/Layout";
 
@@ -22,6 +22,7 @@ import Requests from "./pages/Requests";
 import { SnackbarProvider } from "./context/SnackbarContext";
 import PatientDashboardPreview from "./pages/PatientDashboardPreview";
 import RequestDetails from "./pages/Requests/RequestDetails";
+import EditRejectedRequest from "./pages/Requests/EditRejectedRequest";
 import AdminDashboard from "./pages/Admin";
 import OperationsManagement from "./pages/Admin/OperationsManagement";
 import MaterialsManagement from "./pages/Admin/MaterialsManagement";
@@ -31,6 +32,18 @@ import EditPatient from "./pages/Patients/EditPatient";
 import EditDoctor from "./pages/Doctors/EditDoctor";
 import EditClinic from "./pages/Clinics/EditClinic";
 import EditUser from "./pages/Users/EditUser";
+import { LabWorkQueue, LabRequestDetail } from "./pages/Lab";
+import LaborzettelForm from "./pages/Lab/LaborzettelForm";
+import {
+  InventoryMaterials,
+  InventoryLots,
+  LotMovements,
+} from "./pages/Inventory";
+import LabTechnicians from "./pages/LabTechnicians";
+import CreateLabTechnician from "./pages/LabTechnicians/CreateLabTechnician";
+import LabTechnicianDetails from "./pages/LabTechnicians/LabTechnicianDetails";
+import EditLabTechnician from "./pages/LabTechnicians/EditLabTechnician";
+import { useAuth } from "./context/AuthContext";
 
 function App() {
   const { pathname } = useLocation();
@@ -60,6 +73,10 @@ function App() {
           />
           <Route path="/requests" element={<Requests />} />
           <Route path="/requests/:id" element={<RequestDetails />} />
+          <Route
+            path="/requests/:id/edit-resubmit"
+            element={<EditRejectedRequest />}
+          />
 
           <Route path="/clinics" element={<Clinics />} />
           <Route path="/clinics/create" element={<CreateClinic />} />
@@ -76,11 +93,38 @@ function App() {
           <Route path="/doctors/edit/:id" element={<EditDoctor />} />
           <Route path="/doctors/:id" element={<DoctorDetails />} />
 
+          <Route path="/lab-technicians" element={<LabTechnicians />} />
+          <Route
+            path="/lab-technicians/create"
+            element={<CreateLabTechnician />}
+          />
+          <Route
+            path="/lab-technicians/edit/:id"
+            element={<EditLabTechnician />}
+          />
+          <Route
+            path="/lab-technicians/:id"
+            element={<LabTechnicianDetails />}
+          />
+
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/admin/operations" element={<OperationsManagement />} />
           <Route path="/admin/materials" element={<MaterialsManagement />} />
           <Route path="/admin/options" element={<OptionsManagement />} />
           <Route path="/admin/categories" element={<CategoriesManagement />} />
+
+          {/* Lab technician routes - restricted to lab_technician and superadmin roles */}
+          <Route path="/lab/queue" element={<LabWorkQueue />} />
+          <Route path="/lab/requests/:id" element={<LabRequestDetail />} />
+          <Route path="/lab/:id/laborzettel" element={<LaborzettelForm />} />
+
+          {/* Inventory routes - restricted to lab_technician and superadmin roles */}
+          <Route path="/inventory/materials" element={<InventoryMaterials />} />
+          <Route path="/inventory/lots" element={<InventoryLots />} />
+          <Route
+            path="/inventory/lots/:lotId/movements"
+            element={<LotMovements />}
+          />
 
           {/* <Route path="/teeth-selection" element={<TeethSelection />} /> */}
           {/* 

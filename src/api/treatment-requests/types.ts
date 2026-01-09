@@ -38,7 +38,6 @@ export interface CreateRequestDto {
   patient: string;
   impression: string;
   shade: string;
-  attachment: string;
 }
 
 export type UpdateRequestDto = Partial<CreateRequestDto>;
@@ -61,7 +60,6 @@ export interface TreatmentRequest {
   status: string;
   notes: string;
   data: any[];
-  attachment: any;
   insurance: string;
   deliveryDate: string;
   isDoctorApprovalNeeded: boolean;
@@ -71,6 +69,19 @@ export interface TreatmentRequest {
   requestNumber: string;
   shade: string;
   impression: string;
+  // Rejection fields
+  rejectedAt?: string;
+  rejectedBy?: Doctor;
+  rejectionReason?: string;
+  labRequest?: {
+    _id: string;
+    labStatus: "new" | "notified" | "read" | "in_progress" | "completed" | "rejected" | "dispatched";
+    rejectionReason?: string;
+    rejectionDetails?: string;
+    assignedTechnician?: any;
+    completedAt?: string;
+    completedBy?: any;
+  };
 }
 
 export interface Patient {

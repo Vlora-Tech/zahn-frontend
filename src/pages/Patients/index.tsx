@@ -34,7 +34,8 @@ import StyledLink from "../../components/atoms/StyledLink";
 import TableRowsLoader from "../../components/molecules/TableRowsLoader";
 import EmptyTableState from "../../components/molecules/EmptyTableState";
 import { useAuth } from "../../context/AuthContext";
-import { isoDateToAge } from "../../utils/isoDateToAge";
+import { isoDateToAge } from "../../utils/dateToAge";
+import DateText from "../../components/atoms/DateText";
 
 const PatientList = () => {
   const navigate = useNavigate();
@@ -122,7 +123,7 @@ const PatientList = () => {
           color: "rgba(146, 146, 146, 1)",
         }}
       >
-        Patientenliste
+        Patienten
       </Typography>
 
       {/* Error Alert */}
@@ -152,16 +153,15 @@ const PatientList = () => {
           <TextField
             variant="outlined"
             size="small"
-            placeholder="Suchen"
+            placeholder="Name oder Patientennr. suchen..."
             value={searchInput}
-            slotProps={{
-              input: {
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <Search />
-                  </InputAdornment>
-                ),
-              },
+            sx={{ minWidth: 500 }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Search fontSize="small" />
+                </InputAdornment>
+              ),
             }}
             onChange={handleSearch}
           />
@@ -263,11 +263,7 @@ const PatientList = () => {
                           <TableCell>{patient?.patientType || "-"}</TableCell>
                           <TableCell>
                             {patient?.birthDate
-                              ? `${new Date(
-                                  patient.birthDate
-                                ).toLocaleDateString("de-DE")} ( ${isoDateToAge(
-                                  patient.birthDate
-                                )} )`
+                              ? <><DateText date={patient.birthDate} /> ( {isoDateToAge(patient.birthDate)} J. )</>
                               : "-"}
                           </TableCell>
                           <TableCell>

@@ -26,5 +26,6 @@ dist-ssr
 .cursor
 userinput.py
 .vercel
-
 .env
+.kiro
+tsconfig.tsbuildinfo

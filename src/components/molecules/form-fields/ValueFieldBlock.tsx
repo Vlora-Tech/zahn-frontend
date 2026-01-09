@@ -1,8 +1,9 @@
 import { Box, Typography } from "@mui/material";
+import { ReactNode } from "react";
 
 interface ValueFieldBlockProps {
   label: string;
-  value: string;
+  value: ReactNode;
 }
 
 const ValueFieldBlock: React.FC<ValueFieldBlockProps> = ({ label, value }) => {
@@ -14,11 +15,6 @@ const ValueFieldBlock: React.FC<ValueFieldBlockProps> = ({ label, value }) => {
         gap: "8px",
       }}
     >
-      <style>
-        {`.summary-value::first-letter {
-            text-transform: uppercase;
-          }`}
-      </style>
       <Typography
         sx={{
           fontWeight: "400",
@@ -34,7 +30,7 @@ const ValueFieldBlock: React.FC<ValueFieldBlockProps> = ({ label, value }) => {
           fontSize: "16px",
         }}
       >
-        <div className="summary-value">{value}</div>
+        {value}
       </Typography>
     </Box>
   );

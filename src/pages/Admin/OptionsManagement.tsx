@@ -52,6 +52,8 @@ import { useGetOperations } from "../../api/operations/hooks";
 import { OptionRequestBody } from "../../api/options/types";
 import { useQueryClient } from "@tanstack/react-query";
 import ButtonBlock from "../../components/atoms/ButtonBlock";
+import { formatDateDE } from "../../utils/formatDate";
+import DateText from "../../components/atoms/DateText";
 
 // Define a theme to match the app's color scheme
 const theme = createTheme({
@@ -527,9 +529,7 @@ const OptionsManagement: React.FC = () => {
                         </TableCell>
                         <TableCell>
                           <Typography variant="body2" color="text.secondary">
-                            {new Date(option.createdAt).toLocaleDateString(
-                              "de-DE"
-                            )}
+                            <DateText date={option.createdAt} />
                           </Typography>
                         </TableCell>
                         <TableCell>

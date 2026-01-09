@@ -17,6 +17,10 @@ import {
   Pagination,
   Stack,
   Alert,
+  FormControl,
+  Select,
+  MenuItem,
+  SelectChangeEvent,
 } from "@mui/material";
 import {
   Search,
@@ -25,10 +29,12 @@ import {
   Print,
   Refresh,
   Visibility,
+  FilterAlt,
 } from "@mui/icons-material";
 import { debounce } from "lodash";
 import ButtonBlock from "../../components/atoms/ButtonBlock";
 import { useGetDoctors } from "../../api/doctors/hooks";
+import { useGetClinics } from "../../api/clinics/hooks";
 import { useNavigate } from "react-router-dom";
 import StyledLink from "../../components/atoms/StyledLink";
 import TableRowsLoader from "../../components/molecules/TableRowsLoader";
@@ -41,18 +47,18 @@ const Doctors = () => {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
+  const [clinicFilter, setClinicFilter] = useState<string>("all");
 
   const navigate = useNavigate();
 
-  const {
-    data: doctors,
-    isLoading,
-    error,
-  } = useGetDoctors({
-    page,
-    sortBy: orderBy,
+  const { data: clinics } = useGetClinics({ limit: 100 });
+
+  const { data: doctors, isLoading, error } = useGetDoctors({ 
+    page, 
+    sortBy: orderBy, 
     sortOrder: order,
     search,
+    ...(clinicFilter !== "all" && { clinic: clinicFilter }),
   });
 
   // Debounced search function
@@ -105,6 +111,11 @@ const Doctors = () => {
     setSearchInput(event.target.value);
   };
 
+  const handleClinicFilterChange = (event: SelectChangeEvent<string>) => {
+    setClinicFilter(event.target.value);
+    setPage(1);
+  };
+
   const isSelected = (id: string) => selected.indexOf(id) !== -1;
 
   const hasData = doctors?.data && doctors.data.length > 0;
@@ -117,16 +128,16 @@ const Doctors = () => {
           color: "rgba(146, 146, 146, 1)",
         }}
       >
-        Ärzteliste
+        Ärzte
       </Typography>
-
+      
       {/* Error Alert */}
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
           Fehler beim Laden der Ärzte. Bitte versuchen Sie es erneut.
         </Alert>
       )}
-
+      
       <Paper
         sx={{
           borderRadius: "10px",
@@ -144,22 +155,42 @@ const Doctors = () => {
             p: "16px 28px",
           }}
         >
-          <TextField
-            variant="outlined"
-            size="small"
-            placeholder="Suchen"
-            value={searchInput}
-            slotProps={{
-              input: {
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <Search />
+          <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+            <TextField
+              variant="outlined"
+              size="small"
+              placeholder="Name oder Username suchen..."
+              value={searchInput}
+              sx={{ minWidth: 500 }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Search fontSize="small" />
                   </InputAdornment>
                 ),
-              },
-            }}
-            onChange={handleSearch}
-          />
+              }}
+              onChange={handleSearch}
+            />
+            <FormControl size="small" sx={{ minWidth: 180 }}>
+              <Select
+                value={clinicFilter}
+                onChange={handleClinicFilterChange}
+                displayEmpty
+                startAdornment={
+                  <InputAdornment position="start">
+                    <FilterAlt fontSize="small" sx={{ color: "rgba(104, 201, 242, 1)" }} />
+                  </InputAdornment>
+                }
+              >
+                <MenuItem value="all">Alle Praxen</MenuItem>
+                {clinics?.data?.map((clinic) => (
+                  <MenuItem key={clinic._id} value={clinic._id}>
+                    {clinic.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Box>
           <Box>
             <ButtonBlock
               startIcon={<Add />}
@@ -178,7 +209,7 @@ const Doctors = () => {
                 navigate("/doctors/create");
               }}
             >
-              Arzt hinzufügen
+              Artz hinzufügen
             </ButtonBlock>
             <IconButton>
               <Print />
@@ -225,44 +256,40 @@ const Doctors = () => {
                 {isLoading ? (
                   <TableRowsLoader rowsNum={10} colNums={5} />
                 ) : !hasData ? (
-                  <EmptyTableState
-                    colSpan={5}
-                    message={
-                      search
-                        ? "Keine Ärzte gefunden"
-                        : "Keine Ärzte vorhanden. Fügen Sie einen neuen Arzt hinzu."
-                    }
+                  <EmptyTableState 
+                    colSpan={5} 
+                    message={search ? "Keine Ärzte gefunden" : "Keine Ärzte vorhanden. Fügen Sie einen neuen Arzt hinzu."}
                   />
                 ) : (
                   <>
-                    {doctors?.data?.map((doctor) => {
-                      const isItemSelected = isSelected(doctor._id);
-                      return (
-                        <TableRow
-                          key={doctor._id}
-                          hover
-                          onClick={() => handleClick(doctor._id)}
-                          role="checkbox"
-                          aria-checked={isItemSelected}
-                          tabIndex={-1}
-                          selected={isItemSelected}
-                        >
-                          <TableCell padding="checkbox">
-                            <Checkbox checked={isItemSelected} />
-                          </TableCell>
-                          <TableCell>
-                            {doctor?.firstName} {doctor?.lastName}
-                          </TableCell>
-                          <TableCell>{doctor?.clinic?.name || "-"}</TableCell>
-                          <TableCell>{doctor?.username || "-"}</TableCell>
-                          <TableCell>
-                            <StyledLink to={`/doctors/${doctor._id}`}>
-                              <Visibility />
-                            </StyledLink>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
+                {doctors?.data?.map((doctor) => {
+                  const isItemSelected = isSelected(doctor._id);
+                  return (
+                    <TableRow
+                      key={doctor._id}
+                      hover
+                      onClick={() => handleClick(doctor._id)}
+                      role="checkbox"
+                      aria-checked={isItemSelected}
+                      tabIndex={-1}
+                      selected={isItemSelected}
+                    >
+                      <TableCell padding="checkbox">
+                        <Checkbox checked={isItemSelected} />
+                      </TableCell>
+                      <TableCell>
+                        {doctor?.firstName} {doctor?.lastName}
+                      </TableCell>
+                      <TableCell>{doctor?.clinic?.name || "-"}</TableCell>
+                      <TableCell>{doctor?.username || "-"}</TableCell>
+                      <TableCell>
+                        <StyledLink to={`/doctors/${doctor._id}`}>
+                          <Visibility />
+                        </StyledLink>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
                   </>
                 )}
               </TableBody>

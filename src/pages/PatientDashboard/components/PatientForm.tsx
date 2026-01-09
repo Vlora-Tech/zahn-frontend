@@ -14,10 +14,9 @@ import { useGetClinics } from "../../../api/clinics/hooks";
 import { Fragment, useMemo, useEffect } from "react";
 import SelectBlock from "../../../components/atoms/SelectBlock";
 import InputBlockNoForm from "../../../components/atoms/InputBlockNoForm";
-import { isoDateToAge } from "../../../utils/isoDateToAge";
-import S3FileUpload, {
-  S3UploadResponse,
-} from "../../../components/S3FileUpload";
+import { isoDateToAge } from "../../../utils/dateToAge";
+import { formatDateDE } from "../../../utils/formatDate";
+import DateText from "../../../components/atoms/DateText";
 
 const PatientInformation = (props) => {
   const {
@@ -35,8 +34,6 @@ const PatientInformation = (props) => {
     selectedImpression,
     onEmptyDataChange, // New prop to communicate empty state to parent
     disabled = false, // New prop to disable all fields
-    attachment,
-    setAttachment,
   } = props;
 
   const { patientNumber, firstName, lastName, gender, birthDate } =
@@ -144,6 +141,9 @@ const PatientInformation = (props) => {
             borderRadius: "10px",
             background: "rgba(255, 255, 255, 1)",
             padding: "26px 40px",
+            display: "flex",
+            flexDirection: "column",
+            flex: "1",
           }}
         >
           <Grid container spacing={2}>
@@ -157,20 +157,37 @@ const PatientInformation = (props) => {
               <ValueFieldBlock label="Patientennummer" value={patientNumber} />
             </Grid>
             <Grid size={6}>
-              <ValueFieldBlock label="Geschlecht" value={gender} />
+              <ValueFieldBlock 
+                label="Geschlecht" 
+                value={
+                  gender === "male" ? "Männlich" : 
+                  gender === "female" ? "Weiblich" : 
+                  gender === "other" ? "Divers" : 
+                  gender ? gender.charAt(0).toUpperCase() + gender.slice(1) : ""
+                } 
+              />
             </Grid>
             <Grid size={6}>
               <ValueFieldBlock
                 label="Geburtstag"
                 value={
                   birthDate
-                    ? `${new Date(birthDate).toLocaleDateString(
-                        "de-DE"
-                      )} ( ${isoDateToAge(birthDate)} )`
+                    ? <><DateText date={birthDate} /> ( {isoDateToAge(birthDate)} J. )</>
                     : ""
                 }
               />
             </Grid>
+            {/* <Grid size={12}>
+              <TextFieldBlockNoForm
+                name="notes"
+                label="Notizen"
+                placeholder="Enter notes"
+                multiline={true}
+                minRows={7}
+                value={notes}
+                onChange={setNotes}
+              />
+            </Grid> */}
           </Grid>
         </Paper>
         <Typography
@@ -188,24 +205,9 @@ const PatientInformation = (props) => {
             borderRadius: "10px",
             background: "rgba(255, 255, 255, 1)",
             padding: "26px 40px",
-          }}
-        >
-          <S3FileUpload
-            onUploadSuccess={(uploadRes: S3UploadResponse) =>
-              setAttachment(uploadRes)
-            }
-            onRemove={() => setAttachment(null)}
-            onUploadError={(error) => console.error("Upload error:", error)}
-            currentFile={attachment}
-          />
-        </Paper>
-        <Paper
-          sx={{
-            borderRadius: "10px",
-            background: "rgba(255, 255, 255, 1)",
-            padding: "26px 40px",
             display: "flex",
             flexDirection: "column",
+            flex: "1",
           }}
         >
           <Grid container spacing={2}>
@@ -238,7 +240,7 @@ const PatientInformation = (props) => {
                   }}
                   value={selectedDoctor?.value}
                   enableClear={false}
-                  disabled={isEditMode || disabled}
+                  disabled={disabled}
                 />
               </FormControl>
             </Grid>
@@ -271,7 +273,7 @@ const PatientInformation = (props) => {
                   }}
                   value={selectedClinic.value}
                   enableClear={false}
-                  disabled={isEditMode || disabled}
+                  disabled={disabled}
                 />
               </FormControl>
             </Grid>
@@ -297,9 +299,9 @@ const PatientInformation = (props) => {
                   type={"date"}
                   onChange={setDeliveryDate}
                   value={
-                    isEditMode
+                    isEditMode && deliveryDate
                       ? new Date(deliveryDate).toISOString().split("T")[0]
-                      : deliveryDate
+                      : deliveryDate || ""
                   }
                   disabled={disabled}
                 />
@@ -314,6 +316,7 @@ const PatientInformation = (props) => {
             padding: "26px 40px",
             display: "flex",
             flexDirection: "column",
+            flex: "1",
           }}
         >
           <Grid container spacing={2}>
@@ -364,10 +367,10 @@ const PatientInformation = (props) => {
                     color: "rgba(10, 77, 130, 1)",
                   }}
                 >
-                  Zahnfarbe
+                  Zahnfarbe *
                 </FormLabel>
                 <SelectBlock
-                  enableClear={true}
+                  enableClear={false}
                   placeholder={"Zahnfarbe auswählen"}
                   options={[
                     { label: "A1", value: "a1" },

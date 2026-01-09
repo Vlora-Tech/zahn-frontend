@@ -1,0 +1,137 @@
+[
+  {
+    "section": "Arbeitsvorbereitung GKV",
+    "items": [
+      {
+        "number": "0010",
+        "name": "Modell (3D-Gedruckt)",
+        "defaultValue": "1"
+      },
+      {
+        "number": "0021",
+        "name": "Doublieren (3D-Gedruckt)",
+        "defaultValue": "1"
+      },
+      {
+        "number": "0051",
+        "name": "Sägemodell (3D-Gedruckt)",
+        "defaultValue": "1"
+      },
+      {
+        "number": "0120",
+        "name": "Mittelwertartikulator",
+        "defaultValue": "1"
+      }
+    ]
+  },
+  {
+    "section": "Kronen und Brücken GKV",
+    "items": [
+      {
+        "number": "1021",
+        "name": "Vollkrone/Metall (zircon)",
+        "defaultValue": "teethCount"
+      }
+    ]
+  },
+  {
+    "section": "CAD-CAM offiziell BEB",
+    "items": [
+      {
+        "number": "2281",
+        "name": "Krone aus Keramik gefräst",
+        "defaultValue": "teethCount"
+      }
+    ]
+  },
+  {
+    "section": "CAD-CAM eigene BEB-Nummern",
+    "items": [
+      {
+        "number": "0030",
+        "name": "Digitales Antagonistenmodell CAD",
+        "defaultValue": "1"
+      },
+      {
+        "number": "0032",
+        "name": "Digitales Präparationsmodell CAD",
+        "defaultValue": "1"
+      },
+      {
+        "number": "0420",
+        "name": "Artikulation digital",
+        "defaultValue": "1"
+      },
+      {
+        "number": "0725",
+        "name": "Digitale Zahnfarbenbestimmung",
+        "defaultValue": "teethCount"
+      },
+      {
+        "number": "0825",
+        "name": "Segment digitalisieren, je Segment",
+        "defaultValue": "1"
+      },
+      {
+        "number": "0826",
+        "name": "Präparationsrand festl. u. darstellen",
+        "defaultValue": "1"
+      },
+      {
+        "number": "0827",
+        "name": "Präparationsgrenze digit. je Segment",
+        "defaultValue": "1"
+      },
+      {
+        "number": "0840",
+        "name": "Scan, Konstruktion u. Datentransfer",
+        "defaultValue": "1"
+      },
+      {
+        "number": "0842",
+        "name": "Bearbeiten des CAM-Elements",
+        "defaultValue": "1"
+      },
+      {
+        "number": "0843",
+        "name": "Aufpassen CAD-Element, j. Einh.",
+        "defaultValue": "teethCount"
+      },
+      {
+        "number": "0857",
+        "name": "CAD-Konstrukt. Krone/Brückenglied",
+        "defaultValue": "teethCount"
+      },
+      {
+        "number": "0877",
+        "name": "Front-/Seitenzahn einscannen",
+        "defaultValue": "teethCount"
+      },
+      {
+        "number": "0904",
+        "name": "Erstellen einer Okklusionsebene",
+        "defaultValue": "teethCount"
+      },
+      {
+        "number": "2704",
+        "name": "Mal/Glanzbrand",
+        "defaultValue": "teethCount"
+      },
+      {
+        "number": "2712",
+        "name": "Kaufläche konstruieren CAD",
+        "defaultValue": "teethCount"
+      },
+      {
+        "number": "2790",
+        "name": "Anlage Auftragsdaten CAD/CAM",
+        "defaultValue": "1"
+      },
+      {
+        "number": "5315",
+        "name": "Sintern je Einheit",
+        "defaultValue": "teethCount"
+      }
+    ]
+  }
+]

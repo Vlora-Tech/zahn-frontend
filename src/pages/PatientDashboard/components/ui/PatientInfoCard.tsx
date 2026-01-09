@@ -2,7 +2,9 @@ import { Grid, Paper, Stack, Typography } from "@mui/material";
 import ButtonBlock from "../../../../components/atoms/ButtonBlock";
 import { Edit } from "@mui/icons-material";
 import TextFieldBlockNoForm from "../../../../components/molecules/form-fields/TextFieldBlockNoForm";
-import { isoDateToAge } from "../../../../utils/isoDateToAge";
+import { isoDateToAge } from "../../../../utils/dateToAge";
+import { formatDateDE } from "../../../../utils/formatDate";
+import DateText from "../../../../components/atoms/DateText";
 
 export interface PatientInfo {
   id: string;
@@ -62,12 +64,18 @@ const PatientInfoCard: React.FC<{
               value: `${patientData.firstName} ${patientData.lastName}`,
             },
             { label: "Patientennummer", value: patientData.patientNumber },
-            { label: "Geschlecht", value: patientData.gender },
+            { 
+              label: "Geschlecht", 
+              value: patientData.gender === "male" ? "Männlich" : 
+                     patientData.gender === "female" ? "Weiblich" : 
+                     patientData.gender === "other" ? "Divers" : 
+                     patientData.gender || ""
+            },
             {
               label: "Geburtstag",
-              value: `${new Date(patientData.birthDate).toLocaleDateString(
-                "de-DE"
-              )} ( ${isoDateToAge(patientData.birthDate)} )`,
+              value: patientData.birthDate ? (
+                <><DateText date={patientData.birthDate} /> ( {isoDateToAge(patientData.birthDate)} J. )</>
+              ) : "-",
             },
           ].map((item) => (
             <Stack key={item.label} sx={{ textAlign: "left", width: "250px" }}>
@@ -91,9 +99,7 @@ const PatientInfoCard: React.FC<{
             { label: "Praxis", value: patientData.clinic.label },
             {
               label: "Liefertermin",
-              value: new Date(patientData.deliveryDate).toLocaleDateString(
-                "de-DE"
-              ),
+              value: <DateText date={patientData.deliveryDate} />,
             },
           ].map((item) => (
             <Stack key={item.label} sx={{ textAlign: "left", width: "250px" }}>

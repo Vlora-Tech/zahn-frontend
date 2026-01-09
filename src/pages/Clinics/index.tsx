@@ -113,7 +113,7 @@ const Clinics = () => {
           color: "rgba(146, 146, 146, 1)",
         }}
       >
-        Klinikliste
+        Kliniken
       </Typography>
       
       {/* Error Alert */}
@@ -143,16 +143,15 @@ const Clinics = () => {
           <TextField
             variant="outlined"
             size="small"
-            placeholder="Suchen"
+            placeholder="Name, Stadt oder PLZ suchen..."
             value={searchInput}
-            slotProps={{
-              input: {
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <Search />
-                  </InputAdornment>
-                ),
-              },
+            sx={{ minWidth: 500 }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Search fontSize="small" />
+                </InputAdornment>
+              ),
             }}
             onChange={handleSearch}
           />

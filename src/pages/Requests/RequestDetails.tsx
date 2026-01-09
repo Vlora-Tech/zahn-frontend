@@ -3,34 +3,105 @@ import {
   Stack,
   Typography,
   Paper,
-  Grid,
-  Chip,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogContentText,
   DialogActions,
   TextField,
-  Divider,
+  Avatar,
+  IconButton,
+  Backdrop,
+  CircularProgress,
+  Tabs,
+  Tab,
 } from "@mui/material";
 import { useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Check, Close, Edit } from "@mui/icons-material";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  Check,
+  Close,
+  Edit,
+  Person,
+  LocalHospital,
+  Assignment,
+  AccessTime,
+  Badge,
+  Wc,
+  Cake,
+  MedicalServices,
+  Schedule,
+  ArrowBack,
+  Notes,
+  Error as ErrorIcon,
+  Inventory,
+  CardGiftcard,
+  Info,
+  Description,
+  MedicalInformation,
+} from "@mui/icons-material";
 
 import {
   useGetTreatmentRequestById,
   useApproveTreatmentRequest,
   useRejectTreatmentRequest,
+  useMarkReceivedFromLab,
+  useMarkDeliveredToPatient,
 } from "../../api/treatment-requests/hooks";
+import { useLabRequestByRequestId } from "../../api/lab-requests/hooks";
+import { useLaborzettelByLabRequest } from "../../api/laborzettel/hooks";
 import RequestSummary from "../PatientDashboard/components/RequestSummary";
 import ButtonBlock from "../../components/atoms/ButtonBlock";
 import LoadingSpinner from "../../components/atoms/LoadingSpinner";
 import { OperationSchema } from "../PatientDashboard";
-import { isoDateToAge } from "../../utils/isoDateToAge";
+import { isoDateToAge } from "../../utils/dateToAge";
+import DateText from "../../components/atoms/DateText";
+import LabStatusSection from "./components/LabStatusSection";
+import RequestStatusChip from "./components/RequestStatusChip";
+import RequestActivitySection from "./components/RequestActivitySection";
+import LaborzettelSection from "./components/LaborzettelSection";
+
+// Helper to check delivery date urgency
+const getDeliveryDateUrgency = (
+  deliveryDate: string,
+): "overdue" | "today" | "normal" => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const delivery = new Date(deliveryDate);
+  delivery.setHours(0, 0, 0, 0);
+
+  if (delivery < today) return "overdue";
+  if (delivery.getTime() === today.getTime()) return "today";
+  return "normal";
+};
+
+interface TabPanelProps {
+  children?: React.ReactNode;
+  index: number;
+  value: number;
+}
+
+function TabPanel(props: TabPanelProps) {
+  const { children, value, index, ...other } = props;
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`request-tabpanel-${index}`}
+      aria-labelledby={`request-tab-${index}`}
+      {...other}
+    >
+      {value === index && <Box sx={{ pt: 2 }}>{children}</Box>}
+    </div>
+  );
+}
 
 export default function RequestDetails() {
   const params = useParams();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const requestId = params.id;
 
   const {
@@ -41,17 +112,29 @@ export default function RequestDetails() {
 
   const approveMutation = useApproveTreatmentRequest();
   const rejectMutation = useRejectTreatmentRequest();
+  const markReceivedFromLabMutation = useMarkReceivedFromLab();
+  const markDeliveredToPatientMutation = useMarkDeliveredToPatient();
+
+  // Get lab request to check its status
+  const { data: labRequest } = useLabRequestByRequestId(requestId || "");
+
+  // Get laborzettel to check if it exists
+  const { data: laborzettel } = useLaborzettelByLabRequest(
+    labRequest?._id || "",
+  );
+  const hasLaborzettel = !!laborzettel;
 
   const [approveDialogOpen, setApproveDialogOpen] = useState(false);
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [approveNotes, setApproveNotes] = useState("");
   const [rejectReason, setRejectReason] = useState("");
+  const [activeTab, setActiveTab] = useState(0);
 
   // Transform treatment request data to match RequestSummary expected format
   const patientData = useMemo(() => {
     if (!treatmentRequest?.patient) return null;
 
-    const patient = treatmentRequest.patient as any; // Type assertion for missing properties
+    const patient = treatmentRequest.patient as any;
 
     return {
       id: patient._id,
@@ -73,10 +156,6 @@ export default function RequestDetails() {
 
   // Transform treatment request operations to match RequestSummary expected format
   const configuredOperations = useMemo((): OperationSchema[] => {
-    // if (!treatmentRequest?.selectedTeeth) return [];
-
-    // return treatmentRequest.operations
-
     return treatmentRequest?.operations?.map((operation, index) => ({
       operationIdx: operation?.operationIdx,
       selectedTeeth: operation?.selectedTeeth,
@@ -95,50 +174,50 @@ export default function RequestDetails() {
       material: {
         ...operation.material,
         name: operation.material?.name || "Unknown Material",
-        // color: operation.material?.color || "#c3c3c3",
-        // image: operation.material?.image || null
       },
       optionsAndParameters: operation.optionsAndParameters,
       connectors: operation.connectors || [],
     }));
   }, [treatmentRequest]);
 
-  const selectedTeethRequest =
-    configuredOperations?.flatMap((operation) => operation.selectedTeeth) ?? [];
+  // Compute teeth selection data for coloring
+  const selectedTeethRequest = useMemo(() => {
+    if (!configuredOperations) return [];
+    return configuredOperations.flatMap((op) => op.selectedTeeth || []);
+  }, [configuredOperations]);
 
-  const selectedConnectorsRequest =
-    configuredOperations?.flatMap((operation) => operation.connectors) ?? [];
+  const selectedConnectorsRequest = useMemo(() => {
+    if (!configuredOperations) return [];
+    return configuredOperations.flatMap((op) => op.connectors || []);
+  }, [configuredOperations]);
 
-  // Create a mapping of teeth to their operation colors
   const teethRequestColorMap = useMemo(() => {
-    const map: Record<number, string> = {};
-    configuredOperations?.forEach((operation) => {
-      operation.selectedTeeth?.forEach((tooth) => {
-        map[tooth] = operation.operation?.color || "#c3c3c3";
+    if (!configuredOperations) return {};
+    const colorMap: Record<number, string> = {};
+    configuredOperations.forEach((op) => {
+      const color = op.operation?.color || "#c3c3c3";
+      op.selectedTeeth?.forEach((tooth) => {
+        colorMap[tooth] = color;
       });
     });
-    return map;
+    return colorMap;
   }, [configuredOperations]);
 
-  // Create a mapping of connectors to their operation colors
   const connectorsRequestColorMap = useMemo(() => {
-    const map: Record<string, string> = {};
-    configuredOperations?.forEach((operation) => {
-      operation.connectors?.forEach((connector) => {
-        const connectorKey = `${connector[0]}-${connector[1]}`;
-        map[connectorKey] = operation.operation?.color || "#c3c3c3";
+    if (!configuredOperations) return {};
+    const colorMap: Record<string, string> = {};
+    configuredOperations.forEach((op) => {
+      const color = op.operation?.color || "#c3c3c3";
+      op.connectors?.forEach((connector) => {
+        const key = `${connector[0]}-${connector[1]}`;
+        colorMap[key] = color;
       });
     });
-    return map;
+    return colorMap;
   }, [configuredOperations]);
 
-  const handleApprove = () => {
-    setApproveDialogOpen(true);
-  };
-
-  const handleReject = () => {
-    setRejectDialogOpen(true);
-  };
+  const handleApprove = () => setApproveDialogOpen(true);
+  const handleReject = () => setRejectDialogOpen(true);
 
   const handleConfirmApprove = () => {
     if (requestId) {
@@ -149,11 +228,12 @@ export default function RequestDetails() {
             setApproveDialogOpen(false);
             setApproveNotes("");
             refetch();
+            queryClient.invalidateQueries({
+              queryKey: ["activity-logs", "request", requestId],
+            });
           },
-          onError: (error) => {
-            console.error("Error approving request:", error);
-          },
-        }
+          onError: (error) => console.error("Error approving request:", error),
+        },
       );
     }
   };
@@ -167,11 +247,12 @@ export default function RequestDetails() {
             setRejectDialogOpen(false);
             setRejectReason("");
             refetch();
+            queryClient.invalidateQueries({
+              queryKey: ["activity-logs", "request", requestId],
+            });
           },
-          onError: (error) => {
-            console.error("Error rejecting request:", error);
-          },
-        }
+          onError: (error) => console.error("Error rejecting request:", error),
+        },
       );
     }
   };
@@ -189,14 +270,18 @@ export default function RequestDetails() {
   const handleEditRequest = () => {
     if (treatmentRequest?.patient?._id) {
       navigate(
-        `/patients/${treatmentRequest.patient._id}/requests/edit/${requestId}`
+        `/patients/${treatmentRequest.patient._id}/requests/edit/${requestId}`,
       );
     }
   };
 
-  if (isLoading) {
-    return <LoadingSpinner />;
-  }
+  const handleGoBack = () => navigate(-1);
+
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
+    setActiveTab(newValue);
+  };
+
+  if (isLoading) return <LoadingSpinner />;
 
   if (!treatmentRequest) {
     return (
@@ -211,296 +296,795 @@ export default function RequestDetails() {
     );
   }
 
-  const canApproveReject = treatmentRequest.status === "pending";
+  const canApproveReject =
+    treatmentRequest.status === "pending_approval" &&
+    treatmentRequest.isDoctorApprovalNeeded;
+
+  // Show "Received from Lab" button when lab has dispatched
+  const canMarkReceivedFromLab =
+    treatmentRequest.status === "approved" &&
+    labRequest?.labStatus === "dispatched";
+
+  // Show "Delivered to Patient" button when received from lab
+  const canMarkDeliveredToPatient =
+    treatmentRequest.status === "received_from_lab";
+
+  const showLabStatusSection =
+    treatmentRequest.status === "approved" ||
+    treatmentRequest.status === "received_from_lab" ||
+    treatmentRequest.status === "delivered_to_patient" ||
+    !treatmentRequest.isDoctorApprovalNeeded;
+
+  // Show action section when any action is available
+  const showActionSection =
+    canApproveReject || canMarkReceivedFromLab || canMarkDeliveredToPatient;
+
+  // Handlers for new actions
+  const handleMarkReceivedFromLab = () => {
+    if (requestId) {
+      markReceivedFromLabMutation.mutate(requestId, {
+        onSuccess: () => {
+          refetch();
+          queryClient.invalidateQueries({
+            queryKey: ["activity-logs", "request", requestId],
+          });
+        },
+      });
+    }
+  };
+
+  const handleMarkDeliveredToPatient = () => {
+    if (requestId) {
+      markDeliveredToPatientMutation.mutate(requestId, {
+        onSuccess: () => {
+          refetch();
+          queryClient.invalidateQueries({
+            queryKey: ["activity-logs", "request", requestId],
+          });
+        },
+      });
+    }
+  };
+
+  // Gender display
+  const genderDisplay =
+    patientData?.gender === "male"
+      ? "Männlich"
+      : patientData?.gender === "female"
+        ? "Weiblich"
+        : patientData?.gender;
+
+  // Check if any mutation is pending
+  const isActionPending =
+    approveMutation.isPending ||
+    rejectMutation.isPending ||
+    markReceivedFromLabMutation.isPending ||
+    markDeliveredToPatientMutation.isPending;
 
   return (
-    <Stack flex="1" gap="20px" height="100%">
-      <Typography
-        variant="h2"
+    <Stack flex="1" gap="16px" height="100%" sx={{ position: "relative" }}>
+      {/* Full page loading overlay */}
+      <Backdrop
+        sx={{ color: "#fff", zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={isActionPending}
+      >
+        <CircularProgress color="inherit" />
+      </Backdrop>
+
+      {/* Back button - absolute positioned */}
+      <IconButton
+        onClick={handleGoBack}
         sx={{
-          color: "rgba(146, 146, 146, 1)",
+          position: "absolute",
+          top: 0,
+          left: -56,
+          backgroundColor: "white",
+          boxShadow: "0px 2px 4px rgba(0,0,0,0.1)",
+          "&:hover": { backgroundColor: "rgba(245,245,245,1)" },
+          zIndex: 10,
         }}
       >
-        Antrageninformation
-      </Typography>
+        <ArrowBack />
+      </IconButton>
 
-      <Box display="flex" gap="20px" flex="1">
-        {/* Left Column - Request Summary */}
-        <Stack flex="2" gap="20px">
-          {patientData && (
-            <RequestSummary
-              // patientData={patientData}
-              selectedShade={treatmentRequest.shade}
-              selectedImpression={treatmentRequest.impression}
-              configuredOperations={configuredOperations}
-              selectedTeethRequest={selectedTeethRequest}
-              selectedConnectorsRequest={selectedConnectorsRequest}
-              teethRequestColorMap={teethRequestColorMap}
-              connectorsRequestColorMap={connectorsRequestColorMap}
-              attachment={treatmentRequest?.attachment}
-              handleEditOperation={() => {}} // Disabled in view mode
-              handleDeleteOperation={() => {}} // Disabled in view mode
-              handleEditPatientInfo={() => {}} // Disabled in view mode
-              hideActionButtons={true} // Hide action buttons in view mode
-            />
-          )}
-        </Stack>
+      {/* Top Section: Two Column Layout when actions needed */}
+      <Box sx={{ display: "flex", gap: "16px", alignItems: "stretch" }}>
+        {/* Left Column: Hero Card */}
+        <Paper
+          sx={{
+            flex: 1,
+            borderRadius: "12px",
+            background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
+            boxShadow: "0px 2px 8px rgba(0, 0, 0, 0.08)",
+            border: "1px solid rgba(0,0,0,0.05)",
+            overflow: "hidden",
+          }}
+        >
+          <Box sx={{ display: "flex", flexWrap: "wrap" }}>
+            {/* Auftrag Section */}
+            <Box
+              sx={{
+                flex: 1,
+                minWidth: 220,
+                p: 2.5,
+                borderRight: { xs: "none", md: "1px solid rgba(0,0,0,0.05)" },
+                borderBottom: {
+                  xs: "1px solid rgba(0,0,0,0.05)",
+                  md: "none",
+                },
+              }}
+            >
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  mb: 2,
+                }}
+              >
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                  <Avatar
+                    sx={{
+                      width: 36,
+                      height: 36,
+                      backgroundColor: "rgba(255, 152, 0, 0.15)",
+                      color: "rgba(255, 152, 0, 1)",
+                    }}
+                  >
+                    <Assignment sx={{ fontSize: 20 }} />
+                  </Avatar>
+                  <Typography
+                    variant="body1"
+                    sx={{
+                      fontWeight: 700,
+                      fontFamily: "monospace",
+                      color: "rgba(33, 33, 33, 1)",
+                      letterSpacing: "0.5px",
+                    }}
+                  >
+                    {treatmentRequest.requestNumber}
+                  </Typography>
+                </Box>
+                {treatmentRequest.status === "pending_approval" && (
+                  <ButtonBlock
+                    startIcon={<Edit sx={{ fontSize: 16 }} />}
+                    onClick={handleEditRequest}
+                    style={{
+                      borderRadius: "6px",
+                      height: "32px",
+                      color: "rgba(104, 201, 242, 1)",
+                      background: "rgba(104, 201, 242, 0.1)",
+                      fontSize: "12px",
+                      fontWeight: "600",
+                      padding: "0 12px",
+                    }}
+                  >
+                    Bearbeiten
+                  </ButtonBlock>
+                )}
+              </Box>
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+                <Box>
+                  <RequestStatusChip status={treatmentRequest.status} />
+                </Box>
+                <Box>
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: "rgba(107, 107, 107, 1)",
+                      fontSize: "10px",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.5px",
+                    }}
+                  >
+                    <AccessTime
+                      sx={{
+                        fontSize: 12,
+                        mr: 0.5,
+                        color: "rgba(104, 201, 242, 1)",
+                        verticalAlign: "middle",
+                      }}
+                    />
+                    Erstellt
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                    <DateText date={treatmentRequest.createdAt} />
+                  </Typography>
+                </Box>
+                <Box>
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: "rgba(107, 107, 107, 1)",
+                      fontSize: "10px",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.5px",
+                    }}
+                  >
+                    <Schedule
+                      sx={{
+                        fontSize: 12,
+                        mr: 0.5,
+                        color: "rgba(104, 201, 242, 1)",
+                        verticalAlign: "middle",
+                      }}
+                    />
+                    Liefertermin
+                  </Typography>
+                  {treatmentRequest.deliveryDate ? (
+                    (() => {
+                      const isDelivered =
+                        treatmentRequest.status === "delivered_to_patient";
+                      const urgency = isDelivered
+                        ? "normal"
+                        : getDeliveryDateUrgency(treatmentRequest.deliveryDate);
+                      const showIcon =
+                        urgency === "overdue" || urgency === "today";
+                      const urgencyColor =
+                        urgency === "overdue"
+                          ? "#C62828"
+                          : urgency === "today"
+                            ? "#F9A825"
+                            : undefined;
+                      return (
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            fontWeight: 500,
+                            color: urgencyColor,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 0.5,
+                          }}
+                        >
+                          <DateText date={treatmentRequest.deliveryDate} />
+                          {showIcon && (
+                            <ErrorIcon
+                              sx={{ fontSize: 18, color: urgencyColor }}
+                            />
+                          )}
+                        </Typography>
+                      );
+                    })()
+                  ) : (
+                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                      —
+                    </Typography>
+                  )}
+                </Box>
+              </Box>
+            </Box>
 
-        {/* Right Column - Status and Actions */}
-        <Stack flex="1" gap="20px">
-          <Paper
-            sx={{
-              borderRadius: "10px",
-              background: "rgba(255, 255, 255, 1)",
-              padding: "26px 40px",
-              boxShadow: "0px 4px 8px 0px rgba(0, 0, 0, 0.25)",
-            }}
-          >
-            <Grid container spacing={2}>
-              <Grid size={12}>
-                <Typography variant="body2" color="text.secondary">
-                  Stand
-                </Typography>
-                <Chip
-                  label={treatmentRequest.status}
-                  color={
-                    treatmentRequest.status === "approved"
-                      ? "success"
-                      : treatmentRequest.status === "rejected"
-                      ? "error"
-                      : "default"
-                  }
-                  sx={{ mt: 1 }}
-                />
-              </Grid>
-              <Grid size={12}>
-                <Typography variant="body2" color="text.secondary">
-                  Antragennummer
-                </Typography>
+            {/* Patient Section */}
+            <Box
+              sx={{
+                flex: 1,
+                minWidth: 220,
+                p: 2.5,
+                borderRight: { xs: "none", md: "1px solid rgba(0,0,0,0.05)" },
+                borderBottom: {
+                  xs: "1px solid rgba(0,0,0,0.05)",
+                  md: "none",
+                },
+              }}
+            >
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1.5,
+                  mb: 2,
+                }}
+              >
+                <Avatar
+                  sx={{
+                    width: 36,
+                    height: 36,
+                    backgroundColor: "rgba(104, 201, 242, 0.15)",
+                    color: "rgba(104, 201, 242, 1)",
+                  }}
+                >
+                  <Person sx={{ fontSize: 20 }} />
+                </Avatar>
                 <Typography
                   variant="body1"
-                  sx={{ mt: 1, fontFamily: "monospace" }}
+                  sx={{ fontWeight: 600, color: "rgba(33, 33, 33, 1)" }}
                 >
-                  {treatmentRequest.requestNumber}
+                  {patientData?.firstName} {patientData?.lastName}
                 </Typography>
-              </Grid>
-              <Grid size={12}>
-                <Typography variant="body2" color="text.secondary">
-                  Erstellt am
-                </Typography>
-                <Typography variant="body1" sx={{ mt: 1 }}>
-                  {treatmentRequest.createdAt
-                    ? new Date(treatmentRequest.createdAt).toLocaleString()
-                    : "N/A"}
-                </Typography>
-              </Grid>
-              {treatmentRequest.updatedAt && (
-                <Grid size={12}>
-                  <Typography variant="body2" color="text.secondary">
-                    Zuletzt aktualisiert
+              </Box>
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+                <Box>
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: "rgba(107, 107, 107, 1)",
+                      fontSize: "10px",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.5px",
+                    }}
+                  >
+                    <Badge
+                      sx={{
+                        fontSize: 12,
+                        mr: 0.5,
+                        color: "rgba(104, 201, 242, 1)",
+                        verticalAlign: "middle",
+                      }}
+                    />
+                    Patientennr.
                   </Typography>
-                  <Typography variant="body1" sx={{ mt: 1 }}>
-                    {new Date(treatmentRequest.updatedAt).toLocaleString()}
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                    {patientData?.patientNumber || "—"}
                   </Typography>
-                </Grid>
-              )}
-              {treatmentRequest.requestedBy && (
-                <Grid size={12}>
-                  <Typography variant="body2" color="text.secondary">
-                    Angefordert von
+                </Box>
+                <Box>
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: "rgba(107, 107, 107, 1)",
+                      fontSize: "10px",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.5px",
+                    }}
+                  >
+                    <Wc
+                      sx={{
+                        fontSize: 12,
+                        mr: 0.5,
+                        color: "rgba(104, 201, 242, 1)",
+                        verticalAlign: "middle",
+                      }}
+                    />
+                    Geschlecht
                   </Typography>
-                  <Typography variant="body1" sx={{ mt: 1 }}>
-                    {`${treatmentRequest.requestedBy.firstName ?? ""} ${
-                      treatmentRequest.requestedBy.lastName
-                    }`}
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                    {genderDisplay || "—"}
                   </Typography>
-                </Grid>
-              )}
-              {treatmentRequest.notes && (
-                <Grid size={12}>
-                  <Typography variant="body2" color="text.secondary">
-                    Notizen
+                </Box>
+                <Box>
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: "rgba(107, 107, 107, 1)",
+                      fontSize: "10px",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.5px",
+                    }}
+                  >
+                    <Cake
+                      sx={{
+                        fontSize: 12,
+                        mr: 0.5,
+                        color: "rgba(104, 201, 242, 1)",
+                        verticalAlign: "middle",
+                      }}
+                    />
+                    Geburtsdatum
                   </Typography>
-                  <Typography variant="body1" sx={{ mt: 1 }}>
-                    {treatmentRequest.notes}
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                    {patientData?.birthDate ? (
+                      <>
+                        <DateText date={patientData.birthDate} /> (
+                        {isoDateToAge(patientData.birthDate)} J.)
+                      </>
+                    ) : (
+                      "—"
+                    )}
                   </Typography>
-                </Grid>
-              )}
-            </Grid>
+                </Box>
+              </Box>
+            </Box>
 
-            {/* Edit Request Button */}
-            <Divider sx={{ my: 3 }} />
-            <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
-              Aktionen zur Antrag
-            </Typography>
-            <ButtonBlock
-              startIcon={<Edit />}
-              onClick={handleEditRequest}
-              style={{
-                borderRadius: "40px",
-                height: "40px",
-                color: "white",
+            {/* Praxis Section */}
+            <Box sx={{ flex: 1, minWidth: 220, p: 2.5 }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1.5,
+                  mb: 2,
+                }}
+              >
+                <Avatar
+                  sx={{
+                    width: 36,
+                    height: 36,
+                    backgroundColor: "rgba(135, 193, 51, 0.15)",
+                    color: "rgba(135, 193, 51, 1)",
+                  }}
+                >
+                  <LocalHospital sx={{ fontSize: 20 }} />
+                </Avatar>
+                <Typography
+                  variant="body1"
+                  sx={{ fontWeight: 600, color: "rgba(33, 33, 33, 1)" }}
+                >
+                  {treatmentRequest.clinic?.name || "—"}
+                </Typography>
+              </Box>
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+                <Box>
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: "rgba(107, 107, 107, 1)",
+                      fontSize: "10px",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.5px",
+                    }}
+                  >
+                    <MedicalServices
+                      sx={{
+                        fontSize: 12,
+                        mr: 0.5,
+                        color: "rgba(104, 201, 242, 1)",
+                        verticalAlign: "middle",
+                      }}
+                    />
+                    Zahnarzt
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                    {treatmentRequest.doctor
+                      ? `${treatmentRequest.doctor.firstName} ${treatmentRequest.doctor.lastName}`
+                      : "—"}
+                  </Typography>
+                </Box>
+                {treatmentRequest.requestedBy && (
+                  <Box>
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: "rgba(107, 107, 107, 1)",
+                        fontSize: "10px",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.5px",
+                      }}
+                    >
+                      <Person
+                        sx={{
+                          fontSize: 12,
+                          mr: 0.5,
+                          color: "rgba(104, 201, 242, 1)",
+                          verticalAlign: "middle",
+                        }}
+                      />
+                      Angefordert von
+                    </Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                      {`${treatmentRequest.requestedBy.firstName || ""} ${treatmentRequest.requestedBy.lastName || ""}`.trim() ||
+                        "—"}
+                    </Typography>
+                  </Box>
+                )}
+              </Box>
+            </Box>
+          </Box>
+        </Paper>
+
+        {/* Right Column: Action Buttons Section */}
+        {showActionSection && (
+          <Paper
+            sx={{
+              borderRadius: "12px",
+              background: "white",
+              overflow: "hidden",
+              boxShadow: "0px 2px 8px rgba(0, 0, 0, 0.08)",
+              border: "1px solid rgba(0,0,0,0.05)",
+              width: 280,
+              flexShrink: 0,
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
+            <Box
+              sx={{
+                p: 2,
                 background:
-                  treatmentRequest?.status !== "pending"
-                    ? "rgba(0, 0, 0, 0.12)"
-                    : "linear-gradient(90deg, #87C133 0%, #68C9F2 100%)",
-                width: "100%",
-                fontSize: "14px",
-                fontWeight: "500",
-                boxShadow: "1px 2px 1px 0px rgba(0, 0, 0, 0.25)",
-                marginBottom: "12px",
+                  "linear-gradient(90deg, rgba(135, 193, 51, 0.1) 0%, rgba(104, 201, 242, 0.1) 100%)",
+                borderBottom: "1px solid rgba(0,0,0,0.05)",
+                display: "flex",
+                alignItems: "center",
+                gap: 1,
               }}
-              disabled={treatmentRequest?.status !== "pending"}
             >
-              Antrag bearbeiten
-            </ButtonBlock>
-
-            {/* Doctor Action Buttons */}
-            {canApproveReject && (
-              <>
-                <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
-                  Aktionen von Arzt
-                </Typography>
-                <Stack gap="12px">
+              <Assignment
+                sx={{ fontSize: 20, color: "rgba(104, 201, 242, 1)" }}
+              />
+              <Typography
+                variant="subtitle1"
+                sx={{ fontWeight: 600, fontSize: "14px" }}
+              >
+                Aktion erforderlich
+              </Typography>
+            </Box>
+            <Box
+              sx={{
+                p: 2,
+                display: "flex",
+                flexDirection: "column",
+                gap: 1.5,
+                flex: 1,
+              }}
+            >
+              {canApproveReject && (
+                <>
                   <ButtonBlock
-                    startIcon={<Check />}
                     onClick={handleApprove}
                     disabled={approveMutation.isPending}
                     style={{
-                      borderRadius: "40px",
-                      height: "40px",
+                      borderRadius: "8px",
+                      flex: 1,
                       color: "white",
-                      background:
-                        "linear-gradient(90deg, #4CAF50 0%, #45A049 100%)",
+                      background: "#4CAF50",
                       width: "100%",
-                      fontSize: "14px",
-                      fontWeight: "500",
-                      boxShadow: "1px 2px 1px 0px rgba(0, 0, 0, 0.25)",
+                      fontSize: "16px",
+                      fontWeight: "600",
+                      boxShadow: "0px 2px 4px rgba(76, 175, 80, 0.3)",
+                      flexDirection: "column",
+                      gap: "8px",
+                      justifyContent: "center",
+                      alignItems: "center",
                     }}
                   >
-                    {approveMutation.isPending
-                      ? "Genehmigung..."
-                      : "Genehmigen"}
+                    <Check sx={{ fontSize: 48 }} />
+                    {approveMutation.isPending ? "..." : "Genehmigen"}
                   </ButtonBlock>
                   <ButtonBlock
-                    startIcon={<Close />}
                     onClick={handleReject}
                     disabled={rejectMutation.isPending}
                     style={{
-                      borderRadius: "40px",
-                      height: "40px",
+                      borderRadius: "8px",
+                      flex: 1,
                       color: "white",
-                      backgroundColor: "rgba(220, 53, 69, 1)",
+                      background: "#DC3545",
                       width: "100%",
-                      fontSize: "14px",
-                      fontWeight: "500",
-                      boxShadow: "1px 2px 1px 0px rgba(0, 0, 0, 0.25)",
+                      fontSize: "16px",
+                      fontWeight: "600",
+                      boxShadow: "0px 2px 4px rgba(220, 53, 69, 0.3)",
+                      flexDirection: "column",
+                      gap: "8px",
+                      justifyContent: "center",
+                      alignItems: "center",
                     }}
                   >
-                    {rejectMutation.isPending ? "Ablehnung..." : "Ablehnen"}
+                    <Close sx={{ fontSize: 48 }} />
+                    {rejectMutation.isPending ? "..." : "Ablehnen"}
                   </ButtonBlock>
-                </Stack>
-              </>
-            )}
-          </Paper>
-          <Paper
-            sx={{
-              borderRadius: "10px",
-              background: "rgba(255, 255, 255, 1)",
-              padding: "26px 40px",
-              boxShadow: "0px 4px 8px 0px rgba(0, 0, 0, 0.25)",
-            }}
-          >
-            <Grid container spacing={2}>
-              <Grid size={12}>
-                <Typography variant="body2" color="text.secondary">
-                  Patientenname
-                </Typography>
-                <Typography variant="body1" sx={{ mt: 1 }}>
-                  {patientData?.firstName} {patientData?.lastName}
-                </Typography>
-              </Grid>
-              <Grid size={12}>
-                <Typography variant="body2" color="text.secondary">
-                  Patientennummer
-                </Typography>
-                <Typography variant="body1" sx={{ mt: 1 }}>
-                  {patientData?.patientNumber}
-                </Typography>
-              </Grid>
-              <Grid size={12}>
-                <Typography variant="body2" color="text.secondary">
-                  Geschlecht
-                </Typography>
-                <Typography variant="body1" sx={{ mt: 1 }}>
-                  {patientData?.gender}
-                </Typography>
-              </Grid>
-              <Grid size={12}>
-                <Typography variant="body2" color="text.secondary">
-                  Geburtstag
-                </Typography>
-                <Typography variant="body1" sx={{ mt: 1 }}>
-                  {new Date(patientData?.birthDate).toLocaleDateString("de-DE")}{" "}
-                  ( {isoDateToAge(patientData?.birthDate)} )
-                </Typography>
-              </Grid>
-            </Grid>
-          </Paper>
-          <Paper
-            sx={{
-              borderRadius: "10px",
-              background: "rgba(255, 255, 255, 1)",
-              padding: "26px 40px",
-              boxShadow: "0px 4px 8px 0px rgba(0, 0, 0, 0.25)",
-            }}
-          >
-            <Grid container spacing={2}>
-              <Grid size={12}>
-                <Typography variant="body2" color="text.secondary">
-                  Praxis
-                </Typography>
-                <Typography variant="body1" sx={{ mt: 1 }}>
-                  {treatmentRequest.clinic?.name || "N/A"}
-                </Typography>
-              </Grid>
-              <Grid size={12}>
-                <Typography variant="body2" color="text.secondary">
-                  Zahnarzt
-                </Typography>
-                <Typography variant="body1" sx={{ mt: 1 }}>
-                  {`${treatmentRequest.doctor?.firstName || ""} ${
-                    treatmentRequest.doctor?.lastName || ""
-                  }`.trim() || "N/A"}
-                </Typography>
-              </Grid>
-              {treatmentRequest.deliveryDate && (
-                <Grid size={12}>
-                  <Typography variant="body2" color="text.secondary">
-                    Liefertermin
-                  </Typography>
-                  <Typography variant="body1" sx={{ mt: 1 }}>
-                    {new Date(treatmentRequest.deliveryDate).toLocaleDateString(
-                      "de-DE"
-                    )}
-                  </Typography>
-                </Grid>
+                </>
               )}
-            </Grid>
+              {canMarkReceivedFromLab && (
+                <ButtonBlock
+                  onClick={handleMarkReceivedFromLab}
+                  disabled={markReceivedFromLabMutation.isPending}
+                  style={{
+                    borderRadius: "8px",
+                    flex: 1,
+                    color: "white",
+                    background:
+                      "linear-gradient(90deg, #00897B 0%, #26A69A 100%)",
+                    width: "100%",
+                    fontSize: "16px",
+                    fontWeight: "600",
+                    boxShadow: "0px 2px 4px rgba(0, 137, 123, 0.3)",
+                    flexDirection: "column",
+                    gap: "8px",
+                    justifyContent: "center",
+                    alignItems: "center",
+                  }}
+                >
+                  <Inventory sx={{ fontSize: 48 }} />
+                  {markReceivedFromLabMutation.isPending
+                    ? "..."
+                    : "Zustellung aus dem Labor bestätigen"}
+                </ButtonBlock>
+              )}
+              {canMarkDeliveredToPatient && (
+                <ButtonBlock
+                  onClick={handleMarkDeliveredToPatient}
+                  disabled={markDeliveredToPatientMutation.isPending}
+                  style={{
+                    borderRadius: "8px",
+                    flex: 1,
+                    color: "white",
+                    background:
+                      "linear-gradient(90deg, #87C133 0%, #68C9F2 100%)",
+                    width: "100%",
+                    fontSize: "16px",
+                    fontWeight: "600",
+                    boxShadow: "0px 2px 4px rgba(104, 201, 242, 0.3)",
+                    flexDirection: "column",
+                    gap: "8px",
+                    justifyContent: "center",
+                    alignItems: "center",
+                  }}
+                >
+                  <CardGiftcard sx={{ fontSize: 48 }} />
+                  {markDeliveredToPatientMutation.isPending
+                    ? "..."
+                    : "Zustellung an Patient:in bestätigen"}
+                </ButtonBlock>
+              )}
+            </Box>
           </Paper>
-          {/* Request Status Card */}
-        </Stack>
+        )}
       </Box>
 
-      {/* Approve Confirmation Dialog */}
+      {/* Notizen Card */}
+      {(treatmentRequest.notes || treatmentRequest.rejectionReason) && (
+        <Paper
+          sx={{
+            borderRadius: "12px",
+            background: "white",
+            overflow: "hidden",
+            boxShadow: "0px 2px 8px rgba(0, 0, 0, 0.08)",
+            border: "1px solid rgba(0,0,0,0.05)",
+            p: 2,
+          }}
+        >
+          <Stack gap={2}>
+            {treatmentRequest.notes && (
+              <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1.5 }}>
+                <Notes
+                  sx={{
+                    fontSize: 20,
+                    color: "rgba(104, 201, 242, 1)",
+                    mt: 0.25,
+                  }}
+                />
+                <Box>
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: "rgba(107, 107, 107, 1)",
+                      fontSize: "10px",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.5px",
+                      display: "block",
+                      mb: 0.5,
+                    }}
+                  >
+                    Notizen •{" "}
+                    {treatmentRequest.requestedBy
+                      ? `${treatmentRequest.requestedBy.firstName || ""} ${treatmentRequest.requestedBy.lastName || ""}`.trim()
+                      : ""}
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    sx={{ fontWeight: 500, color: "rgba(33, 33, 33, 1)" }}
+                  >
+                    {treatmentRequest.notes}
+                  </Typography>
+                </Box>
+              </Box>
+            )}
+            {treatmentRequest.rejectionReason && (
+              <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1.5 }}>
+                <Close sx={{ fontSize: 20, color: "#C62828", mt: 0.25 }} />
+                <Box>
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: "#C62828",
+                      fontSize: "10px",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.5px",
+                      display: "block",
+                      mb: 0.5,
+                    }}
+                  >
+                    Ablehnungsgrund •{" "}
+                    {treatmentRequest.rejectedBy
+                      ? `${treatmentRequest.rejectedBy.firstName || ""} ${treatmentRequest.rejectedBy.lastName || ""}`.trim()
+                      : ""}
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    sx={{ fontWeight: 500, color: "rgba(33, 33, 33, 1)" }}
+                  >
+                    {treatmentRequest.rejectionReason}
+                  </Typography>
+                </Box>
+              </Box>
+            )}
+          </Stack>
+        </Paper>
+      )}
+
+      {/* Tabs Section */}
+      <Paper
+        sx={{
+          borderRadius: "12px",
+          background: "white",
+          boxShadow: "0px 2px 8px rgba(0, 0, 0, 0.08)",
+          border: "1px solid rgba(0,0,0,0.05)",
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        <Box sx={{ borderBottom: 1, borderColor: "divider", px: 2 }}>
+          <Tabs
+            value={activeTab}
+            onChange={handleTabChange}
+            aria-label="request details tabs"
+          >
+            <Tab
+              icon={<Info sx={{ fontSize: 18 }} />}
+              iconPosition="start"
+              label="Details"
+              sx={{ textTransform: "none", fontWeight: 600, minHeight: 48 }}
+            />
+            <Tab
+              icon={<MedicalInformation sx={{ fontSize: 18 }} />}
+              iconPosition="start"
+              label="Vorgangen"
+              sx={{ textTransform: "none", fontWeight: 600, minHeight: 48 }}
+            />
+            {hasLaborzettel && (
+              <Tab
+                icon={<Description sx={{ fontSize: 18 }} />}
+                iconPosition="start"
+                label="Laborzettel"
+                sx={{ textTransform: "none", fontWeight: 600, minHeight: 48 }}
+              />
+            )}
+          </Tabs>
+        </Box>
+
+        <Box sx={{ p: 2, flex: 1, overflow: "auto" }}>
+          {/* Tab 1: Details - Labor-Stand and Aktivitätsverlauf */}
+          <TabPanel value={activeTab} index={0}>
+            <Stack gap={2}>
+              {showLabStatusSection && requestId && (
+                <LabStatusSection requestId={requestId} variant="horizontal" />
+              )}
+              {requestId && (
+                <RequestActivitySection
+                  requestId={requestId}
+                  variant="horizontal"
+                />
+              )}
+            </Stack>
+          </TabPanel>
+
+          {/* Tab 2: Operations - Operations and Selected Teeth */}
+          <TabPanel value={activeTab} index={1}>
+            {patientData && (
+              <RequestSummary
+                selectedShade={treatmentRequest.shade}
+                selectedImpression={treatmentRequest.impression}
+                configuredOperations={configuredOperations}
+                selectedTeethRequest={selectedTeethRequest}
+                selectedConnectorsRequest={selectedConnectorsRequest}
+                teethRequestColorMap={teethRequestColorMap}
+                connectorsRequestColorMap={connectorsRequestColorMap}
+                handleEditOperation={() => {}}
+                handleDeleteOperation={() => {}}
+                handleEditPatientInfo={() => {}}
+                hideActionButtons={true}
+              />
+            )}
+          </TabPanel>
+
+          {/* Tab 3: Laborzettel (only if exists) */}
+          {hasLaborzettel && (
+            <TabPanel value={activeTab} index={2}>
+              {requestId && <LaborzettelSection requestId={requestId} />}
+            </TabPanel>
+          )}
+        </Box>
+      </Paper>
+
+      {/* Approve Dialog */}
       <Dialog
         open={approveDialogOpen}
         onClose={handleCancelApprove}
-        aria-labelledby="approve-dialog-title"
         maxWidth="sm"
         fullWidth
+        slotProps={{ paper: { sx: { borderRadius: "12px" } } }}
       >
-        <DialogTitle id="approve-dialog-title">
+        <DialogTitle sx={{ fontWeight: 600 }}>
           Behandlungsantrag genehmigen
         </DialogTitle>
         <DialogContent>
@@ -521,11 +1105,11 @@ export default function RequestDetails() {
             placeholder="Zusätzliche Notizen zur Genehmigung..."
           />
         </DialogContent>
-        <DialogActions>
+        <DialogActions sx={{ p: 2.5, pt: 1 }}>
           <ButtonBlock
             onClick={handleCancelApprove}
             style={{
-              borderRadius: "40px",
+              borderRadius: "8px",
               height: "40px",
               color: "rgba(107, 107, 107, 1)",
               width: "120px",
@@ -539,13 +1123,13 @@ export default function RequestDetails() {
             onClick={handleConfirmApprove}
             disabled={approveMutation.isPending}
             style={{
-              borderRadius: "40px",
+              borderRadius: "8px",
               height: "40px",
               color: "white",
-              background: "linear-gradient(90deg, #4CAF50 0%, #45A049 100%)",
+              background: "#4CAF50",
               width: "120px",
               fontSize: "14px",
-              fontWeight: "500",
+              fontWeight: "600",
             }}
           >
             {approveMutation.isPending ? "..." : "Genehmigen"}
@@ -553,15 +1137,15 @@ export default function RequestDetails() {
         </DialogActions>
       </Dialog>
 
-      {/* Reject Confirmation Dialog */}
+      {/* Reject Dialog */}
       <Dialog
         open={rejectDialogOpen}
         onClose={handleCancelReject}
-        aria-labelledby="reject-dialog-title"
         maxWidth="sm"
         fullWidth
+        slotProps={{ paper: { sx: { borderRadius: "12px" } } }}
       >
-        <DialogTitle id="reject-dialog-title">
+        <DialogTitle sx={{ fontWeight: 600 }}>
           Behandlungsantrag ablehnen
         </DialogTitle>
         <DialogContent>
@@ -582,11 +1166,11 @@ export default function RequestDetails() {
             required
           />
         </DialogContent>
-        <DialogActions>
+        <DialogActions sx={{ p: 2.5, pt: 1 }}>
           <ButtonBlock
             onClick={handleCancelReject}
             style={{
-              borderRadius: "40px",
+              borderRadius: "8px",
               height: "40px",
               color: "rgba(107, 107, 107, 1)",
               width: "120px",
@@ -600,13 +1184,13 @@ export default function RequestDetails() {
             onClick={handleConfirmReject}
             disabled={rejectMutation.isPending || !rejectReason.trim()}
             style={{
-              borderRadius: "40px",
+              borderRadius: "8px",
               height: "40px",
               color: "white",
-              backgroundColor: "rgba(220, 53, 69, 1)",
+              background: "#DC3545",
               width: "120px",
               fontSize: "14px",
-              fontWeight: "500",
+              fontWeight: "600",
             }}
           >
             {rejectMutation.isPending ? "..." : "Ablehnen"}

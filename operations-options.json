@@ -839,13 +839,16 @@
     "parents": [
       {
         "label": "ohne Provisorium",
-        "value": "ohne Provisorium"
+        "value": "ohne Provisorium",
+        "onlyShowChildrenIfSelected": true,
+        "children": [{ "type": "file-upload", "label": "Datei Hochladen" }]
       },
       {
         "label": "mit Provisorium",
         "value": "mit Provisorium",
         "onlyShowChildrenIfSelected": true,
         "children": [
+          { "type": "file-upload", "label": "Datei Hochladen" },
           {
             "type": "drawing",
             "label": ""
@@ -900,13 +903,15 @@
       {
         "label": "ohne Provisorium",
         "value": "ohne Provisorium",
-        "onlyShowChildrenIfSelected": true
+        "onlyShowChildrenIfSelected": true,
+        "children": [{ "type": "file-upload", "label": "Datei Hochladen" }]
       },
       {
         "label": "mit Provisorium",
         "value": "mit Provisorium",
         "onlyShowChildrenIfSelected": true,
         "children": [
+          { "type": "file-upload", "label": "Datei Hochladen" },
           {
             "type": "drawing",
             "label": ""

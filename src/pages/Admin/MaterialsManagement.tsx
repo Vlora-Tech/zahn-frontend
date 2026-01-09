@@ -48,6 +48,8 @@ import { MaterialRequestBody } from "../../api/materials/types";
 import { useQueryClient } from "@tanstack/react-query";
 import S3FileUpload, { S3UploadResponse } from "../../components/S3FileUpload";
 import ButtonBlock from "../../components/atoms/ButtonBlock";
+import { formatDateDE } from "../../utils/formatDate";
+import DateText from "../../components/atoms/DateText";
 
 // Define a theme to match the app's color scheme
 const theme = createTheme({
@@ -412,27 +414,29 @@ const MaterialsManagement: React.FC = () => {
                         </TableCell>
                         <TableCell>
                           <Stack direction="row" spacing={0.5} flexWrap="wrap">
-                            {material.operations?.slice(0, 2).map(
-                              (
-                                operation: {
-                                  _id: string;
-                                  name: string;
-                                  category: string;
-                                },
-                                index: number
-                              ) => (
-                                <Chip
-                                  key={index}
-                                  label={operation.name}
-                                  size="small"
-                                  sx={{
-                                    backgroundColor: "#e8f5e9",
-                                    color: "#2e7d32",
-                                    fontSize: "12px",
-                                  }}
-                                />
-                              )
-                            )}
+                            {material.operations
+                              ?.slice(0, 2)
+                              .map(
+                                (
+                                  operation: {
+                                    _id: string;
+                                    name: string;
+                                    category: string;
+                                  },
+                                  index: number
+                                ) => (
+                                  <Chip
+                                    key={index}
+                                    label={operation.name}
+                                    size="small"
+                                    sx={{
+                                      backgroundColor: "#e8f5e9",
+                                      color: "#2e7d32",
+                                      fontSize: "12px",
+                                    }}
+                                  />
+                                )
+                              )}
                             {material.operations?.length > 2 && (
                               <Chip
                                 label={`+${
@@ -447,9 +451,7 @@ const MaterialsManagement: React.FC = () => {
                         </TableCell>
                         <TableCell>
                           <Typography variant="body2" color="text.secondary">
-                            {new Date(material.createdAt).toLocaleDateString(
-                              "de-DE"
-                            )}
+                            <DateText date={material.createdAt} />
                           </Typography>
                         </TableCell>
                         <TableCell>
@@ -559,6 +561,8 @@ const MaterialsManagement: React.FC = () => {
                         onUploadError={(error) =>
                           console.error("Upload error:", error)
                         }
+                        acceptedFileTypes="image/*"
+                        maxFileSize={5 * 1024 * 1024} // 5MB
                         currentFile={uploadedFile}
                         onRemove={handleFileRemove}
                         label="Upload Material Image"

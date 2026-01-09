@@ -51,7 +51,7 @@ const ButtonBlock: React.FC<IButtonBlockProps> = ({
                 "& > .MuiButton-icon": {
                     marginRight: "8px"
                 },
-                textTransform: 'capitalize',
+                textTransform: 'none',
                 height: '40px',
                 padding: '8px auto',
                 borderRadius: '8px',

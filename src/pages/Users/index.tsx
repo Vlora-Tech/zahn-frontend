@@ -17,6 +17,10 @@ import {
   Pagination,
   Stack,
   Alert,
+  FormControl,
+  Select,
+  MenuItem,
+  SelectChangeEvent,
 } from "@mui/material";
 import {
   Search,
@@ -25,11 +29,13 @@ import {
   Print,
   Refresh,
   Visibility,
+  FilterAlt,
 } from "@mui/icons-material";
 import { debounce } from "lodash";
 import ButtonBlock from "../../components/atoms/ButtonBlock";
 import { useNavigate } from "react-router-dom";
 import { useGetUsers } from "../../api/users/hooks";
+import { useGetClinics } from "../../api/clinics/hooks";
 import StyledLink from "../../components/atoms/StyledLink";
 import TableRowsLoader from "../../components/molecules/TableRowsLoader";
 import EmptyTableState from "../../components/molecules/EmptyTableState";
@@ -41,14 +47,18 @@ const Nurses = () => {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
+  const [clinicFilter, setClinicFilter] = useState<string>("all");
 
   const navigate = useNavigate();
+
+  const { data: clinics } = useGetClinics({ limit: 100 });
 
   const { data: nurses, isLoading, error } = useGetUsers({
     page,
     sortBy: orderBy,
     sortOrder: order,
     search,
+    ...(clinicFilter !== "all" && { clinic: clinicFilter }),
   });
 
   // Debounced search function
@@ -101,6 +111,11 @@ const Nurses = () => {
     setSearchInput(event.target.value);
   };
 
+  const handleClinicFilterChange = (event: SelectChangeEvent<string>) => {
+    setClinicFilter(event.target.value);
+    setPage(1);
+  };
+
   const isSelected = (id: string) => selected.indexOf(id) !== -1;
 
   const hasData = nurses?.data && nurses.data.length > 0;
@@ -113,7 +128,7 @@ const Nurses = () => {
           color: "rgba(146, 146, 146, 1)",
         }}
       >
-        Pflegefachkraftliste
+        Pflegefachkräfte
       </Typography>
       
       {/* Error Alert */}
@@ -140,22 +155,42 @@ const Nurses = () => {
             p: "16px 28px",
           }}
         >
-          <TextField
-            variant="outlined"
-            size="small"
-            placeholder="Suchen"
-            value={searchInput}
-            slotProps={{
-              input: {
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <Search />
+          <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+            <TextField
+              variant="outlined"
+              size="small"
+              placeholder="Name oder Username suchen..."
+              value={searchInput}
+              sx={{ minWidth: 500 }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Search fontSize="small" />
                   </InputAdornment>
                 ),
-              },
-            }}
-            onChange={handleSearch}
-          />
+              }}
+              onChange={handleSearch}
+            />
+            <FormControl size="small" sx={{ minWidth: 180 }}>
+              <Select
+                value={clinicFilter}
+                onChange={handleClinicFilterChange}
+                displayEmpty
+                startAdornment={
+                  <InputAdornment position="start">
+                    <FilterAlt fontSize="small" sx={{ color: "rgba(104, 201, 242, 1)" }} />
+                  </InputAdornment>
+                }
+              >
+                <MenuItem value="all">Alle Praxen</MenuItem>
+                {clinics?.data?.map((clinic) => (
+                  <MenuItem key={clinic._id} value={clinic._id}>
+                    {clinic.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Box>
           <Box>
             <ButtonBlock
               startIcon={<Add />}

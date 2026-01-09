@@ -7,6 +7,8 @@ import LoadingSpinner from "../../components/atoms/LoadingSpinner";
 import PatientDetails from "../Patients/PatientDetails";
 import { Add } from "@mui/icons-material";
 import { useMemo } from "react";
+import { formatDateDE } from "../../utils/formatDate";
+import DateText from "../../components/atoms/DateText";
 
 const RequestCards = (props) => {
   const { request } = props;
@@ -107,7 +109,7 @@ const RequestCards = (props) => {
         }}
       >
         {request?.createdAt
-          ? new Date(request.createdAt).toLocaleDateString("de-DE")
+          ? <DateText date={request.createdAt} />
           : "-"}{" "}
         - {request?.status || "-"}
       </Typography>

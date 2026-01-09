@@ -46,6 +46,8 @@ import {
 import { CreateCategoryDto } from "../../api/categories/types";
 import { useQueryClient } from "@tanstack/react-query";
 import ButtonBlock from "../../components/atoms/ButtonBlock";
+import { formatDateDE } from "../../utils/formatDate";
+import DateText from "../../components/atoms/DateText";
 
 // Define a theme to match the app's color scheme
 const theme = createTheme({
@@ -399,9 +401,7 @@ const CategoriesManagement: React.FC = () => {
                         </TableCell>
                         <TableCell>
                           <Typography variant="body2" color="text.secondary">
-                            {new Date(category.createdAt).toLocaleDateString(
-                              "de-DE"
-                            )}
+                            <DateText date={category.createdAt} />
                           </Typography>
                         </TableCell>
                         <TableCell>

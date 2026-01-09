@@ -10,7 +10,9 @@ import ListItemIcon from "@mui/material/ListItemIcon";
 import logo from "../assets/logo.svg";
 import headerLogo from "../assets/header-logo.svg";
 import { Divider, Paper, Stack, Toolbar, Typography } from "@mui/material";
+import { Warehouse } from "@mui/icons-material";
 import SvgIcon from "./SvgIcon";
+import LabTechnicianIcon from "./LabTechnicianIcon";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
@@ -146,6 +148,18 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 roles: ["superadmin", "doctor", "nurse"],
               },
               {
+                icon: "lab",
+                link: "/lab/queue",
+                activePrefix: "/lab",
+                roles: ["superadmin", "lab_technician"],
+              },
+              {
+                icon: "inventory",
+                link: "/inventory/materials",
+                activePrefix: "/inventory",
+                roles: ["superadmin", "lab_technician"],
+              },
+              {
                 icon: "clinic",
                 link: "/clinics",
                 roles: ["superadmin"],
@@ -161,6 +175,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 roles: ["superadmin"],
               },
               {
+                icon: "lab-technician",
+                link: "/lab-technicians",
+                roles: ["superadmin"],
+              },
+              {
                 icon: "settings",
                 link: "/admin",
                 roles: ["superadmin"],
@@ -169,8 +188,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               //   icon: "notification",
               //   link: "/notification",
               // },
-            ].map(
-              ({ icon, link, roles }) =>
+            ].map(({ icon, link, roles, activePrefix }) => {
+              const activePath = activePrefix || link;
+              const isActive = location?.pathname.startsWith(activePath);
+              return (
                 roles.includes(user?.role || "") && (
                   <ListItem
                     key={link}
@@ -181,7 +202,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                       overflow: "hidden",
                       flex: 1,
 
-                      ...(location?.pathname.startsWith(link)
+                      ...(isActive
                         ? {
                             background: "rgba(244, 244, 244, 0.92)",
                           }
@@ -211,27 +232,48 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                           {
                             minWidth: 0,
                             justifyContent: "center",
-                            color: location?.pathname.startsWith(link)
-                              ? "rgba(135, 193, 51, 1)"
-                              : "#fff",
+                            color: isActive ? "rgba(135, 193, 51, 1)" : "#fff",
                           },
                         ]}
                       >
-                        <SvgIcon
-                          icon={icon}
-                          width="32px"
-                          height="32px"
-                          color={
-                            location?.pathname.startsWith(link)
-                              ? "rgba(135, 193, 51, 1)"
-                              : "rgba(244, 244, 244, 1)"
-                          }
-                        />
+                        {icon === "lab-technician" ? (
+                          <LabTechnicianIcon
+                            width="32px"
+                            height="32px"
+                            color={
+                              isActive
+                                ? "rgba(135, 193, 51, 1)"
+                                : "rgba(244, 244, 244, 1)"
+                            }
+                          />
+                        ) : icon === "inventory" ? (
+                          <Warehouse
+                            sx={{
+                              width: "32px",
+                              height: "32px",
+                              color: isActive
+                                ? "rgba(135, 193, 51, 1)"
+                                : "rgba(244, 244, 244, 1)",
+                            }}
+                          />
+                        ) : (
+                          <SvgIcon
+                            icon={icon}
+                            width="32px"
+                            height="32px"
+                            color={
+                              isActive
+                                ? "rgba(135, 193, 51, 1)"
+                                : "rgba(244, 244, 244, 1)"
+                            }
+                          />
+                        )}
                       </ListItemIcon>
                     </ListItemButton>
                   </ListItem>
                 )
-            )}
+              );
+            })}
           </List>
         )}
 
@@ -396,6 +438,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                     fontWeight: "600",
                     fontSize: "16px",
                     color: "rgba(0, 0, 0, 1)",
+                    fontVariantNumeric: "tabular-nums",
                   }}
                 >
                   {formattedTime} Uhr
