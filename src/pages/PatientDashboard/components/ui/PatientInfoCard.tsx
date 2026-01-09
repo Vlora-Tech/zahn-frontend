@@ -3,7 +3,6 @@ import ButtonBlock from "../../../../components/atoms/ButtonBlock";
 import { Edit } from "@mui/icons-material";
 import TextFieldBlockNoForm from "../../../../components/molecules/form-fields/TextFieldBlockNoForm";
 import { isoDateToAge } from "../../../../utils/dateToAge";
-import { formatDateDE } from "../../../../utils/formatDate";
 import DateText from "../../../../components/atoms/DateText";
 
 export interface PatientInfo {
@@ -20,6 +19,11 @@ export interface PatientInfo {
   insurance: string;
   notes: string;
 }
+
+const GENDERS = {
+  male: "Männlich",
+  female: "Weiblich",
+};
 
 const PatientInfoCard: React.FC<{
   patientData: PatientInfo;
@@ -64,18 +68,20 @@ const PatientInfoCard: React.FC<{
               value: `${patientData.firstName} ${patientData.lastName}`,
             },
             { label: "Patientennummer", value: patientData.patientNumber },
-            { 
-              label: "Geschlecht", 
-              value: patientData.gender === "male" ? "Männlich" : 
-                     patientData.gender === "female" ? "Weiblich" : 
-                     patientData.gender === "other" ? "Divers" : 
-                     patientData.gender || ""
+            {
+              label: "Geschlecht",
+              value: patientData.gender ? GENDERS[patientData.gender] : "",
             },
             {
               label: "Geburtstag",
               value: patientData.birthDate ? (
-                <><DateText date={patientData.birthDate} /> ( {isoDateToAge(patientData.birthDate)} J. )</>
-              ) : "-",
+                <>
+                  <DateText date={patientData.birthDate} /> ({" "}
+                  {isoDateToAge(patientData.birthDate)} J. )
+                </>
+              ) : (
+                "-"
+              ),
             },
           ].map((item) => (
             <Stack key={item.label} sx={{ textAlign: "left", width: "250px" }}>

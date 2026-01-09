@@ -54,7 +54,7 @@ export interface FilterLabRequestsParams {
   clinic?: string;
   search?: string;
   operation?: string;
-  sortBy?: "requestNumber" | "deliveryDate";
+  sortBy?: "requestNumber" | "deliveryDate" | "createdAt";
   sortOrder?: "asc" | "desc";
 }
 
