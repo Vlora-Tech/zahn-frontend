@@ -2,7 +2,7 @@ import axios, { AxiosInstance } from "axios";
 
 // Environment variables
 //const apiBaseUrl = import.meta.env.VITE_APP_API_BASE_URL;
-const apiBaseUrl =  https://zahn-care.zahnder.com/api/auth/login;
+const apiBaseUrl =  "https://zahn-care.zahnder.com/api/auth/login";
 // Create an Axios instance with default configurations
 const client: AxiosInstance = axios.create({
   baseURL: apiBaseUrl,
