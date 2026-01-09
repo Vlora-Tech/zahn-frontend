@@ -150,7 +150,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               {
                 icon: "lab",
                 link: "/lab/queue",
-                activePrefix: "/lab",
+                activePrefix: "/lab/",
                 roles: ["superadmin", "lab_technician"],
               },
               {
@@ -177,6 +177,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               {
                 icon: "lab-technician",
                 link: "/lab-technicians",
+                activePrefix: "/lab-technicians",
                 roles: ["superadmin"],
               },
               {
@@ -191,6 +192,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             ].map(({ icon, link, roles, activePrefix }) => {
               const activePath = activePrefix || link;
               const isActive = location?.pathname.startsWith(activePath);
+
               return (
                 roles.includes(user?.role || "") && (
                   <ListItem
