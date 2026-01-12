@@ -144,7 +144,7 @@ const TOOTH_CONNECTORS: ToothConnector[] = [
 // Helper function to check if connector should be shown
 const shouldShowConnector = (
   connector: ToothConnector,
-  selectedTeeth: number[]
+  selectedTeeth: number[],
 ): boolean => {
   return connector.teeth.every((tooth) => selectedTeeth.includes(tooth));
 };
@@ -182,6 +182,8 @@ interface TeethSelectionProps {
   teethColorMap?: Record<number, string>;
   connectorsColorMap?: Record<string, string>;
   style?: React.CSSProperties;
+  /** Compact mode for displaying in cards - smaller size, no interactions */
+  compact?: boolean;
 }
 
 const TeethSelection: React.FC<TeethSelectionProps> = (props) => {
@@ -195,11 +197,12 @@ const TeethSelection: React.FC<TeethSelectionProps> = (props) => {
     teethColorMap,
     connectorsColorMap,
     style = {},
+    compact = false,
   } = props;
 
   const [hoveredTooth, setHoveredTooth] = useState<string | null>(null);
   const [lastSelectedTooth, setLastSelectedTooth] = useState<number | null>(
-    null
+    null,
   );
 
   // Helper function to determine which jaw a tooth belongs to
@@ -246,9 +249,9 @@ const TeethSelection: React.FC<TeethSelectionProps> = (props) => {
   const visibleConnectors = useMemo(
     () =>
       TOOTH_CONNECTORS.filter((connector) =>
-        shouldShowConnector(connector, selectedTeeth)
+        shouldShowConnector(connector, selectedTeeth),
       ),
-    [selectedTeeth]
+    [selectedTeeth],
   );
 
   const handleToothClick = (event: React.MouseEvent<SVGElement>): void => {
@@ -258,12 +261,12 @@ const TeethSelection: React.FC<TeethSelectionProps> = (props) => {
 
     // 1) If a tooth was clicked (inside a group with id starting with "tooth-")
     const toothGroup = clickedElement.closest(
-      "g[id^='tooth-']"
+      "g[id^='tooth-']",
     ) as SVGGElement | null;
 
     // 2) Or if a connector was clicked (element with id starting with "connector-")
     const connectorElement = clickedElement.closest(
-      "[id^='connector-']"
+      "[id^='connector-']",
     ) as SVGElement | null;
 
     if (!toothGroup && !connectorElement) return; // Not a selectable element
@@ -333,8 +336,8 @@ const TeethSelection: React.FC<TeethSelectionProps> = (props) => {
 
     return Boolean(
       selectedConnectors?.find(
-        (connector) => connector.join("-") === parsedConnectorId
-      )
+        (connector) => connector.join("-") === parsedConnectorId,
+      ),
     );
   };
 
@@ -394,13 +397,15 @@ const TeethSelection: React.FC<TeethSelectionProps> = (props) => {
       xmlns="http://www.w3.org/2000/svg"
       fill="none"
       viewBox="0 0 337 580"
-      onClick={handleToothClick}
+      onClick={compact ? undefined : handleToothClick}
       width="100%"
       height="100%"
       style={{
-        cursor: readOnly ? "default" : "pointer",
-        maxWidth: "450px",
+        cursor: readOnly || compact ? "default" : "pointer",
+        maxWidth: compact ? "120px" : "450px",
         height: "auto",
+        // Ensure minimum touch target size on mobile (30px per tooth approximately)
+        minWidth: compact ? "80px" : "200px",
         ...style,
       }}
     >

@@ -11,11 +11,12 @@ import {
   CircularProgress,
   Tabs,
   Tab,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import {
   Person,
   LocalHospital,
-  Assignment,
   AccessTime,
   Badge,
   Wc,
@@ -29,9 +30,10 @@ import {
   CheckCircle,
   Cancel,
   LocalShipping,
-  Description,
+  Assignment,
   Info,
   MedicalInformation,
+  FlashOn,
 } from "@mui/icons-material";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
@@ -94,6 +96,9 @@ const LabRequestDetail = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { hasRole } = useAuth();
+
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm")); // < 600px
 
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
@@ -306,7 +311,7 @@ const LabRequestDetail = () => {
           : patient?.gender;
 
   return (
-    <Stack flex="1" gap="16px" height="100%" sx={{ position: "relative" }}>
+    <Stack flex="1" gap="16px" height="100%">
       <Backdrop
         sx={{ color: "#fff", zIndex: (theme) => theme.zIndex.drawer + 1 }}
         open={isActionPending}
@@ -314,23 +319,15 @@ const LabRequestDetail = () => {
         <CircularProgress color="inherit" />
       </Backdrop>
 
-      <IconButton
-        onClick={handleGoBack}
+      {/* Top Section: Hero Card + Actions */}
+      <Box
         sx={{
-          position: "absolute",
-          top: 0,
-          left: -56,
-          backgroundColor: "white",
-          boxShadow: "0px 2px 4px rgba(0,0,0,0.1)",
-          "&:hover": { backgroundColor: "rgba(245,245,245,1)" },
-          zIndex: 10,
+          display: "flex",
+          flexDirection: { xs: "column", md: "row" },
+          gap: "16px",
+          alignItems: { xs: "stretch", md: "stretch" },
         }}
       >
-        <ArrowBack />
-      </IconButton>
-
-      {/* Top Section: Hero Card + Actions */}
-      <Box sx={{ display: "flex", gap: "16px", alignItems: "stretch" }}>
         {/* Hero Card */}
         <Paper
           sx={{
@@ -342,182 +339,202 @@ const LabRequestDetail = () => {
             overflow: "hidden",
           }}
         >
-          <Box sx={{ display: "flex", flexWrap: "wrap" }}>
-            {/* Auftrag Section */}
-            <Box
+          {/* Row 1: Back Button + Auftrag Section */}
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: { xs: "column", md: "row" },
+              alignItems: { xs: "stretch", md: "center" },
+              p: 2.5,
+              borderBottom: "1px solid rgba(0,0,0,0.05)",
+              gap: { xs: 2, md: 3 },
+            }}
+          >
+            {/* Back Button */}
+            <IconButton
+              onClick={handleGoBack}
               sx={{
-                flex: 1,
-                minWidth: 220,
-                p: 2.5,
-                borderRight: { xs: "none", md: "1px solid rgba(0,0,0,0.05)" },
-                borderBottom: {
-                  xs: "1px solid rgba(0,0,0,0.05)",
-                  md: "none",
-                },
+                backgroundColor: "white",
+                boxShadow: "0px 2px 4px rgba(0,0,0,0.1)",
+                "&:hover": { backgroundColor: "rgba(245,245,245,1)" },
+                alignSelf: { xs: "flex-start", md: "center" },
+                flexShrink: 0,
               }}
             >
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  mb: 2,
-                }}
-              >
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                  <Avatar
-                    sx={{
-                      width: 36,
-                      height: 36,
-                      backgroundColor: "rgba(255, 152, 0, 0.15)",
-                      color: "rgba(255, 152, 0, 1)",
-                    }}
-                  >
-                    <Assignment sx={{ fontSize: 20 }} />
-                  </Avatar>
-                  <Typography
-                    variant="body1"
-                    sx={{
-                      fontWeight: 700,
-                      fontFamily: "monospace",
-                      color: "rgba(33, 33, 33, 1)",
-                      letterSpacing: "0.5px",
-                    }}
-                  >
-                    {request?.requestNumber || "-"}
-                  </Typography>
-                </Box>
+              <ArrowBack />
+            </IconButton>
+
+            {/* Auftrag Info - horizontal on desktop */}
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: { xs: "column", md: "row" },
+                alignItems: { xs: "flex-start", md: "center" },
+                gap: { xs: 1.5, md: 3 },
+                flex: 1,
+                flexWrap: "wrap",
+              }}
+            >
+              {/* Request Number */}
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                <Avatar
+                  sx={{
+                    width: 36,
+                    height: 36,
+                    backgroundColor: "rgba(255, 152, 0, 0.15)",
+                    color: "rgba(255, 152, 0, 1)",
+                  }}
+                >
+                  <Assignment sx={{ fontSize: 20 }} />
+                </Avatar>
+                <Typography
+                  variant="body1"
+                  sx={{
+                    fontWeight: 700,
+                    fontFamily: "monospace",
+                    color: "rgba(33, 33, 33, 1)",
+                    letterSpacing: "0.5px",
+                  }}
+                >
+                  {request?.requestNumber || "-"}
+                </Typography>
               </Box>
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
-                <Box>
-                  <LabStatusChip status={labRequest.labStatus} />
-                </Box>
-                <Box>
-                  <Typography
-                    variant="caption"
-                    sx={{
-                      color: "rgba(107, 107, 107, 1)",
-                      fontSize: "10px",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.5px",
-                    }}
-                  >
-                    <AccessTime
-                      sx={{
-                        fontSize: 12,
-                        mr: 0.5,
-                        color: "rgba(104, 201, 242, 1)",
-                        verticalAlign: "middle",
-                      }}
-                    />
-                    Erstellt
-                  </Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                    <DateText date={labRequest.createdAt} />
-                  </Typography>
-                </Box>
-                <Box>
-                  <Typography
-                    variant="caption"
-                    sx={{
-                      color: "rgba(107, 107, 107, 1)",
-                      fontSize: "10px",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.5px",
-                    }}
-                  >
-                    <Schedule
-                      sx={{
-                        fontSize: 12,
-                        mr: 0.5,
-                        color: "rgba(104, 201, 242, 1)",
-                        verticalAlign: "middle",
-                      }}
-                    />
-                    Liefertermin
-                  </Typography>
-                  {request?.deliveryDate ? (
-                    (() => {
-                      const urgency = getDeliveryDateUrgency(
-                        request.deliveryDate,
-                      );
-                      const showIcon =
-                        urgency === "overdue" || urgency === "today";
-                      const urgencyColor =
-                        urgency === "overdue"
-                          ? "#C62828"
-                          : urgency === "today"
-                            ? "#F9A825"
-                            : undefined;
-                      return (
-                        <Typography
-                          variant="body2"
-                          sx={{
-                            fontWeight: 500,
-                            color: urgencyColor,
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 0.5,
-                          }}
-                        >
-                          <DateText date={request.deliveryDate} />
-                          {showIcon && (
-                            <ErrorIcon
-                              sx={{ fontSize: 18, color: urgencyColor }}
-                            />
-                          )}
-                        </Typography>
-                      );
-                    })()
-                  ) : (
-                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                      —
-                    </Typography>
-                  )}
-                </Box>
-                {(labRequest.assignedTechnicianName ||
-                  labRequest.assignedTechnician) && (
-                  <Box>
-                    <Typography
-                      variant="caption"
-                      sx={{
-                        color: "rgba(107, 107, 107, 1)",
-                        fontSize: "10px",
-                        textTransform: "uppercase",
-                        letterSpacing: "0.5px",
-                      }}
-                    >
-                      <Person
+
+              {/* Status */}
+              <LabStatusChip status={labRequest.labStatus} />
+
+              {/* Erstellt */}
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                <AccessTime
+                  sx={{
+                    fontSize: 18,
+                    color: "rgba(104, 201, 242, 1)",
+                  }}
+                />
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: "rgba(107, 107, 107, 1)",
+                    fontSize: "16px",
+                  }}
+                >
+                  Erstellt:
+                </Typography>
+                <Typography
+                  variant="body2"
+                  sx={{ fontWeight: 500, fontSize: "16px" }}
+                >
+                  <DateText date={labRequest.createdAt} />
+                </Typography>
+              </Box>
+
+              {/* Liefertermin */}
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                <Schedule
+                  sx={{
+                    fontSize: 18,
+                    color: "rgba(104, 201, 242, 1)",
+                  }}
+                />
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: "rgba(107, 107, 107, 1)",
+                    fontSize: "16px",
+                  }}
+                >
+                  Liefertermin:
+                </Typography>
+                {request?.deliveryDate ? (
+                  (() => {
+                    const urgency = getDeliveryDateUrgency(
+                      request.deliveryDate,
+                    );
+                    const showIcon =
+                      urgency === "overdue" || urgency === "today";
+                    const urgencyColor =
+                      urgency === "overdue"
+                        ? "#C62828"
+                        : urgency === "today"
+                          ? "#F9A825"
+                          : undefined;
+                    return (
+                      <Typography
+                        variant="body2"
                         sx={{
-                          fontSize: 12,
-                          mr: 0.5,
-                          color: "rgba(104, 201, 242, 1)",
-                          verticalAlign: "middle",
+                          fontWeight: 500,
+                          fontSize: "16px",
+                          color: urgencyColor,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 0.5,
                         }}
-                      />
-                      Zugewiesen an
-                    </Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                      {labRequest.assignedTechnicianName ||
-                        `${labRequest.assignedTechnician?.firstName || ""} ${labRequest.assignedTechnician?.lastName || ""}`.trim() ||
-                        "—"}
-                    </Typography>
-                  </Box>
+                      >
+                        <DateText date={request.deliveryDate} />
+                        {showIcon && (
+                          <ErrorIcon
+                            sx={{ fontSize: 18, color: urgencyColor }}
+                          />
+                        )}
+                      </Typography>
+                    );
+                  })()
+                ) : (
+                  <Typography
+                    variant="body2"
+                    sx={{ fontWeight: 500, fontSize: "16px" }}
+                  >
+                    —
+                  </Typography>
                 )}
               </Box>
-            </Box>
 
+              {/* Zugewiesen an */}
+              {(labRequest.assignedTechnicianName ||
+                labRequest.assignedTechnician) && (
+                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                  <Person
+                    sx={{
+                      fontSize: 18,
+                      color: "rgba(104, 201, 242, 1)",
+                    }}
+                  />
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: "rgba(107, 107, 107, 1)",
+                      fontSize: "16px",
+                    }}
+                  >
+                    Zugewiesen:
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    sx={{ fontWeight: 500, fontSize: "16px" }}
+                  >
+                    {labRequest.assignedTechnicianName ||
+                      `${labRequest.assignedTechnician?.firstName || ""} ${labRequest.assignedTechnician?.lastName || ""}`.trim() ||
+                      "—"}
+                  </Typography>
+                </Box>
+              )}
+            </Box>
+          </Box>
+
+          {/* Row 2: Patient + Praxis - side by side on desktop */}
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: { xs: "column", md: "row" },
+            }}
+          >
             {/* Patient Section */}
             <Box
               sx={{
                 flex: 1,
-                minWidth: 220,
                 p: 2.5,
                 borderRight: { xs: "none", md: "1px solid rgba(0,0,0,0.05)" },
-                borderBottom: {
-                  xs: "1px solid rgba(0,0,0,0.05)",
-                  md: "none",
-                },
+                borderBottom: { xs: "1px solid rgba(0,0,0,0.05)", md: "none" },
               }}
             >
               <Box
@@ -545,7 +562,14 @@ const LabRequestDetail = () => {
                   {patient?.firstName} {patient?.lastName}
                 </Typography>
               </Box>
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: { xs: "column", md: "row" },
+                  gap: { xs: 1.5, md: 3 },
+                  flexWrap: "wrap",
+                }}
+              >
                 <Box>
                   <Typography
                     variant="caption"
@@ -629,7 +653,7 @@ const LabRequestDetail = () => {
             </Box>
 
             {/* Praxis Section */}
-            <Box sx={{ flex: 1, minWidth: 220, p: 2.5 }}>
+            <Box sx={{ flex: 1, p: 2.5 }}>
               <Box
                 sx={{
                   display: "flex",
@@ -655,7 +679,14 @@ const LabRequestDetail = () => {
                   {clinic?.name || "—"}
                 </Typography>
               </Box>
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: { xs: "column", md: "row" },
+                  gap: { xs: 1.5, md: 3 },
+                  flexWrap: "wrap",
+                }}
+              >
                 <Box>
                   <Typography
                     variant="caption"
@@ -685,7 +716,7 @@ const LabRequestDetail = () => {
           </Box>
         </Paper>
 
-        {/* Right Column: Action Buttons */}
+        {/* Right Column: Action Buttons - full width on mobile */}
         {showActionSection && (
           <Paper
             sx={{
@@ -694,7 +725,7 @@ const LabRequestDetail = () => {
               overflow: "hidden",
               boxShadow: "0px 2px 8px rgba(0, 0, 0, 0.08)",
               border: "1px solid rgba(0,0,0,0.05)",
-              width: 280,
+              width: { xs: "100%", md: 300 },
               flexShrink: 0,
               display: "flex",
               flexDirection: "column",
@@ -703,21 +734,19 @@ const LabRequestDetail = () => {
             {!hideActionHeader && (
               <Box
                 sx={{
-                  p: 2,
+                  p: 2.5,
                   background:
                     "linear-gradient(90deg, rgba(135, 193, 51, 0.1) 0%, rgba(104, 201, 242, 0.1) 100%)",
                   borderBottom: "1px solid rgba(0,0,0,0.05)",
                   display: "flex",
                   alignItems: "center",
-                  gap: 1,
+                  gap: 1.5,
                 }}
               >
-                <Assignment
-                  sx={{ fontSize: 20, color: "rgba(104, 201, 242, 1)" }}
-                />
+                <FlashOn sx={{ fontSize: 40, color: "rgba(255, 152, 0, 1)" }} />
                 <Typography
-                  variant="subtitle1"
-                  sx={{ fontWeight: 600, fontSize: "14px" }}
+                  variant="body1"
+                  sx={{ fontWeight: 600, fontSize: 18 }}
                 >
                   Aktion erforderlich
                 </Typography>
@@ -743,16 +772,18 @@ const LabRequestDetail = () => {
                     background:
                       "linear-gradient(90deg, #87C133 0%, #68C9F2 100%)",
                     width: "100%",
-                    fontSize: "16px",
+                    fontSize: isMobile ? "14px" : "16px",
                     fontWeight: "600",
                     boxShadow: "0px 2px 4px rgba(104, 201, 242, 0.3)",
-                    flexDirection: "column",
+                    flexDirection: isMobile ? "row" : "column",
                     gap: "8px",
                     justifyContent: "center",
                     alignItems: "center",
+                    minHeight: "44px",
+                    padding: isMobile ? "12px 16px" : undefined,
                   }}
                 >
-                  <PlayArrow sx={{ fontSize: 48 }} />
+                  <PlayArrow sx={{ fontSize: isMobile ? 24 : 48 }} />
                   {updateStatusMutation.isPending
                     ? "..."
                     : "Bearbeitung starten"}
@@ -768,19 +799,23 @@ const LabRequestDetail = () => {
                     color: "white",
                     background: "#4CAF50",
                     width: "100%",
-                    fontSize: "16px",
+                    fontSize: isMobile ? "14px" : "16px",
                     fontWeight: "600",
                     boxShadow: "0px 2px 4px rgba(76, 175, 80, 0.3)",
-                    flexDirection: "column",
+                    flexDirection: isMobile ? "row" : "column",
                     gap: "8px",
                     justifyContent: "center",
                     alignItems: "center",
+                    minHeight: "44px",
+                    padding: isMobile ? "12px 16px" : undefined,
                   }}
                 >
-                  <CheckCircle sx={{ fontSize: 48 }} />
+                  <CheckCircle sx={{ fontSize: isMobile ? 24 : 48 }} />
                   {updateStatusMutation.isPending
                     ? "..."
-                    : "Als Erledigt markieren"}
+                    : isMobile
+                      ? "Erledigt"
+                      : "Als Erledigt markieren"}
                 </ButtonBlock>
               )}
               {showRejectButton && (
@@ -793,16 +828,18 @@ const LabRequestDetail = () => {
                     color: "white",
                     background: "#DC3545",
                     width: "100%",
-                    fontSize: "16px",
+                    fontSize: isMobile ? "14px" : "16px",
                     fontWeight: "600",
                     boxShadow: "0px 2px 4px rgba(220, 53, 69, 0.3)",
-                    flexDirection: "column",
+                    flexDirection: isMobile ? "row" : "column",
                     gap: "8px",
                     justifyContent: "center",
                     alignItems: "center",
+                    minHeight: "44px",
+                    padding: isMobile ? "12px 16px" : undefined,
                   }}
                 >
-                  <Cancel sx={{ fontSize: 48 }} />
+                  <Cancel sx={{ fontSize: isMobile ? 24 : 48 }} />
                   {rejectMutation.isPending ? "..." : "Ablehnen"}
                 </ButtonBlock>
               )}
@@ -817,19 +854,23 @@ const LabRequestDetail = () => {
                     background:
                       "linear-gradient(90deg, #00897B 0%, #26A69A 100%)",
                     width: "100%",
-                    fontSize: "16px",
+                    fontSize: isMobile ? "14px" : "16px",
                     fontWeight: "600",
                     boxShadow: "0px 2px 4px rgba(0, 137, 123, 0.3)",
-                    flexDirection: "column",
+                    flexDirection: isMobile ? "row" : "column",
                     gap: "8px",
                     justifyContent: "center",
                     alignItems: "center",
+                    minHeight: "44px",
+                    padding: isMobile ? "12px 16px" : undefined,
                   }}
                 >
-                  <LocalShipping sx={{ fontSize: 48 }} />
+                  <LocalShipping sx={{ fontSize: isMobile ? 24 : 48 }} />
                   {markDispatchedMutation.isPending
                     ? "..."
-                    : "Als Versandt markieren"}
+                    : isMobile
+                      ? "Versandt"
+                      : "Als Versandt markieren"}
                 </ButtonBlock>
               )}
               {showGenerateLaborzettelButton && (
@@ -842,16 +883,18 @@ const LabRequestDetail = () => {
                     background:
                       "linear-gradient(90deg, #5C6BC0 0%, #7986CB 100%)",
                     width: "100%",
-                    fontSize: "16px",
+                    fontSize: isMobile ? "14px" : "16px",
                     fontWeight: "600",
                     boxShadow: "0px 2px 4px rgba(92, 107, 192, 0.3)",
-                    flexDirection: "column",
+                    flexDirection: isMobile ? "row" : "column",
                     gap: "8px",
                     justifyContent: "center",
                     alignItems: "center",
+                    minHeight: "44px",
+                    padding: isMobile ? "12px 16px" : undefined,
                   }}
                 >
-                  <Description sx={{ fontSize: 48 }} />
+                  <Assignment sx={{ fontSize: isMobile ? 24 : 48 }} />
                   {hasLaborzettel ? "Laborzettel" : "Laborzettel erstellen"}
                 </ButtonBlock>
               )}
@@ -974,7 +1017,7 @@ const LabRequestDetail = () => {
             <Tab
               icon={<MedicalInformation sx={{ fontSize: 18 }} />}
               iconPosition="start"
-              label="Vorgangen"
+              label="Vorgänge"
               sx={{ textTransform: "none", fontWeight: 600, minHeight: 48 }}
             />
           </Tabs>

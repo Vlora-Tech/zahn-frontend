@@ -10,52 +10,62 @@ import {
   DialogActions,
   TextField,
   Stack,
+  Chip,
   InputAdornment,
   Pagination,
   Alert,
   useTheme,
   useMediaQuery,
-  Fab,
 } from "@mui/material";
 import {
-  Add,
-  Edit,
   Delete,
   Search,
   Print,
   Refresh,
   Settings,
+  Visibility,
+  Assignment,
   ArrowBack,
 } from "@mui/icons-material";
-import { Formik, Form } from "formik";
-import * as Yup from "yup";
-import {
-  useGetCategories,
-  useCreateCategory,
-  useUpdateCategory,
-  useDeleteCategory,
-} from "../../api/categories/hooks";
-import { CreateCategoryDto } from "../../api/categories/types";
-import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
+import {
+  useGetAllLaborzettel,
+  useDeleteLaborzettel,
+} from "../../api/laborzettel/hooks";
+import { useQueryClient } from "@tanstack/react-query";
 import ButtonBlock from "../../components/atoms/ButtonBlock";
 import DateText from "../../components/atoms/DateText";
 import ResponsiveTable, { ColumnDef } from "../../components/ResponsiveTable";
 
-const validationSchema = Yup.object({
-  name: Yup.string().required("Name ist erforderlich"),
-});
-
-interface Category {
+interface LaborzettelWithDetails {
   _id: string;
-  name: string;
-  description: string;
+  laborzettelNumber: string;
+  lotNr: string;
+  sections?: Array<{
+    section: string;
+    items: Array<{ number: string; name: string; menge: string }>;
+  }>;
   createdAt: string;
   updatedAt: string;
+  labRequest?: {
+    _id: string;
+    labRequestNumber?: string;
+    request?: {
+      requestNumber?: string;
+      patient?: {
+        firstName: string;
+        lastName: string;
+        patientNumber?: string;
+      };
+      clinic?: {
+        name: string;
+      };
+    };
+  };
 }
 
-interface CategoriesApiResponse {
-  data: Category[];
+interface LaborzettelApiResponse {
+  data: LaborzettelWithDetails[];
   pagination: {
     currentPage: number;
     totalPages: number;
@@ -66,16 +76,19 @@ interface CategoriesApiResponse {
   };
 }
 
-// Mobile card renderer for categories
-const CategoryMobileCard = ({
-  category,
-  onEdit,
+// Mobile card renderer for laborzettel
+const LaborzettelMobileCard = ({
+  laborzettel,
+  onView,
   onDelete,
 }: {
-  category: Category;
-  onEdit: (category: Category) => void;
-  onDelete: (category: Category) => void;
+  laborzettel: LaborzettelWithDetails;
+  onView: (laborzettel: LaborzettelWithDetails) => void;
+  onDelete: (laborzettel: LaborzettelWithDetails) => void;
 }) => {
+  const patient = laborzettel.labRequest?.request?.patient;
+  const clinic = laborzettel.labRequest?.request?.clinic;
+
   return (
     <Box>
       <Box
@@ -86,28 +99,31 @@ const CategoryMobileCard = ({
           mb: 1,
         }}
       >
-        <Typography
-          variant="subtitle1"
-          sx={{ fontWeight: 600, color: "rgba(51, 51, 51, 1)" }}
-        >
-          {category.name}
-        </Typography>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Assignment sx={{ color: "rgba(104, 201, 242, 1)", fontSize: 20 }} />
+          <Typography
+            variant="subtitle1"
+            sx={{ fontWeight: 600, color: "rgba(51, 51, 51, 1)" }}
+          >
+            {laborzettel.laborzettelNumber}
+          </Typography>
+        </Box>
         <Box sx={{ display: "flex", gap: 0.5 }}>
           <IconButton
             size="small"
             onClick={(e) => {
               e.stopPropagation();
-              onEdit(category);
+              onView(laborzettel);
             }}
             sx={{ color: "rgba(104, 201, 242, 1)" }}
           >
-            <Edit fontSize="small" />
+            <Visibility fontSize="small" />
           </IconButton>
           <IconButton
             size="small"
             onClick={(e) => {
               e.stopPropagation();
-              onDelete(category);
+              onDelete(laborzettel);
             }}
             sx={{ color: "#d32f2f" }}
           >
@@ -115,112 +131,124 @@ const CategoryMobileCard = ({
           </IconButton>
         </Box>
       </Box>
+      {patient && (
+        <Typography
+          variant="body2"
+          sx={{ color: "rgba(100, 100, 100, 1)", mb: 0.5 }}
+        >
+          Patient: {patient.firstName} {patient.lastName}
+          {patient.patientNumber && ` (${patient.patientNumber})`}
+        </Typography>
+      )}
+      {clinic && (
+        <Typography
+          variant="body2"
+          sx={{ color: "rgba(100, 100, 100, 1)", mb: 0.5 }}
+        >
+          Klinik: {clinic.name}
+        </Typography>
+      )}
+      <Box sx={{ display: "flex", gap: 1, mt: 1, flexWrap: "wrap" }}>
+        <Chip
+          label={`Lot: ${laborzettel.lotNr}`}
+          size="small"
+          sx={{
+            backgroundColor: "#e8f5e9",
+            color: "#2e7d32",
+            fontSize: "11px",
+          }}
+        />
+        <Chip
+          label={`${laborzettel.sections?.length || 0} Abschnitte`}
+          size="small"
+          variant="outlined"
+          sx={{ fontSize: "11px" }}
+        />
+      </Box>
       <Typography
-        variant="body2"
-        sx={{ color: "rgba(100, 100, 100, 1)", mb: 1 }}
+        variant="caption"
+        sx={{ color: "rgba(146, 146, 146, 1)", display: "block", mt: 1 }}
       >
-        {category.description}
-      </Typography>
-      <Typography variant="caption" sx={{ color: "rgba(146, 146, 146, 1)" }}>
-        Erstellt: <DateText date={category.createdAt} />
+        Erstellt: <DateText date={laborzettel.createdAt} />
       </Typography>
     </Box>
   );
 };
 
-const CategoriesManagement: React.FC = () => {
+const LaborzettelManagement: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const navigate = useNavigate();
 
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(
-    null,
-  );
-  const [order, setOrder] = useState<"asc" | "desc">("asc");
-  const [orderBy, setOrderBy] = useState<string>("name");
+  const [laborzettelToDelete, setLaborzettelToDelete] =
+    useState<LaborzettelWithDetails | null>(null);
+  const [order, setOrder] = useState<"asc" | "desc">("desc");
+  const [orderBy, setOrderBy] = useState<string>("createdAt");
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
   const [error, setError] = useState<string | null>(null);
 
   const queryClient = useQueryClient();
   const {
-    data: categoriesResponse,
+    data: laborzettelResponse,
     isLoading,
     refetch,
-  } = useGetCategories({
+  } = useGetAllLaborzettel({
     page,
     limit: 15,
     sortBy: orderBy,
     sortOrder: order,
   });
-  const createMutation = useCreateCategory();
-  const updateMutation = useUpdateCategory();
-  const deleteMutation = useDeleteCategory();
+  const deleteMutation = useDeleteLaborzettel();
 
-  const typedResponse = categoriesResponse as unknown as CategoriesApiResponse;
-  const categories = useMemo(
+  const typedResponse =
+    laborzettelResponse as unknown as LaborzettelApiResponse;
+  const laborzettelList = useMemo(
     () => typedResponse?.data || [],
     [typedResponse?.data],
   );
   const pagination = typedResponse?.pagination;
 
-  // Filter categories by search term (client-side for now)
-  const filteredCategories = useMemo(() => {
-    if (!searchTerm.trim()) return categories;
+  // Filter laborzettel by search term (client-side)
+  const filteredLaborzettel = useMemo(() => {
+    if (!searchTerm.trim()) return laborzettelList;
     const term = searchTerm.toLowerCase();
-    return categories.filter(
-      (cat) =>
-        cat.name.toLowerCase().includes(term) ||
-        cat.description.toLowerCase().includes(term),
+    return laborzettelList.filter(
+      (lz) =>
+        lz.laborzettelNumber?.toLowerCase().includes(term) ||
+        lz.lotNr?.toLowerCase().includes(term) ||
+        lz.labRequest?.request?.patient?.firstName
+          ?.toLowerCase()
+          .includes(term) ||
+        lz.labRequest?.request?.patient?.lastName
+          ?.toLowerCase()
+          .includes(term) ||
+        lz.labRequest?.request?.clinic?.name?.toLowerCase().includes(term),
     );
-  }, [categories, searchTerm]);
+  }, [laborzettelList, searchTerm]);
 
-  const handleOpenDialog = (category?: Category) => {
-    setEditingCategory(category || null);
-    setDialogOpen(true);
-  };
-
-  const handleCloseDialog = () => {
-    setDialogOpen(false);
-    setEditingCategory(null);
-  };
-
-  const handleSubmit = async (values: CreateCategoryDto) => {
-    try {
-      if (editingCategory) {
-        await updateMutation.mutateAsync({
-          categoryId: editingCategory._id,
-          data: values,
-        });
-      } else {
-        await createMutation.mutateAsync(values);
-      }
-      queryClient.invalidateQueries({ queryKey: ["categories"] });
-      handleCloseDialog();
-    } catch {
-      setError(
-        "Fehler beim Speichern der Kategorie. Bitte versuchen Sie es erneut.",
-      );
+  const handleView = (laborzettel: LaborzettelWithDetails) => {
+    // Navigate to the laborzettel form view
+    if (laborzettel.labRequest?._id) {
+      navigate(`/lab/${laborzettel.labRequest._id}/laborzettel`);
     }
   };
 
-  const handleDeleteClick = (category: Category) => {
-    setCategoryToDelete(category);
+  const handleDeleteClick = (laborzettel: LaborzettelWithDetails) => {
+    setLaborzettelToDelete(laborzettel);
     setDeleteConfirmOpen(true);
   };
 
   const handleDeleteConfirm = async () => {
-    if (categoryToDelete) {
+    if (laborzettelToDelete) {
       try {
-        await deleteMutation.mutateAsync(categoryToDelete._id);
-        queryClient.invalidateQueries({ queryKey: ["categories"] });
+        await deleteMutation.mutateAsync(laborzettelToDelete._id);
+        queryClient.invalidateQueries({ queryKey: ["laborzettel"] });
         setDeleteConfirmOpen(false);
-        setCategoryToDelete(null);
+        setLaborzettelToDelete(null);
       } catch {
-        setError("Fehler beim Löschen der Kategorie.");
+        setError("Fehler beim Löschen des Laborzettels.");
       }
     }
   };
@@ -235,34 +263,132 @@ const CategoriesManagement: React.FC = () => {
     setSearchTerm(event.target.value);
   };
 
-  const mobileCardRenderer = (category: Category) => (
-    <CategoryMobileCard
-      category={category}
-      onEdit={handleOpenDialog}
+  const mobileCardRenderer = (laborzettel: LaborzettelWithDetails) => (
+    <LaborzettelMobileCard
+      laborzettel={laborzettel}
+      onView={handleView}
       onDelete={handleDeleteClick}
     />
   );
 
-  const columns: ColumnDef<Category>[] = [
+  const columns: ColumnDef<LaborzettelWithDetails>[] = [
     {
-      id: "name",
-      label: "Kategoriename",
-      accessor: (cat) => (
-        <Typography variant="body2" fontWeight={500}>
-          {cat.name}
-        </Typography>
+      id: "laborzettelNumber",
+      label: "Laborzettel-Nr.",
+      accessor: (lz) => (
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Assignment sx={{ color: "rgba(104, 201, 242, 1)", fontSize: 18 }} />
+          <Typography variant="body2" fontWeight={500}>
+            {lz.laborzettelNumber}
+          </Typography>
+        </Box>
       ),
       sortable: true,
-      width: 200,
+      width: 180,
+    },
+    {
+      id: "patient",
+      label: "Patient",
+      accessor: (lz) => {
+        const patient = lz.labRequest?.request?.patient;
+        return patient ? (
+          <Typography variant="body2">
+            {patient.firstName} {patient.lastName}
+            {patient.patientNumber && (
+              <Typography
+                component="span"
+                variant="caption"
+                sx={{ ml: 0.5, color: "text.secondary" }}
+              >
+                ({patient.patientNumber})
+              </Typography>
+            )}
+          </Typography>
+        ) : (
+          <Typography variant="body2" color="text.secondary">
+            -
+          </Typography>
+        );
+      },
+      width: 180,
+    },
+    {
+      id: "clinic",
+      label: "Klinik",
+      accessor: (lz) => (
+        <Typography variant="body2" color="text.secondary">
+          {lz.labRequest?.request?.clinic?.name || "-"}
+        </Typography>
+      ),
+      width: 150,
+    },
+    {
+      id: "lotNr",
+      label: "Lot-Nr.",
+      accessor: (lz) => (
+        <Chip
+          label={lz.lotNr}
+          size="small"
+          sx={{
+            backgroundColor: "#e8f5e9",
+            color: "#2e7d32",
+            fontSize: "12px",
+          }}
+        />
+      ),
+      width: 120,
+    },
+    {
+      id: "sections",
+      label: "Abschnitte",
+      accessor: (lz) => (
+        <Typography variant="body2" color="text.secondary">
+          {lz.sections?.length || 0}
+        </Typography>
+      ),
+      width: 100,
+    },
+    {
+      id: "createdAt",
+      label: "Erstellt am",
+      accessor: (lz) => <DateText date={lz.createdAt} />,
+      sortable: true,
+      width: 130,
+    },
+    {
+      id: "actions",
+      label: "",
+      accessor: (lz) => (
+        <Box sx={{ display: "flex", gap: 1 }}>
+          <IconButton
+            size="small"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleView(lz);
+            }}
+            sx={{ color: "rgba(104, 201, 242, 1)" }}
+            title="Anzeigen"
+          >
+            <Visibility fontSize="small" />
+          </IconButton>
+          <IconButton
+            size="small"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDeleteClick(lz);
+            }}
+            sx={{ color: "#d32f2f" }}
+            title="Löschen"
+          >
+            <Delete fontSize="small" />
+          </IconButton>
+        </Box>
+      ),
+      width: 100,
     },
   ];
 
-  const initialValues = {
-    name: editingCategory?.name || "",
-    description: editingCategory?.description || "",
-  };
-
-  const hasData = filteredCategories.length > 0;
+  const hasData = filteredLaborzettel.length > 0;
 
   return (
     <Stack
@@ -279,7 +405,7 @@ const CategoriesManagement: React.FC = () => {
           <ArrowBack />
         </IconButton>
         <Typography variant="h2" sx={{ color: "rgba(146, 146, 146, 1)" }}>
-          Kategorien
+          Laborzettel-Vorlagen
         </Typography>
       </Stack>
 
@@ -321,7 +447,7 @@ const CategoriesManagement: React.FC = () => {
           >
             <TextField
               size="small"
-              placeholder="Kategorie suchen..."
+              placeholder="Laborzettel suchen..."
               value={searchTerm}
               onChange={handleSearchChange}
               sx={{
@@ -345,31 +471,13 @@ const CategoriesManagement: React.FC = () => {
           </Box>
           <Box
             sx={{
-              display: { xs: "none", sm: "flex" },
+              display: "flex",
               justifyContent: "flex-end",
               alignItems: "center",
               flexShrink: 0,
               flex: { xs: "none", sm: 1 },
             }}
           >
-            {/* <ButtonBlock
-              startIcon={<Add />}
-              sx={{
-                borderRadius: "40px",
-                textTransform: "none",
-                background: "linear-gradient(90deg, #87C133 0%, #68C9F2 100%)",
-                color: "white",
-                px: { xs: "16px", sm: "12px" },
-                fontWeight: "500",
-                fontSize: { xs: "14px", sm: "16px" },
-                height: { xs: "44px", sm: "37px" },
-                minHeight: "44px",
-                marginRight: { xs: 0, md: "26px" },
-              }}
-              onClick={() => handleOpenDialog()}
-            >
-              Kategorie hinzufügen
-            </ButtonBlock> */}
             <Box sx={{ display: { xs: "none", md: "flex" } }}>
               <IconButton>
                 <Print />
@@ -395,17 +503,17 @@ const CategoriesManagement: React.FC = () => {
           <Box
             sx={{ flex: 1, overflowX: "auto", overflowY: "auto", minWidth: 0 }}
           >
-            <ResponsiveTable<Category>
-              data={filteredCategories}
+            <ResponsiveTable<LaborzettelWithDetails>
+              data={filteredLaborzettel}
               columns={columns}
               mobileCardRenderer={mobileCardRenderer}
               isLoading={isLoading}
               emptyMessage={
                 searchTerm
-                  ? "Keine Kategorien gefunden"
-                  : "Keine Kategorien vorhanden. Fügen Sie eine neue Kategorie hinzu."
+                  ? "Keine Laborzettel gefunden"
+                  : "Keine Laborzettel vorhanden."
               }
-              getItemId={(cat) => cat._id}
+              getItemId={(lz) => lz._id}
               sortBy={orderBy}
               sortOrder={order}
               onSort={handleSort}
@@ -417,7 +525,6 @@ const CategoriesManagement: React.FC = () => {
                 display: "flex",
                 justifyContent: "center",
                 p: { xs: "16px", sm: "24px" },
-                pb: { xs: "80px", sm: "24px" },
                 flexShrink: 0,
               }}
             >
@@ -433,80 +540,6 @@ const CategoriesManagement: React.FC = () => {
         </Box>
       </Paper>
 
-      {/* Add/Edit Dialog */}
-      <Dialog
-        open={dialogOpen}
-        onClose={handleCloseDialog}
-        maxWidth="sm"
-        fullWidth
-        fullScreen={isMobile}
-      >
-        <DialogTitle sx={{ fontWeight: 600 }}>
-          {editingCategory ? "Kategorie bearbeiten" : "Neue Kategorie"}
-        </DialogTitle>
-        <Formik
-          initialValues={initialValues}
-          validationSchema={validationSchema}
-          onSubmit={handleSubmit}
-          enableReinitialize
-        >
-          {({
-            values,
-            errors,
-            touched,
-            handleChange,
-            handleBlur,
-            isSubmitting,
-          }) => (
-            <Form>
-              <DialogContent>
-                <Stack spacing={3}>
-                  <TextField
-                    fullWidth
-                    name="name"
-                    label="Kategoriename"
-                    value={values.name}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    error={touched.name && Boolean(errors.name)}
-                    helperText={touched.name && errors.name}
-                  />
-                </Stack>
-              </DialogContent>
-              <DialogActions sx={{ p: 2 }}>
-                <ButtonBlock
-                  onClick={handleCloseDialog}
-                  style={{
-                    borderRadius: "40px",
-                    height: "40px",
-                    color: "rgba(107, 107, 107, 1)",
-                    fontSize: "14px",
-                    fontWeight: "500",
-                  }}
-                >
-                  Abbrechen
-                </ButtonBlock>
-                <ButtonBlock
-                  type="submit"
-                  disabled={isSubmitting}
-                  style={{
-                    background:
-                      "linear-gradient(90deg, #87C133 0%, #68C9F2 100%)",
-                    borderRadius: "40px",
-                    height: "40px",
-                    color: "white",
-                    fontSize: "14px",
-                    fontWeight: "500",
-                  }}
-                >
-                  {isSubmitting ? "Speichern..." : "Speichern"}
-                </ButtonBlock>
-              </DialogActions>
-            </Form>
-          )}
-        </Formik>
-      </Dialog>
-
       {/* Delete Confirmation Dialog */}
       <Dialog
         open={deleteConfirmOpen}
@@ -516,8 +549,9 @@ const CategoriesManagement: React.FC = () => {
         <DialogTitle sx={{ fontWeight: 600 }}>Löschen bestätigen</DialogTitle>
         <DialogContent>
           <Typography>
-            Sind Sie sicher, dass Sie die Kategorie "{categoryToDelete?.name}"
-            löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.
+            Sind Sie sicher, dass Sie den Laborzettel "
+            {laborzettelToDelete?.laborzettelNumber}" löschen möchten? Diese
+            Aktion kann nicht rückgängig gemacht werden.
           </Typography>
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
@@ -549,33 +583,8 @@ const CategoriesManagement: React.FC = () => {
           </ButtonBlock>
         </DialogActions>
       </Dialog>
-
-      {/* Mobile: Floating Action Button with label */}
-      {isMobile && (
-        <Fab
-          variant="extended"
-          color="primary"
-          aria-label="Kategorie hinzufügen"
-          onClick={() => handleOpenDialog()}
-          sx={{
-            position: "fixed",
-            bottom: 80,
-            right: 16,
-            background: "linear-gradient(90deg, #87C133 0%, #68C9F2 100%)",
-            "&:hover": {
-              background: "linear-gradient(90deg, #7AB02E 0%, #5BB8E0 100%)",
-            },
-            zIndex: 1000,
-            gap: 1,
-            color: "white",
-          }}
-        >
-          <Add />
-          Kategorie hinzufügen
-        </Fab>
-      )}
     </Stack>
   );
 };
 
-export default CategoriesManagement;
+export default LaborzettelManagement;

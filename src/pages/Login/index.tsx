@@ -1,6 +1,6 @@
 import { Form, Formik } from "formik";
 import headerLogo from "../../assets/zahn-care-logo-wide.png";
-import { Box, Paper, Stack } from "@mui/material";
+import { Box, Paper, Stack, useTheme, useMediaQuery } from "@mui/material";
 import TextFieldBlock from "../../components/molecules/form-fields/TextFieldBlock";
 import ButtonBlock from "../../components/atoms/ButtonBlock";
 import { useNavigate } from "react-router-dom";
@@ -21,13 +21,15 @@ export const loginInitialValues = {
 
 export default function Login() {
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const { mutate: loginMutate, status } = useLogin();
 
   return (
     <Formik
       initialValues={loginInitialValues}
-      validationSchema={loginValidationSchema} // Add your validation schema here
+      validationSchema={loginValidationSchema}
       onSubmit={(values) => {
         loginMutate(values, {
           onSuccess(data) {
@@ -41,22 +43,28 @@ export default function Login() {
         console.log("Formik props:", formikProps);
         return (
           <Form>
-            <Box display="flex" gap="20px">
+            <Box
+              display="flex"
+              gap="20px"
+              px={{ xs: 2, sm: 0 }}
+              minHeight={{ xs: "100vh", sm: "auto" }}
+              alignItems={{ xs: "flex-start", sm: "center" }}
+              pt={{ xs: 4, sm: 0 }}
+            >
               <Paper
                 sx={{
-                  // flexGrow: 1,
-                  width: "738px",
-                  height: "800px",
-                  // minHeight: '100vh',
-                  borderRadius: "10px",
+                  width: { xs: "100%", sm: "738px" },
+                  maxWidth: "738px",
+                  height: { xs: "auto", sm: "800px" },
+                  minHeight: { xs: "auto", sm: "800px" },
+                  borderRadius: { xs: "10px", sm: "10px" },
                   background: "rgba(244, 244, 244, 1)",
-                  // boxShadow: '-4px -4px 8px 0px rgba(0, 0, 0, 0.25)',
-                  padding: "26px 40px",
-                  minHeight: "800px",
+                  padding: { xs: "24px 20px", sm: "26px 40px" },
                   display: "flex",
                   flexDirection: "column",
                   justifyContent: "space-between",
                   m: "auto",
+                  gap: { xs: 4, sm: 0 },
                 }}
               >
                 {status === "pending" ? (
@@ -64,15 +72,23 @@ export default function Login() {
                 ) : (
                   <Fragment>
                     <Box>
-                      <img
-                        src={headerLogo}
-                        style={{
-                          height: "84px",
-                          width: "auto",
-                          objectFit: "contain",
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: { xs: "center", sm: "flex-start" },
                         }}
-                      />
-                      <Stack gap="30px" pt="70px">
+                      >
+                        <img
+                          src={headerLogo}
+                          style={{
+                            height: isMobile ? "60px" : "84px",
+                            width: "auto",
+                            objectFit: "contain",
+                          }}
+                          alt="Zahn Care Logo"
+                        />
+                      </Box>
+                      <Stack gap="30px" pt={{ xs: "40px", sm: "70px" }}>
                         <TextFieldBlock name="username" label="Username" />
                         <TextFieldBlock
                           name="password"
@@ -87,11 +103,13 @@ export default function Login() {
                         background:
                           "linear-gradient(90deg, #87C133 0%, #68C9F2 100%)",
                         color: "white",
-                        height: "40px",
+                        height: { xs: "44px", sm: "40px" },
+                        minHeight: "44px",
                         px: "28px",
                         borderRadius: "40px",
-                        alignSelf: "flex-end",
+                        alignSelf: { xs: "stretch", sm: "flex-end" },
                         justifySelf: "flex-end",
+                        width: { xs: "100%", sm: "auto" },
                       }}
                     >
                       Absenden

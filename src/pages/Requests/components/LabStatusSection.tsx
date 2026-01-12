@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Box,
   Typography,
@@ -10,6 +10,10 @@ import {
   StepLabel,
   StepConnector,
   stepConnectorClasses,
+  Collapse,
+  IconButton,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import {
@@ -21,9 +25,14 @@ import {
   CheckCircle,
   LocalShipping,
   Cancel,
+  ExpandMore,
+  ExpandLess,
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
-import { useLabRequestByRequestId, useLabRequest } from "../../../api/lab-requests/hooks";
+import {
+  useLabRequestByRequestId,
+  useLabRequest,
+} from "../../../api/lab-requests/hooks";
 import { useActivityLogs } from "../../../api/activity-logs/hooks";
 import RejectionAlertBanner from "./RejectionAlertBanner";
 import ButtonBlock from "../../../components/atoms/ButtonBlock";
@@ -104,11 +113,27 @@ const StepIconRoot = styled("div")<{
 
 // Lab workflow steps
 const labSteps = [
-  { key: "notified", label: "Benachrichtigt", icon: <NotificationsActive sx={{ fontSize: 16 }} /> },
+  {
+    key: "notified",
+    label: "Benachrichtigt",
+    icon: <NotificationsActive sx={{ fontSize: 16 }} />,
+  },
   { key: "read", label: "Gelesen", icon: <Visibility sx={{ fontSize: 16 }} /> },
-  { key: "in_progress", label: "In Bearbeitung", icon: <PlayArrow sx={{ fontSize: 16 }} /> },
-  { key: "completed", label: "Abgeschlossen", icon: <CheckCircle sx={{ fontSize: 16 }} /> },
-  { key: "dispatched", label: "Versandt", icon: <LocalShipping sx={{ fontSize: 16 }} /> },
+  {
+    key: "in_progress",
+    label: "In Bearbeitung",
+    icon: <PlayArrow sx={{ fontSize: 16 }} />,
+  },
+  {
+    key: "completed",
+    label: "Abgeschlossen",
+    icon: <CheckCircle sx={{ fontSize: 16 }} />,
+  },
+  {
+    key: "dispatched",
+    label: "Versandt",
+    icon: <LocalShipping sx={{ fontSize: 16 }} />,
+  },
 ];
 
 // Get step index from status
@@ -146,27 +171,40 @@ function CustomStepIcon(props: {
   );
 }
 
-const LabStatusSection: React.FC<LabStatusSectionProps> = ({ 
-  requestId, 
+const LabStatusSection: React.FC<LabStatusSectionProps> = ({
+  requestId,
   labRequestId,
   variant = "vertical",
   showResubmitButton = true,
 }) => {
   const navigate = useNavigate();
-  
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm")); // < 600px
+  const [expanded, setExpanded] = useState(!isMobile); // Collapsed by default on mobile
+
   // Use the appropriate hook based on which prop is provided
-  const { data: labRequestByRequestId, isLoading: isLoadingByRequestId, error: errorByRequestId } = 
-    useLabRequestByRequestId(requestId || "");
-  const { data: labRequestById, isLoading: isLoadingById, error: errorById } = 
-    useLabRequest(labRequestId || "");
-  
+  const {
+    data: labRequestByRequestId,
+    isLoading: isLoadingByRequestId,
+    error: errorByRequestId,
+  } = useLabRequestByRequestId(requestId || "");
+  const {
+    data: labRequestById,
+    isLoading: isLoadingById,
+    error: errorById,
+  } = useLabRequest(labRequestId || "");
+
   // Select the appropriate data based on which prop was provided
   const labRequest = labRequestId ? labRequestById : labRequestByRequestId;
   const isLoading = labRequestId ? isLoadingById : isLoadingByRequestId;
   const error = labRequestId ? errorById : errorByRequestId;
-  
+
   const { data: activityLogs } = useActivityLogs(labRequest?._id || "");
-  const isHorizontal = variant === "horizontal";
+  const isHorizontal = variant === "horizontal" && !isMobile; // Force vertical on mobile
+
+  const handleToggleExpand = () => {
+    setExpanded(!expanded);
+  };
 
   const handleEditAndResubmit = () => {
     navigate(`/requests/${requestId}/edit-resubmit`);
@@ -219,45 +257,50 @@ const LabStatusSection: React.FC<LabStatusSectionProps> = ({
 
   // Build timestamps map for each step using activity logs
   const stepTimestamps: Record<string, string> = {};
-  
+
   if (activityLogs && activityLogs.length > 0) {
     // Find notification_sent log for "notified" step
     const notificationLog = activityLogs.find(
-      (log) => log.actionType === "notification_sent" || 
-               (log.actionType === "status_change" && log.newState === "notified")
+      (log) =>
+        log.actionType === "notification_sent" ||
+        (log.actionType === "status_change" && log.newState === "notified"),
     );
     if (notificationLog) {
       stepTimestamps["notified"] = formatDateTime(notificationLog.timestamp);
     }
-    
+
     // Find request_viewed log or status_change to read for "read" step
     const viewedLog = activityLogs.find(
-      (log) => log.actionType === "request_viewed" || 
-               (log.actionType === "status_change" && log.newState === "read")
+      (log) =>
+        log.actionType === "request_viewed" ||
+        (log.actionType === "status_change" && log.newState === "read"),
     );
     if (viewedLog) {
       stepTimestamps["read"] = formatDateTime(viewedLog.timestamp);
     }
-    
+
     // Find status_change to in_progress for "in_progress" step
     const inProgressLog = activityLogs.find(
-      (log) => log.actionType === "status_change" && log.newState === "in_progress"
+      (log) =>
+        log.actionType === "status_change" && log.newState === "in_progress",
     );
     if (inProgressLog) {
       stepTimestamps["in_progress"] = formatDateTime(inProgressLog.timestamp);
     }
-    
+
     // Find status_change to completed for "completed" step
     const completedLog = activityLogs.find(
-      (log) => log.actionType === "status_change" && log.newState === "completed"
+      (log) =>
+        log.actionType === "status_change" && log.newState === "completed",
     );
     if (completedLog) {
       stepTimestamps["completed"] = formatDateTime(completedLog.timestamp);
     }
-    
+
     // Find status_change to dispatched for "dispatched" step
     const dispatchedLog = activityLogs.find(
-      (log) => log.actionType === "status_change" && log.newState === "dispatched"
+      (log) =>
+        log.actionType === "status_change" && log.newState === "dispatched",
     );
     if (dispatchedLog) {
       stepTimestamps["dispatched"] = formatDateTime(dispatchedLog.timestamp);
@@ -310,181 +353,252 @@ const LabStatusSection: React.FC<LabStatusSectionProps> = ({
             background: isRejected
               ? "linear-gradient(90deg, rgba(220, 53, 69, 0.1) 0%, rgba(220, 53, 69, 0.05) 100%)"
               : "linear-gradient(90deg, rgba(135, 193, 51, 0.1) 0%, rgba(104, 201, 242, 0.1) 100%)",
-            borderBottom: "1px solid rgba(0,0,0,0.05)",
+            borderBottom:
+              !isMobile || expanded ? "1px solid rgba(0,0,0,0.05)" : "none",
             display: "flex",
             alignItems: "center",
+            justifyContent: "space-between",
             gap: 1,
+            cursor: isMobile ? "pointer" : "default",
           }}
+          onClick={isMobile ? handleToggleExpand : undefined}
         >
-          <Science
-            sx={{
-              fontSize: 20,
-              color: isRejected ? "#DC3545" : "rgba(104, 201, 242, 1)",
-            }}
-          />
-          <Typography variant="subtitle1" sx={{ fontWeight: 600, fontSize: "14px" }}>
-            Labor-Stand
-          </Typography>
-        </Box>
-
-        {/* Progress Stepper */}
-        <Box sx={{ p: isHorizontal ? 2 : 2.5 }}>
-          {isRejected ? (
-            // Show rejected state
-            <Box sx={{ display: "flex", alignItems: "center", gap: 2, py: 1 }}>
-              <Box
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Science
+              sx={{
+                fontSize: 20,
+                color: isRejected ? "#DC3545" : "rgba(104, 201, 242, 1)",
+              }}
+            />
+            <Typography
+              variant="subtitle1"
+              sx={{ fontWeight: 600, fontSize: "14px" }}
+            >
+              Labor-Stand
+            </Typography>
+            {isMobile && !expanded && (
+              <Typography
+                variant="caption"
                 sx={{
-                  width: 32,
-                  height: 32,
-                  borderRadius: "50%",
-                  background: "#DC3545",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  flexShrink: 0,
+                  color: "text.secondary",
+                  fontSize: "12px",
+                  ml: 1,
                 }}
               >
-                <Cancel sx={{ color: "white", fontSize: 16 }} />
-              </Box>
-              <Box>
-                <Typography variant="body2" sx={{ fontWeight: 600, color: "#DC3545" }}>
-                  Abgelehnt
-                </Typography>
-                {labRequest.rejectedAt && (
-                  <Typography variant="caption" color="text.secondary">
-                    {formatDateTime(labRequest.rejectedAt)}
-                  </Typography>
-                )}
-              </Box>
-            </Box>
-          ) : (
-            <Stepper
-              orientation={isHorizontal ? "horizontal" : "vertical"}
-              activeStep={currentStep}
-              connector={isHorizontal ? <HorizontalConnector /> : <VerticalConnector />}
-              alternativeLabel={isHorizontal}
-              sx={{
-                "& .MuiStepLabel-root": {
-                  padding: 0,
-                },
-                "& .MuiStep-root": {
-                  marginBottom: 0,
-                },
-                ...(isHorizontal && {
-                  "& .MuiStep-root": {
-                    flex: 1,
-                    paddingLeft: 0,
-                    paddingRight: 0,
-                  },
-                  "& .MuiStepLabel-iconContainer": {
-                    paddingRight: 0,
-                  },
-                }),
+                (
+                {isRejected
+                  ? "Abgelehnt"
+                  : labSteps[currentStep - 1]?.label || "Benachrichtigt"}
+                )
+              </Typography>
+            )}
+          </Box>
+          {isMobile && (
+            <IconButton
+              size="small"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleToggleExpand();
               }}
+              sx={{
+                color: isRejected ? "#DC3545" : "rgba(104, 201, 242, 1)",
+                p: 0.5,
+              }}
+              aria-label={
+                expanded ? "Labor-Stand einklappen" : "Labor-Stand ausklappen"
+              }
             >
-              {labSteps.map((step, index) => {
-                const isCompleted = index < currentStep;
-                const isActive = index === currentStep && Boolean(stepTimestamps[step.key]);
-                const timestamp = stepTimestamps[step.key];
+              {expanded ? <ExpandLess /> : <ExpandMore />}
+            </IconButton>
+          )}
+        </Box>
 
-                return (
-                  <Step key={step.key} completed={isCompleted}>
-                    <StepLabel
-                      slots={{
-                        stepIcon: () => (
-                          <CustomStepIcon
-                            icon={step.icon}
-                            active={isActive}
-                            completed={isCompleted}
-                          />
-                        ),
-                      }}
-                      sx={{
-                        "& .MuiStepLabel-labelContainer": {
-                          marginLeft: isHorizontal ? 0 : 1,
-                        },
-                      }}
-                    >
-                      <Box sx={{ 
-                        display: "flex", 
-                        flexDirection: "column",
-                        alignItems: isHorizontal ? "center" : "flex-start", 
-                        gap: 0.25,
-                      }}>
-                        <Typography
-                          variant="body2"
+        {/* Progress Stepper - Collapsible on mobile */}
+        <Collapse in={!isMobile || expanded} timeout="auto">
+          <Box sx={{ p: isHorizontal ? 2 : 2.5 }}>
+            {isRejected ? (
+              // Show rejected state
+              <Box
+                sx={{ display: "flex", alignItems: "center", gap: 2, py: 1 }}
+              >
+                <Box
+                  sx={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: "50%",
+                    background: "#DC3545",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                  }}
+                >
+                  <Cancel sx={{ color: "white", fontSize: 16 }} />
+                </Box>
+                <Box>
+                  <Typography
+                    variant="body2"
+                    sx={{ fontWeight: 600, color: "#DC3545" }}
+                  >
+                    Abgelehnt
+                  </Typography>
+                  {labRequest.rejectedAt && (
+                    <Typography variant="caption" color="text.secondary">
+                      {formatDateTime(labRequest.rejectedAt)}
+                    </Typography>
+                  )}
+                </Box>
+              </Box>
+            ) : (
+              <Stepper
+                orientation={isHorizontal ? "horizontal" : "vertical"}
+                activeStep={currentStep}
+                connector={
+                  isHorizontal ? <HorizontalConnector /> : <VerticalConnector />
+                }
+                alternativeLabel={isHorizontal}
+                sx={{
+                  "& .MuiStepLabel-root": {
+                    padding: 0,
+                  },
+                  "& .MuiStep-root": {
+                    marginBottom: 0,
+                  },
+                  ...(isHorizontal && {
+                    "& .MuiStep-root": {
+                      flex: 1,
+                      paddingLeft: 0,
+                      paddingRight: 0,
+                    },
+                    "& .MuiStepLabel-iconContainer": {
+                      paddingRight: 0,
+                    },
+                  }),
+                }}
+              >
+                {labSteps.map((step, index) => {
+                  const isCompleted = index < currentStep;
+                  const isActive =
+                    index === currentStep && Boolean(stepTimestamps[step.key]);
+                  const timestamp = stepTimestamps[step.key];
+
+                  return (
+                    <Step key={step.key} completed={isCompleted}>
+                      <StepLabel
+                        slots={{
+                          stepIcon: () => (
+                            <CustomStepIcon
+                              icon={step.icon}
+                              active={isActive}
+                              completed={isCompleted}
+                            />
+                          ),
+                        }}
+                        sx={{
+                          "& .MuiStepLabel-labelContainer": {
+                            marginLeft: isHorizontal ? 0 : 1,
+                          },
+                        }}
+                      >
+                        <Box
                           sx={{
-                            fontWeight: isActive || isCompleted ? 600 : 400,
-                            color: isActive || isCompleted ? "text.primary" : "text.disabled",
-                            fontSize: isHorizontal ? "11px" : "13px",
-                            textAlign: isHorizontal ? "center" : "left",
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: isHorizontal ? "center" : "flex-start",
+                            gap: 0.25,
                           }}
                         >
-                          {step.label}
-                        </Typography>
-                        {(isCompleted || isActive) && timestamp && (
                           <Typography
-                            variant="caption"
+                            variant="body2"
                             sx={{
-                              fontSize: isHorizontal ? "10px" : "11px",
-                              color: "text.secondary",
+                              fontWeight: isActive || isCompleted ? 600 : 400,
+                              color:
+                                isActive || isCompleted
+                                  ? "text.primary"
+                                  : "text.disabled",
+                              fontSize: isHorizontal ? "11px" : "13px",
                               textAlign: isHorizontal ? "center" : "left",
                             }}
                           >
-                            {timestamp}
+                            {step.label}
                           </Typography>
-                        )}
-                      </Box>
-                    </StepLabel>
-                  </Step>
-                );
-              })}
-            </Stepper>
-          )}
-
-          {/* Assigned Technician Info - only for vertical variant */}
-          {!isHorizontal && labRequest.assignedTechnician &&
-            ["in_progress", "completed", "dispatched"].includes(labRequest.labStatus) && (
-              <Box
-                sx={{
-                  mt: 2,
-                  pt: 2,
-                  borderTop: "1px solid rgba(0,0,0,0.05)",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 1,
-                }}
-              >
-                <Typography variant="caption" color="text.secondary">
-                  Bearbeitet von:
-                </Typography>
-                <Typography variant="caption" sx={{ fontWeight: 600 }}>
-                  {`${labRequest.assignedTechnician?.firstName || ""} ${labRequest.assignedTechnician?.lastName || ""}`.trim()}
-                </Typography>
-              </Box>
+                          {(isCompleted || isActive) && timestamp && (
+                            <Typography
+                              variant="caption"
+                              sx={{
+                                fontSize: isHorizontal ? "10px" : "11px",
+                                color: "text.secondary",
+                                textAlign: isHorizontal ? "center" : "left",
+                              }}
+                            >
+                              {timestamp}
+                            </Typography>
+                          )}
+                        </Box>
+                      </StepLabel>
+                    </Step>
+                  );
+                })}
+              </Stepper>
             )}
 
-          {/* Technician info inline for horizontal variant */}
-          {isHorizontal && labRequest.assignedTechnician &&
-            ["in_progress", "completed", "dispatched"].includes(labRequest.labStatus) && (
-              <Box
-                sx={{
-                  mt: 1.5,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "flex-end",
-                  gap: 0.5,
-                }}
-              >
-                <Typography variant="caption" color="text.secondary" sx={{ fontSize: "11px" }}>
-                  Bearbeitet von:
-                </Typography>
-                <Typography variant="caption" sx={{ fontWeight: 600, fontSize: "11px" }}>
-                  {`${labRequest.assignedTechnician?.firstName || ""} ${labRequest.assignedTechnician?.lastName || ""}`.trim()}
-                </Typography>
-              </Box>
-            )}
-        </Box>
+            {/* Assigned Technician Info - only for vertical variant */}
+            {!isHorizontal &&
+              labRequest.assignedTechnician &&
+              ["in_progress", "completed", "dispatched"].includes(
+                labRequest.labStatus,
+              ) && (
+                <Box
+                  sx={{
+                    mt: 2,
+                    pt: 2,
+                    borderTop: "1px solid rgba(0,0,0,0.05)",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                  }}
+                >
+                  <Typography variant="caption" color="text.secondary">
+                    Bearbeitet von:
+                  </Typography>
+                  <Typography variant="caption" sx={{ fontWeight: 600 }}>
+                    {`${labRequest.assignedTechnician?.firstName || ""} ${labRequest.assignedTechnician?.lastName || ""}`.trim()}
+                  </Typography>
+                </Box>
+              )}
+
+            {/* Technician info inline for horizontal variant */}
+            {isHorizontal &&
+              labRequest.assignedTechnician &&
+              ["in_progress", "completed", "dispatched"].includes(
+                labRequest.labStatus,
+              ) && (
+                <Box
+                  sx={{
+                    mt: 1.5,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "flex-end",
+                    gap: 0.5,
+                  }}
+                >
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ fontSize: "11px" }}
+                  >
+                    Bearbeitet von:
+                  </Typography>
+                  <Typography
+                    variant="caption"
+                    sx={{ fontWeight: 600, fontSize: "11px" }}
+                  >
+                    {`${labRequest.assignedTechnician?.firstName || ""} ${labRequest.assignedTechnician?.lastName || ""}`.trim()}
+                  </Typography>
+                </Box>
+              )}
+          </Box>
+        </Collapse>
 
         {/* Resubmit Button for rejected - only for vertical variant */}
         {!isHorizontal && isRejected && showResubmitButton && (

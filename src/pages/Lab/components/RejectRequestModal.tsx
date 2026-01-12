@@ -12,9 +12,14 @@ import {
   Typography,
   Alert,
   SelectChangeEvent,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import ButtonBlock from "../../../components/atoms/ButtonBlock";
-import { RejectLabRequestDto, RejectionReason } from "../../../api/lab-requests/types";
+import {
+  RejectLabRequestDto,
+  RejectionReason,
+} from "../../../api/lab-requests/types";
 
 interface RejectRequestModalProps {
   open: boolean;
@@ -38,6 +43,9 @@ const RejectRequestModal: React.FC<RejectRequestModalProps> = ({
   onSubmit,
   isLoading,
 }) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
   const [reason, setReason] = useState<RejectionReason | "">("");
   const [details, setDetails] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -102,14 +110,16 @@ const RejectRequestModal: React.FC<RejectRequestModalProps> = ({
       aria-labelledby="reject-request-dialog-title"
       maxWidth="sm"
       fullWidth
+      fullScreen={isMobile}
+      slotProps={{ paper: { sx: { borderRadius: isMobile ? 0 : "12px" } } }}
     >
-      <DialogTitle id="reject-request-dialog-title">
+      <DialogTitle id="reject-request-dialog-title" sx={{ fontWeight: 600 }}>
         Laborauftrag ablehnen
       </DialogTitle>
       <DialogContent>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-          Bitte wählen Sie einen Grund für die Ablehnung aus. Der Arzt/die Praxis
-          wird über die Ablehnung informiert.
+          Bitte wählen Sie einen Grund für die Ablehnung aus. Der Arzt/die
+          Praxis wird über die Ablehnung informiert.
         </Typography>
 
         {error && (
@@ -170,17 +180,25 @@ const RejectRequestModal: React.FC<RejectRequestModalProps> = ({
           />
         )}
       </DialogContent>
-      <DialogActions sx={{ px: 3, pb: 2 }}>
+      <DialogActions
+        sx={{
+          p: 2.5,
+          pt: 1,
+          flexDirection: { xs: "column", sm: "row" },
+          gap: { xs: 1, sm: 0 },
+        }}
+      >
         <ButtonBlock
           onClick={handleClose}
           disabled={isLoading}
           style={{
-            borderRadius: "40px",
-            height: "40px",
+            borderRadius: "8px",
+            height: "44px",
             color: "rgba(107, 107, 107, 1)",
-            width: "120px",
+            width: isMobile ? "100%" : "120px",
             fontSize: "14px",
             fontWeight: "500",
+            order: isMobile ? 2 : 1,
           }}
         >
           Abbrechen
@@ -189,18 +207,19 @@ const RejectRequestModal: React.FC<RejectRequestModalProps> = ({
           onClick={handleSubmit}
           disabled={isSubmitDisabled}
           style={{
-            borderRadius: "40px",
-            height: "40px",
+            borderRadius: "8px",
+            height: "44px",
             color: "white",
             backgroundColor: isSubmitDisabled
               ? "rgba(0, 0, 0, 0.12)"
               : "rgba(220, 53, 69, 1)",
-            width: "120px",
+            width: isMobile ? "100%" : "120px",
             fontSize: "14px",
-            fontWeight: "500",
+            fontWeight: "600",
             boxShadow: isSubmitDisabled
               ? "none"
               : "1px 2px 1px 0px rgba(0, 0, 0, 0.25)",
+            order: isMobile ? 1 : 2,
           }}
         >
           {isLoading ? "..." : "Ablehnen"}

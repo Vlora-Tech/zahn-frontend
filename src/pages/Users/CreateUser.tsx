@@ -1,5 +1,15 @@
 import { Form, Formik } from "formik";
-import { Box, Divider, Grid, Paper, Typography } from "@mui/material";
+import {
+  Box,
+  Divider,
+  Grid,
+  IconButton,
+  Paper,
+  Typography,
+  useTheme,
+  useMediaQuery,
+} from "@mui/material";
+import { ArrowBack } from "@mui/icons-material";
 import * as yup from "yup";
 // You will need to replace this with your actual component import.
 import TextFieldBlock from "../../components/molecules/form-fields/TextFieldBlock";
@@ -43,6 +53,8 @@ export const initialValues: UserRequestBody = {
 export default function CreateUser() {
   const navigate = useNavigate();
   const { openSnackbar } = useSnackbar();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const { mutate: createUser, isPending } = useCreateUser();
   const { data: clinics } = useGetClinics();
 
@@ -91,35 +103,44 @@ export default function CreateUser() {
           width="100%"
           maxWidth="824px"
           mx="auto"
+          px={{ xs: 2, sm: 0 }}
         >
-          <Typography
-            variant="h2"
-            sx={{
-              fontWeight: "600",
-              fontSize: "24px",
-              color: "rgba(146, 146, 146, 1)",
-            }}
-          >
-            Neu Pflegefachkraft
-          </Typography>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <IconButton
+              onClick={() => navigate("/nurses")}
+              sx={{ color: "rgba(146, 146, 146, 1)" }}
+            >
+              <ArrowBack />
+            </IconButton>
+            <Typography
+              variant="h2"
+              sx={{
+                fontWeight: "600",
+                fontSize: { xs: "20px", sm: "24px" },
+                color: "rgba(146, 146, 146, 1)",
+              }}
+            >
+              Neu Pflegefachkraft
+            </Typography>
+          </Box>
 
           <Paper
             sx={{
-              borderRadius: "10px",
+              borderRadius: { xs: 0, sm: "10px" },
               background: "rgba(255, 255, 255, 1)",
-              padding: "26px 40px",
+              padding: { xs: "16px", sm: "26px 40px" },
             }}
           >
             <Grid container spacing={2}>
-              <Grid size={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <TextFieldBlock name="firstName" label="Vorname *" />
               </Grid>
 
-              <Grid size={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <TextFieldBlock name="lastName" label="Nachname *" />
               </Grid>
 
-              <Grid size={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <SelectFieldBlock
                   name="gender"
                   label="Geschlecht *"
@@ -137,7 +158,7 @@ export default function CreateUser() {
                 />
               </Grid>
 
-              <Grid size={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <SelectFieldBlock
                   name="clinic"
                   label="Klinik *"
@@ -150,19 +171,19 @@ export default function CreateUser() {
                 <Divider />
               </Grid>
 
-              <Grid size={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <TextFieldBlock name="username" label="Username *" />
               </Grid>
 
-              <Grid size={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <TextFieldBlock name="password" label="Passwort *" />
               </Grid>
 
-              <Grid size={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <TextFieldBlock name="email" label="E-Mail *" type="email" />
               </Grid>
 
-              <Grid size={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <TextFieldBlock name="phoneNumber" label="Telefonnummer *" />
               </Grid>
 
@@ -175,7 +196,7 @@ export default function CreateUser() {
                   name="notes"
                   label="Notizen"
                   multiline={true}
-                  minRows={7}
+                  minRows={isMobile ? 4 : 7}
                 />
               </Grid>
             </Grid>
@@ -185,37 +206,17 @@ export default function CreateUser() {
                 justifyContent: "flex-end",
                 marginTop: "20px",
               }}
-              gap="10px"
             >
               <ButtonBlock
-                type="reset"
-                style={{
-                  // background: "linear-gradient(90deg, #87C133 0%, #68C9F2 100%)",
-                  borderRadius: "40px",
-                  height: "40px",
-                  color: "rgba(107, 107, 107, 1)",
-                  width: "143px",
-                  fontSize: "16px",
-
-                  fontWeight: "500",
-
-                  boxShadow: "1px 2px 1px 0px rgba(0, 0, 0, 0.25)",
-                }}
-              >
-                Zurücksetzen
-              </ButtonBlock>
-
-              <ButtonBlock
                 type="submit"
-                style={{
+                sx={{
                   background:
                     "linear-gradient(90deg, #87C133 0%, #68C9F2 100%)",
                   borderRadius: "40px",
-                  height: "40px",
+                  height: { xs: "44px", sm: "40px" },
                   color: "white",
-                  width: "143px",
+                  width: { xs: "100%", sm: "143px" },
                   fontSize: "16px",
-
                   fontWeight: "500",
                 }}
                 disabled={isPending}

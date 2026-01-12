@@ -1,5 +1,13 @@
 import { Form, Formik } from "formik";
-import { Box, Divider, Grid, Paper, Typography } from "@mui/material";
+import {
+  Box,
+  Divider,
+  Grid,
+  IconButton,
+  Paper,
+  Typography,
+} from "@mui/material";
+import { ArrowBack } from "@mui/icons-material";
 import * as yup from "yup";
 import TextFieldBlock from "../../components/molecules/form-fields/TextFieldBlock";
 import { useCreateClinic } from "../../api/clinics/hooks";
@@ -43,7 +51,7 @@ const validationSchema = yup.object({
     .required("Nummer is required")
     .matches(
       /^\+?[0-9]{7,15}$/,
-      "Phone number must be valid and contain 7–15 digits"
+      "Phone number must be valid and contain 7–15 digits",
     ),
 
   notes: yup.string().max(500, "Notes cannot exceed 500 characters").nullable(), // explicitly allows null as well as empty string
@@ -108,22 +116,30 @@ export default function CreateClinic() {
           maxWidth="824px"
           mx="auto"
         >
-          <Typography
-            variant="h2"
-            sx={{
-              fontWeight: "600",
-              fontSize: "24px",
-              color: "rgba(146, 146, 146, 1)",
-            }}
-          >
-            Neu Klinik
-          </Typography>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <IconButton
+              onClick={() => navigate("/clinics")}
+              sx={{ color: "rgba(146, 146, 146, 1)" }}
+            >
+              <ArrowBack />
+            </IconButton>
+            <Typography
+              variant="h2"
+              sx={{
+                fontWeight: "600",
+                fontSize: "24px",
+                color: "rgba(146, 146, 146, 1)",
+              }}
+            >
+              Neu Klinik
+            </Typography>
+          </Box>
 
           <Paper
             sx={{
-              borderRadius: "10px",
+              borderRadius: { xs: 0, sm: "10px" },
               background: "rgba(255, 255, 255, 1)",
-              padding: "26px 40px",
+              padding: { xs: "16px", sm: "26px 40px" },
             }}
           >
             <Grid container spacing={2}>
@@ -131,19 +147,19 @@ export default function CreateClinic() {
                 <TextFieldBlock name="name" label="Klinikname *" />
               </Grid>
 
-              <Grid size={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <TextFieldBlock name="street" label="Straße *" />
               </Grid>
 
-              <Grid size={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <TextFieldBlock name="buildingNo" label="Gebäudenummer *" />
               </Grid>
 
-              <Grid size={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <TextFieldBlock name="postalCode" label="Postleitzahl *" />
               </Grid>
 
-              <Grid size={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <TextFieldBlock name="city" label="Stadt *" />
               </Grid>
 
@@ -167,44 +183,24 @@ export default function CreateClinic() {
             <Box
               sx={{
                 display: "flex",
-                justifyContent: "flex-end",
+                justifyContent: { xs: "stretch", sm: "flex-end" },
                 marginTop: "20px",
               }}
-              gap="10px"
             >
-              <ButtonBlock
-                type="reset"
-                // onClick={() => {
-                //   navigate("/clinics");
-                // }}
-                style={{
-                  // background: "linear-gradient(90deg, #87C133 0%, #68C9F2 100%)",
-                  borderRadius: "40px",
-                  height: "40px",
-                  color: "rgba(107, 107, 107, 1)",
-                  width: "143px",
-                  fontSize: "16px",
-
-                  fontWeight: "500",
-
-                  boxShadow: "1px 2px 1px 0px rgba(0, 0, 0, 0.25)",
-                }}
-              >
-                Zurücksetzen
-              </ButtonBlock>
-
               <ButtonBlock
                 type="submit"
                 style={{
                   background:
                     "linear-gradient(90deg, #87C133 0%, #68C9F2 100%)",
                   borderRadius: "40px",
-                  height: "40px",
+                  height: "44px",
                   color: "white",
-                  width: "143px",
                   fontSize: "16px",
-
                   fontWeight: "500",
+                }}
+                sx={{
+                  width: { xs: "100%", sm: "143px" },
+                  minHeight: "44px",
                 }}
                 disabled={isPending}
               >

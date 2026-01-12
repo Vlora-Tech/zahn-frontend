@@ -8,7 +8,7 @@ import {
   FormControl,
 } from "@mui/material";
 
-const StyledTextField = styled(TextField)({
+const StyledTextField = styled(TextField)(({ theme }) => ({
   "label + &": {
     marginTop: "20px",
   },
@@ -19,6 +19,10 @@ const StyledTextField = styled(TextField)({
     borderBottomColor: "#B2BAC2",
   },
   "& .MuiOutlinedInput-root": {
+    // Mobile: ensure minimum 44px height for touch targets
+    [theme.breakpoints.down("sm")]: {
+      minHeight: "44px",
+    },
     "& fieldset": {
       borderColor: "#E0E3E7",
     },
@@ -45,7 +49,7 @@ const StyledTextField = styled(TextField)({
     backgroundColor: "transparent",
   },
   "& .MuiFormHelperText-root": {
-    backgroundColor: "transparent", // Set the background color to transparent
+    backgroundColor: "transparent",
   },
   "&.MuiTextField-root": {
     backgroundColor: "transparent",
@@ -57,8 +61,12 @@ const StyledTextField = styled(TextField)({
   },
   "& .MuiInputBase-input": {
     padding: "8px 16px",
+    // Mobile: ensure adequate font size to prevent zoom on iOS
+    [theme.breakpoints.down("sm")]: {
+      fontSize: "16px",
+    },
   },
-});
+}));
 
 export interface DatePickerBlockProps extends Omit<TextFieldProps, "variant"> {
   startIcon?: React.ReactNode;

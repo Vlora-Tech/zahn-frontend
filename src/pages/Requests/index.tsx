@@ -1,52 +1,54 @@
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useMemo } from "react";
 import {
   Typography,
   IconButton,
   Box,
   TextField,
   InputAdornment,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Paper,
-  Checkbox,
   Pagination,
   Stack,
-  TableSortLabel,
   Alert,
   Tooltip,
   FormControl,
   Select,
   MenuItem,
   SelectChangeEvent,
+  useTheme,
+  useMediaQuery,
+  InputLabel,
+  Chip,
 } from "@mui/material";
 import {
   Search,
   Settings,
   Print,
   Refresh,
-  Visibility,
   Warning,
   FilterAlt,
   Error as ErrorIcon,
+  CalendarToday,
+  MedicalServices,
+  Science,
 } from "@mui/icons-material";
+import MobileFilterPanel from "../../components/MobileFilterPanel";
+import {
+  getRequestStatusConfig,
+  getLabStatusConfig,
+} from "../../constants/statusConfig";
 import { debounce } from "lodash";
 import { useGetTreatmentRequests } from "../../api/treatment-requests/hooks";
 import { useGetDoctors } from "../../api/doctors/hooks";
-import StyledLink from "../../components/atoms/StyledLink";
-import TableRowsLoader from "../../components/molecules/TableRowsLoader";
-import EmptyTableState from "../../components/molecules/EmptyTableState";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import LabStatusChip from "../Lab/components/LabStatusChip";
 import { LabStatus } from "../../api/lab-requests/types";
 import RequestStatusChip from "./components/RequestStatusChip";
 import { formatDateDE } from "../../utils/formatDate";
 import DateText from "../../components/atoms/DateText";
+import ResponsiveTable, { ColumnDef } from "../../components/ResponsiveTable";
+import { TreatmentRequest } from "../../api/treatment-requests/types";
 
-// Request status type
 type RequestStatus =
   | "pending_approval"
   | "approved"
@@ -54,7 +56,6 @@ type RequestStatus =
   | "received_from_lab"
   | "delivered_to_patient";
 
-// Status filter options for request status (Stand)
 const requestStatusOptions: { value: RequestStatus | "all"; label: string }[] =
   [
     { value: "all", label: "Alle Stand" },
@@ -65,7 +66,6 @@ const requestStatusOptions: { value: RequestStatus | "all"; label: string }[] =
     { value: "delivered_to_patient", label: "An Patient geliefert" },
   ];
 
-// Lab status filter options (Labor-Stand)
 const labStatusOptions: { value: LabStatus | "all"; label: string }[] = [
   { value: "all", label: "Alle Labor-Stand" },
   { value: "new", label: "Neu" },
@@ -77,7 +77,6 @@ const labStatusOptions: { value: LabStatus | "all"; label: string }[] = [
   { value: "dispatched", label: "Versandt" },
 ];
 
-// Map rejection reason codes to human-readable German labels
 const rejectionReasonLabels: Record<string, string> = {
   incomplete_information: "Unvollständige Informationen",
   invalid_specifications: "Ungültige Spezifikationen",
@@ -86,7 +85,6 @@ const rejectionReasonLabels: Record<string, string> = {
   other: "Sonstiges",
 };
 
-// Component to display lab status for a single request row
 const LabStatusCell: React.FC<{
   requestStatus: string;
   isDoctorApprovalNeeded: boolean;
@@ -95,28 +93,17 @@ const LabStatusCell: React.FC<{
     rejectionReason?: string;
     rejectionDetails?: string;
   };
-}> = ({ requestStatus, isDoctorApprovalNeeded, labRequest }) => {
-  // Show lab status for any request that's not pending or rejected
+}> = ({ requestStatus, labRequest }) => {
   const shouldShowLabStatus =
     requestStatus !== "pending_approval" && requestStatus !== "rejected";
-
-  // Don't show anything for requests that don't have lab status
-  if (!shouldShowLabStatus) {
-    return <span>-</span>;
-  }
-
-  if (!labRequest) {
-    return <span>-</span>;
-  }
+  if (!shouldShowLabStatus || !labRequest) return <span>-</span>;
 
   const isRejected = labRequest.labStatus === "rejected";
-
   if (isRejected) {
     const reasonLabel =
       rejectionReasonLabels[labRequest.rejectionReason || ""] ||
       labRequest.rejectionReason ||
       "Unbekannt";
-
     return (
       <Tooltip
         title={
@@ -140,36 +127,28 @@ const LabStatusCell: React.FC<{
       </Tooltip>
     );
   }
-
   return <LabStatusChip status={labRequest.labStatus} />;
 };
 
-// Helper to check delivery date urgency
 const getDeliveryDateUrgency = (
   deliveryDate: string,
 ): "overdue" | "today" | "normal" => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-
   const delivery = new Date(deliveryDate);
   delivery.setHours(0, 0, 0, 0);
-
   if (delivery < today) return "overdue";
   if (delivery.getTime() === today.getTime()) return "today";
   return "normal";
 };
 
-// Component to display delivery date with urgency styling
-const DeliveryDateCell: React.FC<{
-  deliveryDate?: string;
-  status: string;
-}> = ({ deliveryDate, status }) => {
+const DeliveryDateCell: React.FC<{ deliveryDate?: string; status: string }> = ({
+  deliveryDate,
+  status,
+}) => {
   if (!deliveryDate) return <span>-</span>;
-
-  // Don't show urgency styling if delivered to patient
   const isDelivered = status === "delivered_to_patient";
   const urgency = isDelivered ? "normal" : getDeliveryDateUrgency(deliveryDate);
-
   const getStyles = () => {
     switch (urgency) {
       case "overdue":
@@ -180,9 +159,7 @@ const DeliveryDateCell: React.FC<{
         return {};
     }
   };
-
   const showIcon = urgency === "overdue" || urgency === "today";
-
   return (
     <Box
       sx={{
@@ -207,8 +184,108 @@ const DeliveryDateCell: React.FC<{
   );
 };
 
+// Mobile card renderer for requests
+const RequestMobileCard = ({ request }: { request: TreatmentRequest }) => {
+  const statusConfig = getRequestStatusConfig(
+    request.status || "pending_approval",
+  );
+  const labStatusConfig = request.labRequest
+    ? getLabStatusConfig(request.labRequest.labStatus)
+    : null;
+
+  return (
+    <Box>
+      {/* Request number and patient name */}
+      <Box sx={{ mb: 1.5 }}>
+        <Typography
+          variant="subtitle1"
+          sx={{ fontWeight: 600, color: "rgba(51, 51, 51, 1)" }}
+        >
+          #{request.requestNumber || "-"}
+        </Typography>
+        <Typography variant="body2" sx={{ color: "rgba(51, 51, 51, 1)" }}>
+          {request.patient?.firstName && request.patient?.lastName
+            ? `${request.patient.firstName} ${request.patient.lastName}`
+            : "-"}
+        </Typography>
+      </Box>
+
+      {/* Status chips - stacked vertically */}
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 1,
+          mb: 1.5,
+        }}
+      >
+        <Chip
+          icon={
+            <MedicalServices
+              sx={{
+                fontSize: 14,
+                color: `${statusConfig.textColor} !important`,
+              }}
+            />
+          }
+          label={`Stand: ${statusConfig.label}`}
+          size="small"
+          sx={{
+            backgroundColor: statusConfig.bgColor,
+            color: statusConfig.textColor,
+            fontWeight: 500,
+            fontSize: "11px",
+            height: 24,
+            width: "fit-content",
+          }}
+        />
+        {labStatusConfig && (
+          <Chip
+            icon={
+              <Science
+                sx={{
+                  fontSize: 14,
+                  color: `${labStatusConfig.textColor} !important`,
+                }}
+              />
+            }
+            label={`Labor: ${labStatusConfig.label}`}
+            size="small"
+            sx={{
+              backgroundColor: labStatusConfig.bgColor,
+              color: labStatusConfig.textColor,
+              fontWeight: 500,
+              fontSize: "11px",
+              height: 24,
+              width: "fit-content",
+            }}
+          />
+        )}
+      </Box>
+
+      {/* Delivery date */}
+      <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+        <CalendarToday
+          sx={{ fontSize: 16, color: "rgba(146, 146, 146, 0.7)" }}
+        />
+        <Typography variant="body2" sx={{ color: "rgba(100, 100, 100, 1)" }}>
+          Liefertermin:{" "}
+          <DeliveryDateCell
+            deliveryDate={request.deliveryDate}
+            status={request.status || "pending_approval"}
+          />
+        </Typography>
+      </Box>
+    </Box>
+  );
+};
+
 const Requests = () => {
-  const [selected, setSelected] = useState<string[]>([]);
+  const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const { user } = useAuth();
+
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
@@ -219,21 +296,18 @@ const Requests = () => {
     "all",
   );
   const [doctorFilter, setDoctorFilter] = useState<string>("all");
-
-  const { user } = useAuth();
-
   const [order, setOrder] = useState<"asc" | "desc">("desc");
   const [orderBy, setOrderBy] = useState("createdAt");
 
-  // Fetch doctors for filter dropdown
   const { data: doctorsData } = useGetDoctors();
 
   const {
     data: requests,
-    isLoading: isRequestsLoading,
-    error: requestsError,
+    isLoading,
+    error,
   } = useGetTreatmentRequests({
     page,
+    limit: 15,
     search,
     sortBy: orderBy,
     sortOrder: order,
@@ -244,88 +318,148 @@ const Requests = () => {
     ...(user?.role === "nurse" ? { clinic: user?.clinic?._id } : {}),
   });
 
-  // Debounced search function
   const debouncedSearch = useCallback(
     debounce((searchTerm: string) => {
       setSearch(searchTerm);
-      setPage(1); // Reset to first page when searching
-    }, 500), // 500ms delay
+      setPage(1);
+    }, 500),
     [],
   );
 
-  const handleSort = (property: string) => {
-    const isAsc = orderBy === property && order === "asc";
-
-    setOrder(isAsc ? "desc" : "asc");
-
-    setOrderBy(property);
-  };
-
-  const handleStatusFilterChange = (event: SelectChangeEvent<string>) => {
-    setStatusFilter(event.target.value as RequestStatus | "all");
-    setPage(1);
-  };
-
-  const handleLabStatusFilterChange = (event: SelectChangeEvent<string>) => {
-    setLabStatusFilter(event.target.value as LabStatus | "all");
-    setPage(1);
-  };
-
-  const handleDoctorFilterChange = (event: SelectChangeEvent<string>) => {
-    setDoctorFilter(event.target.value);
-    setPage(1);
-  };
-
-  // Effect to trigger debounced search when searchInput changes
   useEffect(() => {
     debouncedSearch(searchInput);
-
-    // Cleanup function to cancel pending debounced calls
     return () => {
       debouncedSearch.cancel();
     };
   }, [searchInput, debouncedSearch]);
 
-  const handleClick = (id: string) => {
-    const selectedIndex = selected.indexOf(id);
-    let newSelected: string[] = [];
-
-    if (selectedIndex === -1) {
-      newSelected = newSelected.concat(selected, id);
-    } else if (selectedIndex === 0) {
-      newSelected = newSelected.concat(selected.slice(1));
-    } else if (selectedIndex === selected.length - 1) {
-      newSelected = newSelected.concat(selected.slice(0, -1));
-    } else if (selectedIndex > 0) {
-      newSelected = newSelected.concat(
-        selected.slice(0, selectedIndex),
-        selected.slice(selectedIndex + 1),
-      );
-    }
-    setSelected(newSelected);
+  const handleSort = (property: string) => {
+    const isAsc = orderBy === property && order === "asc";
+    setOrder(isAsc ? "desc" : "asc");
+    setOrderBy(property);
   };
 
-  const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) =>
     setSearchInput(event.target.value);
+  const handleStatusFilterChange = (event: SelectChangeEvent<string>) => {
+    setStatusFilter(event.target.value as RequestStatus | "all");
+    setPage(1);
   };
+  const handleLabStatusFilterChange = (event: SelectChangeEvent<string>) => {
+    setLabStatusFilter(event.target.value as LabStatus | "all");
+    setPage(1);
+  };
+  const handleDoctorFilterChange = (event: SelectChangeEvent<string>) => {
+    setDoctorFilter(event.target.value);
+    setPage(1);
+  };
+  const handleRowClick = (request: TreatmentRequest) =>
+    navigate(`/requests/${request._id}`);
 
-  const isSelected = (id: string) => selected.indexOf(id) !== -1;
+  // Count active filters for mobile filter panel
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (statusFilter !== "all") count++;
+    if (labStatusFilter !== "all") count++;
+    if (doctorFilter !== "all") count++;
+    return count;
+  }, [statusFilter, labStatusFilter, doctorFilter]);
+
+  // Clear all filters
+  const handleClearFilters = () => {
+    setStatusFilter("all");
+    setLabStatusFilter("all");
+    setDoctorFilter("all");
+    setPage(1);
+  };
 
   const hasData = requests?.data && requests.data.length > 0;
+  const mobileCardRenderer = (request: TreatmentRequest) => (
+    <RequestMobileCard request={request} />
+  );
+
+  const columns: ColumnDef<TreatmentRequest>[] = [
+    {
+      id: "requestNumber",
+      label: "Auftragsnr.",
+      accessor: (r) => r.requestNumber || "-",
+      sortable: true,
+      width: 120,
+    },
+    {
+      id: "deliveryDate",
+      label: "Liefertermin",
+      accessor: (r) => (
+        <DeliveryDateCell
+          deliveryDate={r.deliveryDate}
+          status={r.status || "pending_approval"}
+        />
+      ),
+      sortable: true,
+      width: 130,
+    },
+    {
+      id: "patient",
+      label: "Patientenname",
+      accessor: (r) =>
+        r.patient?.firstName && r.patient?.lastName
+          ? `${r.patient.firstName} ${r.patient.lastName}`
+          : "-",
+      sortable: true,
+      width: 180,
+    },
+    {
+      id: "doctor",
+      label: "Zahnarzt",
+      accessor: (r) =>
+        r.doctor?.firstName && r.doctor?.lastName
+          ? `${r.doctor.firstName} ${r.doctor.lastName}`
+          : "-",
+      sortable: true,
+      width: 150,
+    },
+    {
+      id: "status",
+      label: "Stand",
+      accessor: (r) => (
+        <RequestStatusChip status={r.status || "pending_approval"} />
+      ),
+      sortable: true,
+      width: 150,
+    },
+    {
+      id: "labStatus",
+      label: "Labor-Stand",
+      accessor: (r) => (
+        <LabStatusCell
+          requestStatus={r.status}
+          isDoctorApprovalNeeded={r.isDoctorApprovalNeeded}
+          labRequest={r.labRequest}
+        />
+      ),
+      width: 130,
+    },
+    {
+      id: "createdAt",
+      label: "Erstellt am",
+      accessor: (r) => <DateText date={r.createdAt} showTime />,
+      sortable: true,
+      width: 150,
+    },
+  ];
 
   return (
-    <Stack flex="1" gap="20px" height={"100%"}>
-      <Typography
-        variant="h2"
-        sx={{
-          color: "rgba(146, 146, 146, 1)",
-        }}
-      >
+    <Stack
+      flex="1"
+      gap="20px"
+      height="100%"
+      sx={{ overflow: "hidden", minWidth: 0 }}
+    >
+      <Typography variant="h2" sx={{ color: "rgba(146, 146, 146, 1)" }}>
         Auftragen
       </Typography>
 
-      {/* Error Alert */}
-      {requestsError && (
+      {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
           Fehler beim Laden der Aufträge. Bitte versuchen Sie es erneut.
         </Alert>
@@ -333,38 +467,123 @@ const Requests = () => {
 
       <Paper
         sx={{
-          borderRadius: "10px",
+          borderRadius: { xs: 0, sm: "10px" },
           background: "rgba(255, 255, 255, 1)",
           display: "flex",
           flexDirection: "column",
           flex: "1",
+          overflow: "hidden",
+          maxWidth: "100%",
         }}
       >
         <Box
           sx={{
             display: "flex",
+            flexDirection: { xs: "column", sm: "row" },
             justifyContent: "space-between",
-            alignItems: "center",
-            p: "16px 28px",
+            alignItems: { xs: "stretch", sm: "center" },
+            gap: { xs: 2, sm: 2 },
+            p: { xs: "12px 16px", sm: "16px 28px" },
           }}
         >
-          <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+          <Box
+            sx={{
+              display: "flex",
+              gap: 2,
+              alignItems: "center",
+              flexWrap: "wrap",
+              flex: 1,
+            }}
+          >
             <TextField
               variant="outlined"
               size="small"
               placeholder="Patient oder Auftragsnr. suchen..."
               value={searchInput}
-              sx={{ minWidth: 500 }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Search fontSize="small" />
-                  </InputAdornment>
-                ),
+              sx={{
+                minWidth: { xs: "100%", sm: 200, md: 300 },
+                width: { xs: "100%", sm: "auto" },
+                flexShrink: 1,
+                "& .MuiInputBase-root": {
+                  minHeight: { xs: "44px", sm: "40px" },
+                },
+              }}
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Search fontSize="small" />
+                    </InputAdornment>
+                  ),
+                },
               }}
               onChange={handleSearch}
             />
-            <FormControl size="small" sx={{ minWidth: 180 }}>
+
+            {/* Mobile Filter Panel */}
+            {isMobile && (
+              <MobileFilterPanel
+                activeFilterCount={activeFilterCount}
+                onClearFilters={handleClearFilters}
+              >
+                <FormControl size="small" fullWidth>
+                  <InputLabel id="mobile-status-filter-label">Stand</InputLabel>
+                  <Select
+                    labelId="mobile-status-filter-label"
+                    value={statusFilter}
+                    onChange={handleStatusFilterChange}
+                    label="Stand"
+                  >
+                    {requestStatusOptions.map((opt) => (
+                      <MenuItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+                <FormControl size="small" fullWidth>
+                  <InputLabel id="mobile-lab-status-filter-label">
+                    Labor-Stand
+                  </InputLabel>
+                  <Select
+                    labelId="mobile-lab-status-filter-label"
+                    value={labStatusFilter}
+                    onChange={handleLabStatusFilterChange}
+                    label="Labor-Stand"
+                  >
+                    {labStatusOptions.map((opt) => (
+                      <MenuItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+                <FormControl size="small" fullWidth>
+                  <InputLabel id="mobile-doctor-filter-label">
+                    Zahnarzt
+                  </InputLabel>
+                  <Select
+                    labelId="mobile-doctor-filter-label"
+                    value={doctorFilter}
+                    onChange={handleDoctorFilterChange}
+                    label="Zahnarzt"
+                  >
+                    <MenuItem value="all">Alle Zahnärzte</MenuItem>
+                    {doctorsData?.data?.map((doctor) => (
+                      <MenuItem key={doctor._id} value={doctor._id}>
+                        {doctor.firstName} {doctor.lastName}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </MobileFilterPanel>
+            )}
+
+            {/* Desktop/Tablet Filter Controls */}
+            <FormControl
+              size="small"
+              sx={{ minWidth: 150, display: { xs: "none", sm: "flex" } }}
+            >
               <Select
                 value={statusFilter}
                 onChange={handleStatusFilterChange}
@@ -378,14 +597,17 @@ const Requests = () => {
                   </InputAdornment>
                 }
               >
-                {requestStatusOptions.map((option) => (
-                  <MenuItem key={option.value} value={option.value}>
-                    {option.label}
+                {requestStatusOptions.map((opt) => (
+                  <MenuItem key={opt.value} value={opt.value}>
+                    {opt.label}
                   </MenuItem>
                 ))}
               </Select>
             </FormControl>
-            <FormControl size="small" sx={{ minWidth: 180 }}>
+            <FormControl
+              size="small"
+              sx={{ minWidth: 150, display: { xs: "none", md: "flex" } }}
+            >
               <Select
                 value={labStatusFilter}
                 onChange={handleLabStatusFilterChange}
@@ -399,14 +621,17 @@ const Requests = () => {
                   </InputAdornment>
                 }
               >
-                {labStatusOptions.map((option) => (
-                  <MenuItem key={option.value} value={option.value}>
-                    {option.label}
+                {labStatusOptions.map((opt) => (
+                  <MenuItem key={opt.value} value={opt.value}>
+                    {opt.label}
                   </MenuItem>
                 ))}
               </Select>
             </FormControl>
-            <FormControl size="small" sx={{ minWidth: 180 }}>
+            <FormControl
+              size="small"
+              sx={{ minWidth: 150, display: { xs: "none", md: "flex" } }}
+            >
               <Select
                 value={doctorFilter}
                 onChange={handleDoctorFilterChange}
@@ -429,7 +654,7 @@ const Requests = () => {
               </Select>
             </FormControl>
           </Box>
-          <Box>
+          <Box sx={{ display: { xs: "none", md: "flex" } }}>
             <IconButton>
               <Print />
             </IconButton>
@@ -441,172 +666,54 @@ const Requests = () => {
             </IconButton>
           </Box>
         </Box>
-        <Stack flex={1} justifyContent={"space-between"}>
-          <TableContainer>
-            <Table>
-              <TableHead
-                sx={{
-                  backgroundColor: "rgba(232, 232, 232, 1)",
-                }}
-              >
-                <TableCell padding="checkbox">
-                  <Checkbox />
-                </TableCell>
-                <TableCell>
-                  <TableSortLabel
-                    active={orderBy === "requestNumber"}
-                    direction={orderBy === "requestNumber" ? order : "asc"}
-                    onClick={() => handleSort("requestNumber")}
-                  >
-                    Auftragsnr.
-                  </TableSortLabel>
-                </TableCell>
-                <TableCell>
-                  <TableSortLabel
-                    active={orderBy === "createdAt"}
-                    direction={orderBy === "createdAt" ? order : "asc"}
-                    onClick={() => handleSort("createdAt")}
-                  >
-                    Erstellt am
-                  </TableSortLabel>
-                </TableCell>
-                <TableCell>
-                  <TableSortLabel
-                    active={orderBy === "deliveryDate"}
-                    direction={orderBy === "deliveryDate" ? order : "asc"}
-                    onClick={() => handleSort("deliveryDate")}
-                  >
-                    Liefertermin
-                  </TableSortLabel>
-                </TableCell>
-                <TableCell>
-                  <TableSortLabel
-                    active={orderBy === "patient"}
-                    direction={orderBy === "patient" ? order : "asc"}
-                    onClick={() => handleSort("patient")}
-                  >
-                    Patientenname
-                  </TableSortLabel>
-                </TableCell>
-                <TableCell>
-                  <TableSortLabel
-                    active={orderBy === "doctor"}
-                    direction={orderBy === "doctor" ? order : "asc"}
-                    onClick={() => handleSort("doctor")}
-                  >
-                    Zahnarzt
-                  </TableSortLabel>
-                </TableCell>
-                <TableCell>
-                  <TableSortLabel
-                    active={orderBy === "status"}
-                    direction={orderBy === "status" ? order : "asc"}
-                    onClick={() => handleSort("status")}
-                  >
-                    Stand
-                  </TableSortLabel>
-                </TableCell>
-                <TableCell>Labor-Stand</TableCell>
-                {/* <TableCell>Erstellt von</TableCell> */}
-                <TableCell></TableCell>
-              </TableHead>
-              <TableBody>
-                {isRequestsLoading ? (
-                  <TableRowsLoader rowsNum={10} colNums={8} />
-                ) : !hasData ? (
-                  <EmptyTableState
-                    colSpan={8}
-                    message={
-                      search
-                        ? "Keine Aufträge gefunden"
-                        : "Keine Aufträge vorhanden. Erstellen Sie einen neuen Auftrag."
-                    }
-                  />
-                ) : (
-                  <>
-                    {requests?.data?.map((request) => {
-                      const isItemSelected = isSelected(request._id);
-
-                      return (
-                        <TableRow
-                          key={request._id}
-                          hover
-                          onClick={() => handleClick(request._id)}
-                          role="checkbox"
-                          aria-checked={isItemSelected}
-                          tabIndex={-1}
-                          selected={isItemSelected}
-                        >
-                          <TableCell padding="checkbox">
-                            <Checkbox checked={isItemSelected} />
-                          </TableCell>
-                          <TableCell>{request?.requestNumber || "-"}</TableCell>
-                          <TableCell>
-                            <DateText date={request?.createdAt} showTime />
-                          </TableCell>
-                          <TableCell>
-                            <DeliveryDateCell
-                              deliveryDate={request?.deliveryDate}
-                              status={request?.status || "pending_approval"}
-                            />
-                          </TableCell>
-                          <TableCell>
-                            {request?.patient?.firstName &&
-                            request?.patient?.lastName
-                              ? `${request.patient.firstName} ${request.patient.lastName}`
-                              : "-"}
-                          </TableCell>
-                          <TableCell>
-                            {request?.doctor?.firstName &&
-                            request?.doctor?.lastName
-                              ? `${request.doctor.firstName} ${request.doctor.lastName}`
-                              : "-"}
-                          </TableCell>
-                          <TableCell>
-                            <RequestStatusChip
-                              status={request?.status || "pending_approval"}
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <LabStatusCell
-                              requestStatus={request.status}
-                              isDoctorApprovalNeeded={
-                                request.isDoctorApprovalNeeded
-                              }
-                              labRequest={request.labRequest}
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <StyledLink to={`/requests/${request?._id}`}>
-                              <Visibility />
-                            </StyledLink>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
+        <Box
+          sx={{
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+            overflow: "hidden",
+            minWidth: 0,
+          }}
+        >
+          <Box
+            sx={{ flex: 1, overflowX: "auto", overflowY: "auto", minWidth: 0 }}
+          >
+            <ResponsiveTable<TreatmentRequest>
+              data={requests?.data || []}
+              columns={columns}
+              mobileCardRenderer={mobileCardRenderer}
+              onRowClick={handleRowClick}
+              isLoading={isLoading}
+              emptyMessage={
+                search
+                  ? "Keine Aufträge gefunden"
+                  : "Keine Aufträge vorhanden. Erstellen Sie einen neuen Auftrag."
+              }
+              getItemId={(r) => r._id}
+              sortBy={orderBy}
+              sortOrder={order}
+              onSort={handleSort}
+            />
+          </Box>
           {hasData && requests?.pagination && (
             <Box
               sx={{
                 display: "flex",
                 justifyContent: "center",
-                p: "24px",
-                marginTop: "auto",
+                p: { xs: "16px", sm: "24px" },
+                flexShrink: 0,
               }}
             >
               <Pagination
                 count={requests.pagination.totalPages || 1}
                 page={requests.pagination.currentPage || 1}
-                onChange={(event, value) => setPage(value)}
+                onChange={(_, value) => setPage(value)}
                 color="primary"
+                size={isMobile ? "small" : "medium"}
               />
             </Box>
           )}
-        </Stack>
+        </Box>
       </Paper>
     </Stack>
   );

@@ -15,6 +15,8 @@ import {
   CircularProgress,
   Tabs,
   Tab,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import { useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
@@ -25,7 +27,6 @@ import {
   Edit,
   Person,
   LocalHospital,
-  Assignment,
   AccessTime,
   Badge,
   Wc,
@@ -38,8 +39,9 @@ import {
   Inventory,
   CardGiftcard,
   Info,
-  Description,
+  Assignment,
   MedicalInformation,
+  FlashOn,
 } from "@mui/icons-material";
 
 import {
@@ -103,6 +105,9 @@ export default function RequestDetails() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const requestId = params.id;
+
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm")); // < 600px
 
   const {
     data: treatmentRequest,
@@ -362,7 +367,7 @@ export default function RequestDetails() {
     markDeliveredToPatientMutation.isPending;
 
   return (
-    <Stack flex="1" gap="16px" height="100%" sx={{ position: "relative" }}>
+    <Stack flex="1" gap="16px" height="100%">
       {/* Full page loading overlay */}
       <Backdrop
         sx={{ color: "#fff", zIndex: (theme) => theme.zIndex.drawer + 1 }}
@@ -371,24 +376,15 @@ export default function RequestDetails() {
         <CircularProgress color="inherit" />
       </Backdrop>
 
-      {/* Back button - absolute positioned */}
-      <IconButton
-        onClick={handleGoBack}
+      {/* Top Section: Hero Card with Back Button */}
+      <Box
         sx={{
-          position: "absolute",
-          top: 0,
-          left: -56,
-          backgroundColor: "white",
-          boxShadow: "0px 2px 4px rgba(0,0,0,0.1)",
-          "&:hover": { backgroundColor: "rgba(245,245,245,1)" },
-          zIndex: 10,
+          display: "flex",
+          flexDirection: { xs: "column", md: "row" },
+          gap: "16px",
+          alignItems: { xs: "stretch", md: "stretch" },
         }}
       >
-        <ArrowBack />
-      </IconButton>
-
-      {/* Top Section: Two Column Layout when actions needed */}
-      <Box sx={{ display: "flex", gap: "16px", alignItems: "stretch" }}>
         {/* Left Column: Hero Card */}
         <Paper
           sx={{
@@ -400,51 +396,65 @@ export default function RequestDetails() {
             overflow: "hidden",
           }}
         >
-          <Box sx={{ display: "flex", flexWrap: "wrap" }}>
-            {/* Auftrag Section */}
-            <Box
+          {/* Row 1: Back Button + Auftrag Section */}
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: { xs: "column", md: "row" },
+              alignItems: { xs: "stretch", md: "center" },
+              p: 2.5,
+              borderBottom: "1px solid rgba(0,0,0,0.05)",
+              gap: { xs: 2, md: 3 },
+            }}
+          >
+            {/* Back Button */}
+            <IconButton
+              onClick={handleGoBack}
               sx={{
-                flex: 1,
-                minWidth: 220,
-                p: 2.5,
-                borderRight: { xs: "none", md: "1px solid rgba(0,0,0,0.05)" },
-                borderBottom: {
-                  xs: "1px solid rgba(0,0,0,0.05)",
-                  md: "none",
-                },
+                backgroundColor: "white",
+                boxShadow: "0px 2px 4px rgba(0,0,0,0.1)",
+                "&:hover": { backgroundColor: "rgba(245,245,245,1)" },
+                alignSelf: { xs: "flex-start", md: "center" },
+                flexShrink: 0,
               }}
             >
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  mb: 2,
-                }}
-              >
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                  <Avatar
-                    sx={{
-                      width: 36,
-                      height: 36,
-                      backgroundColor: "rgba(255, 152, 0, 0.15)",
-                      color: "rgba(255, 152, 0, 1)",
-                    }}
-                  >
-                    <Assignment sx={{ fontSize: 20 }} />
-                  </Avatar>
-                  <Typography
-                    variant="body1"
-                    sx={{
-                      fontWeight: 700,
-                      fontFamily: "monospace",
-                      color: "rgba(33, 33, 33, 1)",
-                      letterSpacing: "0.5px",
-                    }}
-                  >
-                    {treatmentRequest.requestNumber}
-                  </Typography>
-                </Box>
+              <ArrowBack />
+            </IconButton>
+
+            {/* Auftrag Info - horizontal on desktop */}
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: { xs: "column", md: "row" },
+                alignItems: { xs: "flex-start", md: "center" },
+                gap: { xs: 1.5, md: 3 },
+                flex: 1,
+                flexWrap: "wrap",
+              }}
+            >
+              {/* Request Number + Edit Button */}
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                <Avatar
+                  sx={{
+                    width: 36,
+                    height: 36,
+                    backgroundColor: "rgba(255, 152, 0, 0.15)",
+                    color: "rgba(255, 152, 0, 1)",
+                  }}
+                >
+                  <MedicalInformation sx={{ fontSize: 20 }} />
+                </Avatar>
+                <Typography
+                  variant="body1"
+                  sx={{
+                    fontWeight: 700,
+                    fontFamily: "monospace",
+                    color: "rgba(33, 33, 33, 1)",
+                    letterSpacing: "0.5px",
+                  }}
+                >
+                  {treatmentRequest.requestNumber}
+                </Typography>
                 {treatmentRequest.status === "pending_approval" && (
                   <ButtonBlock
                     startIcon={<Edit sx={{ fontSize: 16 }} />}
@@ -463,109 +473,114 @@ export default function RequestDetails() {
                   </ButtonBlock>
                 )}
               </Box>
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
-                <Box>
-                  <RequestStatusChip status={treatmentRequest.status} />
-                </Box>
-                <Box>
+
+              {/* Status */}
+              <RequestStatusChip status={treatmentRequest.status} />
+
+              {/* Erstellt */}
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                <AccessTime
+                  sx={{
+                    fontSize: 18,
+                    color: "rgba(104, 201, 242, 1)",
+                  }}
+                />
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: "rgba(107, 107, 107, 1)",
+                    fontSize: "16px",
+                  }}
+                >
+                  Erstellt:
+                </Typography>
+                <Typography
+                  variant="body2"
+                  sx={{ fontWeight: 500, fontSize: "16px" }}
+                >
+                  <DateText date={treatmentRequest.createdAt} />
+                </Typography>
+              </Box>
+
+              {/* Liefertermin */}
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                <Schedule
+                  sx={{
+                    fontSize: 18,
+                    color: "rgba(104, 201, 242, 1)",
+                  }}
+                />
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: "rgba(107, 107, 107, 1)",
+                    fontSize: "16px",
+                  }}
+                >
+                  Liefertermin:
+                </Typography>
+                {treatmentRequest.deliveryDate ? (
+                  (() => {
+                    const isDelivered =
+                      treatmentRequest.status === "delivered_to_patient";
+                    const urgency = isDelivered
+                      ? "normal"
+                      : getDeliveryDateUrgency(treatmentRequest.deliveryDate);
+                    const showIcon =
+                      urgency === "overdue" || urgency === "today";
+                    const urgencyColor =
+                      urgency === "overdue"
+                        ? "#C62828"
+                        : urgency === "today"
+                          ? "#F9A825"
+                          : undefined;
+                    return (
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          fontWeight: 500,
+                          fontSize: "16px",
+                          color: urgencyColor,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 0.5,
+                        }}
+                      >
+                        <DateText date={treatmentRequest.deliveryDate} />
+                        {showIcon && (
+                          <ErrorIcon
+                            sx={{ fontSize: 18, color: urgencyColor }}
+                          />
+                        )}
+                      </Typography>
+                    );
+                  })()
+                ) : (
                   <Typography
-                    variant="caption"
-                    sx={{
-                      color: "rgba(107, 107, 107, 1)",
-                      fontSize: "10px",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.5px",
-                    }}
+                    variant="body2"
+                    sx={{ fontWeight: 500, fontSize: "16px" }}
                   >
-                    <AccessTime
-                      sx={{
-                        fontSize: 12,
-                        mr: 0.5,
-                        color: "rgba(104, 201, 242, 1)",
-                        verticalAlign: "middle",
-                      }}
-                    />
-                    Erstellt
+                    —
                   </Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                    <DateText date={treatmentRequest.createdAt} />
-                  </Typography>
-                </Box>
-                <Box>
-                  <Typography
-                    variant="caption"
-                    sx={{
-                      color: "rgba(107, 107, 107, 1)",
-                      fontSize: "10px",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.5px",
-                    }}
-                  >
-                    <Schedule
-                      sx={{
-                        fontSize: 12,
-                        mr: 0.5,
-                        color: "rgba(104, 201, 242, 1)",
-                        verticalAlign: "middle",
-                      }}
-                    />
-                    Liefertermin
-                  </Typography>
-                  {treatmentRequest.deliveryDate ? (
-                    (() => {
-                      const isDelivered =
-                        treatmentRequest.status === "delivered_to_patient";
-                      const urgency = isDelivered
-                        ? "normal"
-                        : getDeliveryDateUrgency(treatmentRequest.deliveryDate);
-                      const showIcon =
-                        urgency === "overdue" || urgency === "today";
-                      const urgencyColor =
-                        urgency === "overdue"
-                          ? "#C62828"
-                          : urgency === "today"
-                            ? "#F9A825"
-                            : undefined;
-                      return (
-                        <Typography
-                          variant="body2"
-                          sx={{
-                            fontWeight: 500,
-                            color: urgencyColor,
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 0.5,
-                          }}
-                        >
-                          <DateText date={treatmentRequest.deliveryDate} />
-                          {showIcon && (
-                            <ErrorIcon
-                              sx={{ fontSize: 18, color: urgencyColor }}
-                            />
-                          )}
-                        </Typography>
-                      );
-                    })()
-                  ) : (
-                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                      —
-                    </Typography>
-                  )}
-                </Box>
+                )}
               </Box>
             </Box>
+          </Box>
 
+          {/* Row 2: Patient + Praxis - side by side on desktop */}
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: { xs: "column", md: "row" },
+            }}
+          >
             {/* Patient Section */}
             <Box
               sx={{
                 flex: 1,
-                minWidth: 220,
                 p: 2.5,
                 borderRight: { xs: "none", md: "1px solid rgba(0,0,0,0.05)" },
-                borderBottom: {
-                  xs: "1px solid rgba(0,0,0,0.05)",
-                  md: "none",
-                },
+                borderBottom: { xs: "1px solid rgba(0,0,0,0.05)", md: "none" },
               }}
             >
               <Box
@@ -593,7 +608,14 @@ export default function RequestDetails() {
                   {patientData?.firstName} {patientData?.lastName}
                 </Typography>
               </Box>
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: { xs: "column", md: "row" },
+                  gap: { xs: 1.5, md: 3 },
+                  flexWrap: "wrap",
+                }}
+              >
                 <Box>
                   <Typography
                     variant="caption"
@@ -677,7 +699,7 @@ export default function RequestDetails() {
             </Box>
 
             {/* Praxis Section */}
-            <Box sx={{ flex: 1, minWidth: 220, p: 2.5 }}>
+            <Box sx={{ flex: 1, p: 2.5 }}>
               <Box
                 sx={{
                   display: "flex",
@@ -703,7 +725,14 @@ export default function RequestDetails() {
                   {treatmentRequest.clinic?.name || "—"}
                 </Typography>
               </Box>
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: { xs: "column", md: "row" },
+                  gap: { xs: 1.5, md: 3 },
+                  flexWrap: "wrap",
+                }}
+              >
                 <Box>
                   <Typography
                     variant="caption"
@@ -762,7 +791,7 @@ export default function RequestDetails() {
           </Box>
         </Paper>
 
-        {/* Right Column: Action Buttons Section */}
+        {/* Right Column: Action Buttons Section - full width on mobile */}
         {showActionSection && (
           <Paper
             sx={{
@@ -771,7 +800,7 @@ export default function RequestDetails() {
               overflow: "hidden",
               boxShadow: "0px 2px 8px rgba(0, 0, 0, 0.08)",
               border: "1px solid rgba(0,0,0,0.05)",
-              width: 280,
+              width: { xs: "100%", md: 300 },
               flexShrink: 0,
               display: "flex",
               flexDirection: "column",
@@ -779,21 +808,19 @@ export default function RequestDetails() {
           >
             <Box
               sx={{
-                p: 2,
+                p: 2.5,
                 background:
                   "linear-gradient(90deg, rgba(135, 193, 51, 0.1) 0%, rgba(104, 201, 242, 0.1) 100%)",
                 borderBottom: "1px solid rgba(0,0,0,0.05)",
                 display: "flex",
                 alignItems: "center",
-                gap: 1,
+                gap: 1.5,
               }}
             >
-              <Assignment
-                sx={{ fontSize: 20, color: "rgba(104, 201, 242, 1)" }}
-              />
+              <FlashOn sx={{ fontSize: 40, color: "rgba(255, 152, 0, 1)" }} />
               <Typography
-                variant="subtitle1"
-                sx={{ fontWeight: 600, fontSize: "14px" }}
+                variant="body1"
+                sx={{ fontWeight: 600, fontSize: 18 }}
               >
                 Aktion erforderlich
               </Typography>
@@ -818,16 +845,18 @@ export default function RequestDetails() {
                       color: "white",
                       background: "#4CAF50",
                       width: "100%",
-                      fontSize: "16px",
+                      fontSize: isMobile ? "14px" : "16px",
                       fontWeight: "600",
                       boxShadow: "0px 2px 4px rgba(76, 175, 80, 0.3)",
-                      flexDirection: "column",
+                      flexDirection: isMobile ? "row" : "column",
                       gap: "8px",
                       justifyContent: "center",
                       alignItems: "center",
+                      minHeight: "44px",
+                      padding: isMobile ? "12px 16px" : undefined,
                     }}
                   >
-                    <Check sx={{ fontSize: 48 }} />
+                    <Check sx={{ fontSize: isMobile ? 24 : 36 }} />
                     {approveMutation.isPending ? "..." : "Genehmigen"}
                   </ButtonBlock>
                   <ButtonBlock
@@ -839,16 +868,18 @@ export default function RequestDetails() {
                       color: "white",
                       background: "#DC3545",
                       width: "100%",
-                      fontSize: "16px",
+                      fontSize: isMobile ? "14px" : "16px",
                       fontWeight: "600",
                       boxShadow: "0px 2px 4px rgba(220, 53, 69, 0.3)",
-                      flexDirection: "column",
+                      flexDirection: isMobile ? "row" : "column",
                       gap: "8px",
                       justifyContent: "center",
                       alignItems: "center",
+                      minHeight: "44px",
+                      padding: isMobile ? "12px 16px" : undefined,
                     }}
                   >
-                    <Close sx={{ fontSize: 48 }} />
+                    <Close sx={{ fontSize: isMobile ? 24 : 36 }} />
                     {rejectMutation.isPending ? "..." : "Ablehnen"}
                   </ButtonBlock>
                 </>
@@ -864,19 +895,23 @@ export default function RequestDetails() {
                     background:
                       "linear-gradient(90deg, #00897B 0%, #26A69A 100%)",
                     width: "100%",
-                    fontSize: "16px",
+                    fontSize: isMobile ? "14px" : "16px",
                     fontWeight: "600",
                     boxShadow: "0px 2px 4px rgba(0, 137, 123, 0.3)",
-                    flexDirection: "column",
+                    flexDirection: isMobile ? "row" : "column",
                     gap: "8px",
                     justifyContent: "center",
                     alignItems: "center",
+                    minHeight: "44px",
+                    padding: isMobile ? "12px 16px" : undefined,
                   }}
                 >
-                  <Inventory sx={{ fontSize: 48 }} />
+                  <Inventory sx={{ fontSize: isMobile ? 24 : 36 }} />
                   {markReceivedFromLabMutation.isPending
                     ? "..."
-                    : "Zustellung aus dem Labor bestätigen"}
+                    : isMobile
+                      ? "Aus Labor erhalten"
+                      : "Labor-Zustellung bestätigen"}
                 </ButtonBlock>
               )}
               {canMarkDeliveredToPatient && (
@@ -890,19 +925,23 @@ export default function RequestDetails() {
                     background:
                       "linear-gradient(90deg, #87C133 0%, #68C9F2 100%)",
                     width: "100%",
-                    fontSize: "16px",
+                    fontSize: isMobile ? "14px" : "16px",
                     fontWeight: "600",
                     boxShadow: "0px 2px 4px rgba(104, 201, 242, 0.3)",
-                    flexDirection: "column",
+                    flexDirection: isMobile ? "row" : "column",
                     gap: "8px",
                     justifyContent: "center",
                     alignItems: "center",
+                    minHeight: "44px",
+                    padding: isMobile ? "12px 16px" : undefined,
                   }}
                 >
-                  <CardGiftcard sx={{ fontSize: 48 }} />
+                  <CardGiftcard sx={{ fontSize: isMobile ? 24 : 36 }} />
                   {markDeliveredToPatientMutation.isPending
                     ? "..."
-                    : "Zustellung an Patient:in bestätigen"}
+                    : isMobile
+                      ? "An Patient geliefert"
+                      : "Patient-Zustellung bestätigen"}
                 </ButtonBlock>
               )}
             </Box>
@@ -1016,14 +1055,14 @@ export default function RequestDetails() {
               sx={{ textTransform: "none", fontWeight: 600, minHeight: 48 }}
             />
             <Tab
-              icon={<MedicalInformation sx={{ fontSize: 18 }} />}
+              icon={<MedicalServices sx={{ fontSize: 18 }} />}
               iconPosition="start"
-              label="Vorgangen"
+              label="Vorgänge"
               sx={{ textTransform: "none", fontWeight: 600, minHeight: 48 }}
             />
             {hasLaborzettel && (
               <Tab
-                icon={<Description sx={{ fontSize: 18 }} />}
+                icon={<Assignment sx={{ fontSize: 18 }} />}
                 iconPosition="start"
                 label="Laborzettel"
                 sx={{ textTransform: "none", fontWeight: 600, minHeight: 48 }}
@@ -1082,7 +1121,8 @@ export default function RequestDetails() {
         onClose={handleCancelApprove}
         maxWidth="sm"
         fullWidth
-        slotProps={{ paper: { sx: { borderRadius: "12px" } } }}
+        fullScreen={isMobile}
+        slotProps={{ paper: { sx: { borderRadius: isMobile ? 0 : "12px" } } }}
       >
         <DialogTitle sx={{ fontWeight: 600 }}>
           Behandlungsantrag genehmigen
@@ -1105,16 +1145,24 @@ export default function RequestDetails() {
             placeholder="Zusätzliche Notizen zur Genehmigung..."
           />
         </DialogContent>
-        <DialogActions sx={{ p: 2.5, pt: 1 }}>
+        <DialogActions
+          sx={{
+            p: 2.5,
+            pt: 1,
+            flexDirection: { xs: "column", sm: "row" },
+            gap: { xs: 1, sm: 0 },
+          }}
+        >
           <ButtonBlock
             onClick={handleCancelApprove}
             style={{
               borderRadius: "8px",
-              height: "40px",
+              height: "44px",
               color: "rgba(107, 107, 107, 1)",
-              width: "120px",
+              width: isMobile ? "100%" : "120px",
               fontSize: "14px",
               fontWeight: "500",
+              order: isMobile ? 2 : 1,
             }}
           >
             Abbrechen
@@ -1124,12 +1172,13 @@ export default function RequestDetails() {
             disabled={approveMutation.isPending}
             style={{
               borderRadius: "8px",
-              height: "40px",
+              height: "44px",
               color: "white",
               background: "#4CAF50",
-              width: "120px",
+              width: isMobile ? "100%" : "120px",
               fontSize: "14px",
               fontWeight: "600",
+              order: isMobile ? 1 : 2,
             }}
           >
             {approveMutation.isPending ? "..." : "Genehmigen"}
@@ -1143,7 +1192,8 @@ export default function RequestDetails() {
         onClose={handleCancelReject}
         maxWidth="sm"
         fullWidth
-        slotProps={{ paper: { sx: { borderRadius: "12px" } } }}
+        fullScreen={isMobile}
+        slotProps={{ paper: { sx: { borderRadius: isMobile ? 0 : "12px" } } }}
       >
         <DialogTitle sx={{ fontWeight: 600 }}>
           Behandlungsantrag ablehnen
@@ -1166,16 +1216,24 @@ export default function RequestDetails() {
             required
           />
         </DialogContent>
-        <DialogActions sx={{ p: 2.5, pt: 1 }}>
+        <DialogActions
+          sx={{
+            p: 2.5,
+            pt: 1,
+            flexDirection: { xs: "column", sm: "row" },
+            gap: { xs: 1, sm: 0 },
+          }}
+        >
           <ButtonBlock
             onClick={handleCancelReject}
             style={{
               borderRadius: "8px",
-              height: "40px",
+              height: "44px",
               color: "rgba(107, 107, 107, 1)",
-              width: "120px",
+              width: isMobile ? "100%" : "120px",
               fontSize: "14px",
               fontWeight: "500",
+              order: isMobile ? 2 : 1,
             }}
           >
             Abbrechen
@@ -1185,12 +1243,13 @@ export default function RequestDetails() {
             disabled={rejectMutation.isPending || !rejectReason.trim()}
             style={{
               borderRadius: "8px",
-              height: "40px",
+              height: "44px",
               color: "white",
               background: "#DC3545",
-              width: "120px",
+              width: isMobile ? "100%" : "120px",
               fontSize: "14px",
               fontWeight: "600",
+              order: isMobile ? 1 : 2,
             }}
           >
             {rejectMutation.isPending ? "..." : "Ablehnen"}

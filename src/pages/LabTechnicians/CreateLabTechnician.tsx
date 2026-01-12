@@ -1,5 +1,14 @@
 import { Form, Formik } from "formik";
-import { Box, Grid, Paper, Typography } from "@mui/material";
+import {
+  Box,
+  Grid,
+  IconButton,
+  Paper,
+  Typography,
+  useTheme,
+  useMediaQuery,
+} from "@mui/material";
+import { ArrowBack } from "@mui/icons-material";
 import * as yup from "yup";
 import TextFieldBlock from "../../components/molecules/form-fields/TextFieldBlock";
 import ButtonBlock from "../../components/atoms/ButtonBlock";
@@ -42,6 +51,8 @@ const initialValues = {
 export default function CreateLabTechnician() {
   const { mutate: createLabTechnician, isPending } = useCreateLabTechnician();
   const { openSnackbar } = useSnackbar();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const navigate = useNavigate();
 
@@ -96,33 +107,43 @@ export default function CreateLabTechnician() {
           width="100%"
           maxWidth="824px"
           mx="auto"
+          px={{ xs: 2, sm: 0 }}
         >
-          <Typography
-            variant="h2"
-            sx={{
-              color: "rgba(146, 146, 146, 1)",
-            }}
-          >
-            Neuer Labortechniker
-          </Typography>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <IconButton
+              onClick={() => navigate("/lab-technicians")}
+              sx={{ color: "rgba(146, 146, 146, 1)" }}
+            >
+              <ArrowBack />
+            </IconButton>
+            <Typography
+              variant="h2"
+              sx={{
+                color: "rgba(146, 146, 146, 1)",
+                fontSize: { xs: "20px", sm: "24px" },
+              }}
+            >
+              Neuer Labortechniker
+            </Typography>
+          </Box>
 
           <Paper
             sx={{
-              borderRadius: "10px",
+              borderRadius: { xs: 0, sm: "10px" },
               background: "rgba(255, 255, 255, 1)",
-              padding: "26px 40px",
+              padding: { xs: "16px", sm: "26px 40px" },
             }}
           >
             <Grid container spacing={2}>
-              <Grid size={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <TextFieldBlock name="firstName" label="Vorname *" />
               </Grid>
 
-              <Grid size={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <TextFieldBlock name="lastName" label="Nachname *" />
               </Grid>
 
-              <Grid size={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <SelectFieldBlock
                   name="gender"
                   label="Geschlecht *"
@@ -140,7 +161,7 @@ export default function CreateLabTechnician() {
                 />
               </Grid>
 
-              <Grid size={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <SelectFieldBlock
                   name="clinic"
                   label="Labor *"
@@ -153,11 +174,11 @@ export default function CreateLabTechnician() {
                 />
               </Grid>
 
-              <Grid size={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <TextFieldBlock name="username" label="Username *" />
               </Grid>
 
-              <Grid size={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <TextFieldBlock
                   name="password"
                   label="Passwort *"
@@ -165,11 +186,11 @@ export default function CreateLabTechnician() {
                 />
               </Grid>
 
-              <Grid size={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <TextFieldBlock name="email" label="E-Mail *" type="email" />
               </Grid>
 
-              <Grid size={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <TextFieldBlock name="phoneNumber" label="Telefonnummer *" />
               </Grid>
 
@@ -178,7 +199,7 @@ export default function CreateLabTechnician() {
                   name="notes"
                   label="Notizen"
                   multiline={true}
-                  minRows={7}
+                  minRows={isMobile ? 4 : 7}
                 />
               </Grid>
             </Grid>
@@ -188,32 +209,16 @@ export default function CreateLabTechnician() {
                 justifyContent: "flex-end",
                 marginTop: "20px",
               }}
-              gap="10px"
             >
               <ButtonBlock
-                type="reset"
-                style={{
-                  borderRadius: "40px",
-                  height: "40px",
-                  color: "rgba(107, 107, 107, 1)",
-                  width: "143px",
-                  fontSize: "16px",
-                  fontWeight: "500",
-                  boxShadow: "1px 2px 1px 0px rgba(0, 0, 0, 0.25)",
-                }}
-              >
-                Zurücksetzen
-              </ButtonBlock>
-
-              <ButtonBlock
                 type="submit"
-                style={{
+                sx={{
                   background:
                     "linear-gradient(90deg, #87C133 0%, #68C9F2 100%)",
                   borderRadius: "40px",
-                  height: "40px",
+                  height: { xs: "44px", sm: "40px" },
                   color: "white",
-                  width: "143px",
+                  width: { xs: "100%", sm: "143px" },
                   fontSize: "16px",
                   fontWeight: "500",
                 }}

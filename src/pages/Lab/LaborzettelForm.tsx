@@ -406,7 +406,7 @@ const LaborzettelForm = () => {
   const isSaved = !!existingLaborzettel && !isEditMode;
 
   return (
-    <Stack flex="1" gap="16px" height="100%" sx={{ position: "relative" }}>
+    <Stack flex="1" gap="16px" height="100%">
       {/* Loading overlay */}
       <Backdrop
         sx={{ color: "#fff", zIndex: (theme) => theme.zIndex.drawer + 1 }}
@@ -415,17 +415,16 @@ const LaborzettelForm = () => {
         <CircularProgress color="inherit" />
       </Backdrop>
 
-      {/* Back button - absolute positioned */}
+      {/* Back button */}
       <IconButton
         onClick={handleGoBack}
         sx={{
-          position: "absolute",
-          top: 0,
-          left: -56,
           backgroundColor: "white",
           boxShadow: "0px 2px 4px rgba(0,0,0,0.1)",
           "&:hover": { backgroundColor: "rgba(245,245,245,1)" },
           zIndex: 10,
+          alignSelf: "flex-start",
+          mb: 1,
         }}
       >
         <ArrowBack />
@@ -439,14 +438,23 @@ const LaborzettelForm = () => {
             "linear-gradient(90deg, rgba(92, 107, 192, 0.1) 0%, rgba(121, 134, 203, 0.1) 100%)",
           boxShadow: "0px 2px 8px rgba(0, 0, 0, 0.08)",
           border: "1px solid rgba(0,0,0,0.05)",
-          p: 3,
+          p: { xs: 2, sm: 3 },
           display: "flex",
+          flexDirection: { xs: "column", sm: "row" },
           justifyContent: "space-between",
-          alignItems: "center",
+          alignItems: { xs: "stretch", sm: "center" },
+          gap: 2,
         }}
       >
         <Box>
-          <Typography variant="h5" sx={{ fontWeight: 600, color: "#5C6BC0" }}>
+          <Typography
+            variant="h5"
+            sx={{
+              fontWeight: 600,
+              color: "#5C6BC0",
+              fontSize: { xs: "18px", sm: "24px" },
+            }}
+          >
             Laborzettel{" "}
             {isSaved ? existingLaborzettel?.laborzettelNumber : "erstellen"}
           </Typography>
@@ -454,7 +462,13 @@ const LaborzettelForm = () => {
             Auftrag: {labRequest.request?.requestNumber || "-"}
           </Typography>
         </Box>
-        <Box sx={{ display: "flex", gap: 1.5 }}>
+        <Box
+          sx={{
+            display: "flex",
+            gap: 1.5,
+            flexDirection: { xs: "column", sm: "row" },
+          }}
+        >
           {isEditMode ? (
             // Show Save button in edit mode
             <ButtonBlock
@@ -526,7 +540,7 @@ const LaborzettelForm = () => {
           background: "white",
           boxShadow: "0px 2px 8px rgba(0, 0, 0, 0.08)",
           border: "1px solid rgba(0,0,0,0.05)",
-          p: 3,
+          p: { xs: 2, sm: 3 },
         }}
       >
         <Stack spacing={3}>
@@ -541,7 +555,7 @@ const LaborzettelForm = () => {
               onChange={(e) => setLotNr(e.target.value)}
               variant="outlined"
               size="small"
-              sx={{ width: 300 }}
+              sx={{ width: { xs: "100%", sm: 300 } }}
               required
               disabled={!isEditMode}
               helperText={
@@ -603,7 +617,7 @@ const LaborzettelForm = () => {
                     label="Material/Charge hinzufügen"
                     placeholder="Suchen..."
                     size="small"
-                    sx={{ maxWidth: 500 }}
+                    sx={{ width: "100%", maxWidth: { sm: 500 } }}
                   />
                 )}
                 renderOption={(props, lot) => {
@@ -642,23 +656,25 @@ const LaborzettelForm = () => {
             {/* Selected Lots Display */}
             {selectedLotsWithQuantity.length > 0 && (
               <Box sx={{ mt: 2 }}>
-                <TableContainer>
-                  <Table size="small">
+                <TableContainer sx={{ overflowX: "auto" }}>
+                  <Table size="small" sx={{ minWidth: 600 }}>
                     <TableHead>
                       <TableRow
                         sx={{ backgroundColor: "rgba(104, 201, 242, 0.1)" }}
                       >
-                        <TableCell sx={{ fontWeight: 600 }}>Material</TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>
+                        <TableCell sx={{ fontWeight: 600, width: 150 }}>
+                          Material
+                        </TableCell>
+                        <TableCell sx={{ fontWeight: 600, width: 120 }}>
                           Chargennr.
                         </TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>
+                        <TableCell sx={{ fontWeight: 600, width: 100 }}>
                           Verfügbar
                         </TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>
+                        <TableCell sx={{ fontWeight: 600, width: 150 }}>
                           Menge verwendet *
                         </TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>
+                        <TableCell sx={{ fontWeight: 600, width: 100 }}>
                           Ablaufdatum
                         </TableCell>
                         {isEditMode && (
@@ -710,16 +726,10 @@ const LaborzettelForm = () => {
                                       max: item.lot.currentQuantity,
                                       step: 0.1,
                                     }}
-                                    sx={{ width: 100 }}
+                                    sx={{ width: 80 }}
                                     error={
                                       item.quantityUsed >
                                       item.lot.currentQuantity
-                                    }
-                                    helperText={
-                                      item.quantityUsed >
-                                      item.lot.currentQuantity
-                                        ? "Überschreitet Bestand"
-                                        : ""
                                     }
                                   />
                                   <Typography
@@ -807,15 +817,19 @@ const LaborzettelForm = () => {
           </Box>
 
           {/* Items Table */}
-          <TableContainer>
-            <Table size="small">
+          <TableContainer sx={{ overflowX: "auto" }}>
+            <Table size="small" sx={{ minWidth: 450 }}>
               <TableHead>
                 <TableRow sx={{ backgroundColor: "rgba(0,0,0,0.02)" }}>
-                  <TableCell sx={{ fontWeight: 600, width: 100 }}>
+                  <TableCell sx={{ fontWeight: 600, width: 80 }}>
                     L-Nr.
                   </TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>Leistung</TableCell>
-                  <TableCell sx={{ fontWeight: 600, width: 100 }}>
+                  <TableCell sx={{ fontWeight: 600, width: 300 }}>
+                    Leistung
+                  </TableCell>
+                  <TableCell
+                    sx={{ fontWeight: 600, width: 70, textAlign: "center" }}
+                  >
                     Menge
                   </TableCell>
                 </TableRow>
@@ -847,7 +861,7 @@ const LaborzettelForm = () => {
                             max: 32,
                             style: { textAlign: "center" },
                           }}
-                          sx={{ width: 70 }}
+                          sx={{ width: 60 }}
                         />
                       ) : (
                         <Typography

@@ -12,10 +12,10 @@ import {
   Stack,
   InputAdornment,
   Pagination,
-  Alert,
   useTheme,
   useMediaQuery,
   Fab,
+  Grid,
 } from "@mui/material";
 import {
   Add,
@@ -30,54 +30,37 @@ import {
 import { Formik, Form } from "formik";
 import * as Yup from "yup";
 import {
-  useGetCategories,
-  useCreateCategory,
-  useUpdateCategory,
-  useDeleteCategory,
-} from "../../api/categories/hooks";
-import { CreateCategoryDto } from "../../api/categories/types";
+  useGetProcedures,
+  useCreateProcedure,
+  useUpdateProcedure,
+  useDeleteProcedure,
+} from "../../api/procedures/hooks";
+import { Procedure } from "../../api/procedures/types";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import ButtonBlock from "../../components/atoms/ButtonBlock";
-import DateText from "../../components/atoms/DateText";
 import ResponsiveTable, { ColumnDef } from "../../components/ResponsiveTable";
 
 const validationSchema = Yup.object({
+  number: Yup.string().required("Nummer ist erforderlich"),
   name: Yup.string().required("Name ist erforderlich"),
+  price: Yup.number()
+    .min(0, "Preis muss positiv sein")
+    .required("Preis ist erforderlich"),
 });
 
-interface Category {
-  _id: string;
-  name: string;
-  description: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface CategoriesApiResponse {
-  data: Category[];
-  pagination: {
-    currentPage: number;
-    totalPages: number;
-    totalItems: number;
-    itemsPerPage: number;
-    hasNextPage: boolean;
-    hasPreviousPage: boolean;
-  };
-}
-
-// Mobile card renderer for categories
-const CategoryMobileCard = ({
-  category,
+// Mobile card renderer for procedures
+const ProcedureMobileCard = ({
+  procedure,
   onEdit,
   onDelete,
 }: {
-  category: Category;
-  onEdit: (category: Category) => void;
-  onDelete: (category: Category) => void;
+  procedure: Procedure;
+  onEdit: (procedure: Procedure) => void;
+  onDelete: (procedure: Procedure) => void;
 }) => {
   return (
-    <Box>
+    <Box sx={{ p: 2 }}>
       <Box
         sx={{
           display: "flex",
@@ -86,18 +69,26 @@ const CategoryMobileCard = ({
           mb: 1,
         }}
       >
-        <Typography
-          variant="subtitle1"
-          sx={{ fontWeight: 600, color: "rgba(51, 51, 51, 1)" }}
-        >
-          {category.name}
-        </Typography>
+        <Box>
+          <Typography
+            variant="caption"
+            sx={{ color: "rgba(146, 146, 146, 1)" }}
+          >
+            {procedure.number}
+          </Typography>
+          <Typography
+            variant="subtitle1"
+            sx={{ fontWeight: 600, color: "rgba(51, 51, 51, 1)" }}
+          >
+            {procedure.name}
+          </Typography>
+        </Box>
         <Box sx={{ display: "flex", gap: 0.5 }}>
           <IconButton
             size="small"
             onClick={(e) => {
               e.stopPropagation();
-              onEdit(category);
+              onEdit(procedure);
             }}
             sx={{ color: "rgba(104, 201, 242, 1)" }}
           >
@@ -107,7 +98,7 @@ const CategoryMobileCard = ({
             size="small"
             onClick={(e) => {
               e.stopPropagation();
-              onDelete(category);
+              onDelete(procedure);
             }}
             sx={{ color: "#d32f2f" }}
           >
@@ -116,111 +107,118 @@ const CategoryMobileCard = ({
         </Box>
       </Box>
       <Typography
-        variant="body2"
-        sx={{ color: "rgba(100, 100, 100, 1)", mb: 1 }}
+        variant="body1"
+        sx={{ color: "rgba(51, 51, 51, 1)", fontWeight: 500 }}
       >
-        {category.description}
-      </Typography>
-      <Typography variant="caption" sx={{ color: "rgba(146, 146, 146, 1)" }}>
-        Erstellt: <DateText date={category.createdAt} />
+        {procedure.price.toLocaleString("de-DE", {
+          style: "currency",
+          currency: "EUR",
+        })}
       </Typography>
     </Box>
   );
 };
 
-const CategoriesManagement: React.FC = () => {
+const ProceduresManagement: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const navigate = useNavigate();
 
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [editingProcedure, setEditingProcedure] = useState<Procedure | null>(
+    null,
+  );
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(
+  const [procedureToDelete, setProcedureToDelete] = useState<Procedure | null>(
     null,
   );
   const [order, setOrder] = useState<"asc" | "desc">("asc");
-  const [orderBy, setOrderBy] = useState<string>("name");
+  const [orderBy, setOrderBy] = useState<string>("number");
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
-  const [error, setError] = useState<string | null>(null);
 
   const queryClient = useQueryClient();
   const {
-    data: categoriesResponse,
+    data: proceduresResponse,
     isLoading,
     refetch,
-  } = useGetCategories({
+  } = useGetProcedures({
     page,
     limit: 15,
     sortBy: orderBy,
     sortOrder: order,
   });
-  const createMutation = useCreateCategory();
-  const updateMutation = useUpdateCategory();
-  const deleteMutation = useDeleteCategory();
+  const createMutation = useCreateProcedure();
+  const updateMutation = useUpdateProcedure();
+  const deleteMutation = useDeleteProcedure();
 
-  const typedResponse = categoriesResponse as unknown as CategoriesApiResponse;
-  const categories = useMemo(
-    () => typedResponse?.data || [],
-    [typedResponse?.data],
+  const procedures = useMemo(
+    () => proceduresResponse?.data || [],
+    [proceduresResponse?.data],
   );
-  const pagination = typedResponse?.pagination;
+  const pagination = proceduresResponse?.pagination;
 
-  // Filter categories by search term (client-side for now)
-  const filteredCategories = useMemo(() => {
-    if (!searchTerm.trim()) return categories;
+  // Filter procedures by search term (client-side)
+  const filteredProcedures = useMemo(() => {
+    if (!searchTerm.trim()) return procedures;
     const term = searchTerm.toLowerCase();
-    return categories.filter(
-      (cat) =>
-        cat.name.toLowerCase().includes(term) ||
-        cat.description.toLowerCase().includes(term),
+    return procedures.filter(
+      (proc) =>
+        proc.name.toLowerCase().includes(term) ||
+        proc.number.toLowerCase().includes(term),
     );
-  }, [categories, searchTerm]);
+  }, [procedures, searchTerm]);
 
-  const handleOpenDialog = (category?: Category) => {
-    setEditingCategory(category || null);
+  const handleOpenDialog = (procedure?: Procedure) => {
+    setEditingProcedure(procedure || null);
     setDialogOpen(true);
   };
 
   const handleCloseDialog = () => {
     setDialogOpen(false);
-    setEditingCategory(null);
+    setEditingProcedure(null);
   };
 
-  const handleSubmit = async (values: CreateCategoryDto) => {
+  const handleSubmit = async (values: {
+    number: string;
+    name: string;
+    price: number;
+  }) => {
     try {
-      if (editingCategory) {
+      if (editingProcedure) {
         await updateMutation.mutateAsync({
-          categoryId: editingCategory._id,
+          procedureId: editingProcedure._id,
           data: values,
         });
       } else {
         await createMutation.mutateAsync(values);
       }
-      queryClient.invalidateQueries({ queryKey: ["categories"] });
+
+      queryClient.invalidateQueries({ queryKey: ["procedures"] });
       handleCloseDialog();
-    } catch {
-      setError(
-        "Fehler beim Speichern der Kategorie. Bitte versuchen Sie es erneut.",
+    } catch (error) {
+      console.error("Error saving procedure:", error);
+      alert(
+        "Fehler beim Speichern: " +
+          (error instanceof Error ? error.message : "Unbekannter Fehler"),
       );
     }
   };
 
-  const handleDeleteClick = (category: Category) => {
-    setCategoryToDelete(category);
+  const handleDeleteClick = (procedure: Procedure) => {
+    setProcedureToDelete(procedure);
     setDeleteConfirmOpen(true);
   };
 
   const handleDeleteConfirm = async () => {
-    if (categoryToDelete) {
+    if (procedureToDelete) {
       try {
-        await deleteMutation.mutateAsync(categoryToDelete._id);
-        queryClient.invalidateQueries({ queryKey: ["categories"] });
+        await deleteMutation.mutateAsync(procedureToDelete._id);
+        queryClient.invalidateQueries({ queryKey: ["procedures"] });
         setDeleteConfirmOpen(false);
-        setCategoryToDelete(null);
-      } catch {
-        setError("Fehler beim Löschen der Kategorie.");
+        setProcedureToDelete(null);
+      } catch (error) {
+        console.error("Error deleting procedure:", error);
       }
     }
   };
@@ -235,34 +233,89 @@ const CategoriesManagement: React.FC = () => {
     setSearchTerm(event.target.value);
   };
 
-  const mobileCardRenderer = (category: Category) => (
-    <CategoryMobileCard
-      category={category}
+  const mobileCardRenderer = (procedure: Procedure) => (
+    <ProcedureMobileCard
+      procedure={procedure}
       onEdit={handleOpenDialog}
       onDelete={handleDeleteClick}
     />
   );
 
-  const columns: ColumnDef<Category>[] = [
+  const columns: ColumnDef<Procedure>[] = [
     {
-      id: "name",
-      label: "Kategoriename",
-      accessor: (cat) => (
-        <Typography variant="body2" fontWeight={500}>
-          {cat.name}
+      id: "number",
+      label: "Nummer",
+      accessor: (proc) => (
+        <Typography variant="body2" sx={{ fontFamily: "monospace" }}>
+          {proc.number}
         </Typography>
       ),
       sortable: true,
-      width: 200,
+      width: 120,
+    },
+    {
+      id: "name",
+      label: "Name",
+      accessor: (proc) => (
+        <Typography variant="body2" fontWeight={500}>
+          {proc.name}
+        </Typography>
+      ),
+      sortable: true,
+      width: 300,
+    },
+    {
+      id: "price",
+      label: "Preis",
+      accessor: (proc) => (
+        <Typography variant="body2">
+          {proc.price.toLocaleString("de-DE", {
+            style: "currency",
+            currency: "EUR",
+          })}
+        </Typography>
+      ),
+      sortable: true,
+      width: 120,
+    },
+    {
+      id: "actions",
+      label: "",
+      accessor: (proc) => (
+        <Box sx={{ display: "flex", gap: 1 }}>
+          <IconButton
+            size="small"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleOpenDialog(proc);
+            }}
+            sx={{ color: "rgba(104, 201, 242, 1)" }}
+          >
+            <Edit fontSize="small" />
+          </IconButton>
+          <IconButton
+            size="small"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDeleteClick(proc);
+            }}
+            sx={{ color: "#d32f2f" }}
+          >
+            <Delete fontSize="small" />
+          </IconButton>
+        </Box>
+      ),
+      width: 100,
     },
   ];
 
   const initialValues = {
-    name: editingCategory?.name || "",
-    description: editingCategory?.description || "",
+    number: editingProcedure?.number || "",
+    name: editingProcedure?.name || "",
+    price: editingProcedure?.price ?? "",
   };
 
-  const hasData = filteredCategories.length > 0;
+  const hasData = filteredProcedures.length > 0;
 
   return (
     <Stack
@@ -279,15 +332,9 @@ const CategoriesManagement: React.FC = () => {
           <ArrowBack />
         </IconButton>
         <Typography variant="h2" sx={{ color: "rgba(146, 146, 146, 1)" }}>
-          Kategorien
+          Leistungen
         </Typography>
       </Stack>
-
-      {error && (
-        <Alert severity="error" onClose={() => setError(null)} sx={{ mb: 2 }}>
-          {error}
-        </Alert>
-      )}
 
       <Paper
         sx={{
@@ -321,7 +368,7 @@ const CategoriesManagement: React.FC = () => {
           >
             <TextField
               size="small"
-              placeholder="Kategorie suchen..."
+              placeholder="Leistung suchen..."
               value={searchTerm}
               onChange={handleSearchChange}
               sx={{
@@ -352,7 +399,7 @@ const CategoriesManagement: React.FC = () => {
               flex: { xs: "none", sm: 1 },
             }}
           >
-            {/* <ButtonBlock
+            <ButtonBlock
               startIcon={<Add />}
               sx={{
                 borderRadius: "40px",
@@ -368,8 +415,8 @@ const CategoriesManagement: React.FC = () => {
               }}
               onClick={() => handleOpenDialog()}
             >
-              Kategorie hinzufügen
-            </ButtonBlock> */}
+              Leistung hinzufügen
+            </ButtonBlock>
             <Box sx={{ display: { xs: "none", md: "flex" } }}>
               <IconButton>
                 <Print />
@@ -395,17 +442,17 @@ const CategoriesManagement: React.FC = () => {
           <Box
             sx={{ flex: 1, overflowX: "auto", overflowY: "auto", minWidth: 0 }}
           >
-            <ResponsiveTable<Category>
-              data={filteredCategories}
+            <ResponsiveTable<Procedure>
+              data={filteredProcedures}
               columns={columns}
               mobileCardRenderer={mobileCardRenderer}
               isLoading={isLoading}
               emptyMessage={
                 searchTerm
-                  ? "Keine Kategorien gefunden"
-                  : "Keine Kategorien vorhanden. Fügen Sie eine neue Kategorie hinzu."
+                  ? "Keine Leistungen gefunden"
+                  : "Keine Leistungen vorhanden. Fügen Sie eine neue Leistung hinzu."
               }
-              getItemId={(cat) => cat._id}
+              getItemId={(proc) => proc._id}
               sortBy={orderBy}
               sortOrder={order}
               onSort={handleSort}
@@ -442,7 +489,7 @@ const CategoriesManagement: React.FC = () => {
         fullScreen={isMobile}
       >
         <DialogTitle sx={{ fontWeight: 600 }}>
-          {editingCategory ? "Kategorie bearbeiten" : "Neue Kategorie"}
+          {editingProcedure ? "Leistung bearbeiten" : "Neue Leistung"}
         </DialogTitle>
         <Formik
           initialValues={initialValues}
@@ -460,28 +507,70 @@ const CategoriesManagement: React.FC = () => {
           }) => (
             <Form>
               <DialogContent>
-                <Stack spacing={3}>
-                  <TextField
-                    fullWidth
-                    name="name"
-                    label="Kategoriename"
-                    value={values.name}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    error={touched.name && Boolean(errors.name)}
-                    helperText={touched.name && errors.name}
-                  />
-                </Stack>
+                <Grid container spacing={2}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <TextField
+                      fullWidth
+                      name="number"
+                      label="Nummer"
+                      value={values.number}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                      error={touched.number && Boolean(errors.number)}
+                      helperText={touched.number && errors.number}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <TextField
+                      fullWidth
+                      name="price"
+                      label="Preis (€)"
+                      type="number"
+                      value={values.price}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                      error={touched.price && Boolean(errors.price)}
+                      helperText={touched.price && errors.price}
+                      slotProps={{
+                        input: {
+                          inputProps: { min: 0, step: 0.01 },
+                        },
+                      }}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12 }}>
+                    <TextField
+                      fullWidth
+                      name="name"
+                      label="Name"
+                      value={values.name}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                      error={touched.name && Boolean(errors.name)}
+                      helperText={touched.name && errors.name}
+                    />
+                  </Grid>
+                </Grid>
               </DialogContent>
-              <DialogActions sx={{ p: 2 }}>
+              <DialogActions
+                sx={{
+                  p: 2,
+                  flexDirection: { xs: "column", sm: "row" },
+                  gap: { xs: 1, sm: 0 },
+                }}
+              >
                 <ButtonBlock
                   onClick={handleCloseDialog}
                   style={{
                     borderRadius: "40px",
-                    height: "40px",
+                    height: "44px",
                     color: "rgba(107, 107, 107, 1)",
                     fontSize: "14px",
                     fontWeight: "500",
+                  }}
+                  sx={{
+                    width: { xs: "100%", sm: "auto" },
+                    order: { xs: 2, sm: 1 },
                   }}
                 >
                   Abbrechen
@@ -493,10 +582,14 @@ const CategoriesManagement: React.FC = () => {
                     background:
                       "linear-gradient(90deg, #87C133 0%, #68C9F2 100%)",
                     borderRadius: "40px",
-                    height: "40px",
+                    height: "44px",
                     color: "white",
                     fontSize: "14px",
                     fontWeight: "500",
+                  }}
+                  sx={{
+                    width: { xs: "100%", sm: "auto" },
+                    order: { xs: 1, sm: 2 },
                   }}
                 >
                   {isSubmitting ? "Speichern..." : "Speichern"}
@@ -516,19 +609,29 @@ const CategoriesManagement: React.FC = () => {
         <DialogTitle sx={{ fontWeight: 600 }}>Löschen bestätigen</DialogTitle>
         <DialogContent>
           <Typography>
-            Sind Sie sicher, dass Sie die Kategorie "{categoryToDelete?.name}"
+            Sind Sie sicher, dass Sie die Leistung "{procedureToDelete?.name}"
             löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.
           </Typography>
         </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
+        <DialogActions
+          sx={{
+            p: 2,
+            flexDirection: { xs: "column", sm: "row" },
+            gap: { xs: 1, sm: 0 },
+          }}
+        >
           <ButtonBlock
             onClick={() => setDeleteConfirmOpen(false)}
             style={{
               borderRadius: "40px",
-              height: "40px",
+              height: "44px",
               color: "rgba(107, 107, 107, 1)",
               fontSize: "14px",
               fontWeight: "500",
+            }}
+            sx={{
+              width: { xs: "100%", sm: "auto" },
+              order: { xs: 2, sm: 1 },
             }}
           >
             Abbrechen
@@ -539,10 +642,14 @@ const CategoriesManagement: React.FC = () => {
             style={{
               background: "rgba(247, 107, 107, 1)",
               borderRadius: "40px",
-              height: "40px",
+              height: "44px",
               color: "white",
               fontSize: "14px",
               fontWeight: "500",
+            }}
+            sx={{
+              width: { xs: "100%", sm: "auto" },
+              order: { xs: 1, sm: 2 },
             }}
           >
             {deleteMutation.isPending ? "Löschen..." : "Löschen"}
@@ -555,7 +662,7 @@ const CategoriesManagement: React.FC = () => {
         <Fab
           variant="extended"
           color="primary"
-          aria-label="Kategorie hinzufügen"
+          aria-label="Leistung hinzufügen"
           onClick={() => handleOpenDialog()}
           sx={{
             position: "fixed",
@@ -571,11 +678,11 @@ const CategoriesManagement: React.FC = () => {
           }}
         >
           <Add />
-          Kategorie hinzufügen
+          Leistung hinzufügen
         </Fab>
       )}
     </Stack>
   );
 };
 
-export default CategoriesManagement;
+export default ProceduresManagement;

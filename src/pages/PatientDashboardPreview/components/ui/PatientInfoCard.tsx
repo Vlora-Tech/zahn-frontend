@@ -27,7 +27,7 @@ const PatientInfoCard: React.FC<{ info: PatientInfo }> = ({ info }) => (
       {[
         { label: "Name", value: info.name },
         { label: "Nummer", value: info.id },
-        { label: "Patient Typ", value: info.type },
+        { label: "Patiententyp", value: info.type },
         { label: "Geburtstag", value: info.dob },
         { label: "Geschlecht", value: info.gender },
       ].map((item) => (

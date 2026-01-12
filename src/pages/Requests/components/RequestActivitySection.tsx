@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Box,
   Typography,
@@ -9,6 +9,10 @@ import {
   StepLabel,
   StepConnector,
   stepConnectorClasses,
+  Collapse,
+  IconButton,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import {
@@ -18,6 +22,8 @@ import {
   Inventory,
   CardGiftcard,
   History,
+  ExpandMore,
+  ExpandLess,
 } from "@mui/icons-material";
 import { useRequestActivityLogs } from "../../../api/activity-logs/hooks";
 
@@ -94,12 +100,27 @@ const StepIconRoot = styled("div")<{
 }));
 
 // Action type to step mapping
-const actionTypeToStep: Record<string, { label: string; icon: React.ReactNode }> = {
+const actionTypeToStep: Record<
+  string,
+  { label: string; icon: React.ReactNode }
+> = {
   request_created: { label: "Erstellt", icon: <Add sx={{ fontSize: 16 }} /> },
-  request_approved: { label: "Genehmigt", icon: <CheckCircle sx={{ fontSize: 16 }} /> },
-  request_rejected: { label: "Abgelehnt", icon: <Cancel sx={{ fontSize: 16 }} /> },
-  received_from_lab: { label: "Vom Labor erhalten", icon: <Inventory sx={{ fontSize: 16 }} /> },
-  delivered_to_patient: { label: "An Patient übergeben", icon: <CardGiftcard sx={{ fontSize: 16 }} /> },
+  request_approved: {
+    label: "Genehmigt",
+    icon: <CheckCircle sx={{ fontSize: 16 }} />,
+  },
+  request_rejected: {
+    label: "Abgelehnt",
+    icon: <Cancel sx={{ fontSize: 16 }} />,
+  },
+  received_from_lab: {
+    label: "Vom Labor erhalten",
+    icon: <Inventory sx={{ fontSize: 16 }} />,
+  },
+  delivered_to_patient: {
+    label: "An Patient übergeben",
+    icon: <CardGiftcard sx={{ fontSize: 16 }} />,
+  },
 };
 
 // Format timestamp
@@ -136,7 +157,14 @@ const RequestActivitySection: React.FC<RequestActivitySectionProps> = ({
   variant = "horizontal",
 }) => {
   const { data: activityLogs, isLoading } = useRequestActivityLogs(requestId);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm")); // < 600px
+  const [expanded, setExpanded] = useState(!isMobile); // Collapsed by default on mobile
   const isHorizontal = variant === "horizontal";
+
+  const handleToggleExpand = () => {
+    setExpanded(!expanded);
+  };
 
   if (isLoading) {
     return (
@@ -192,114 +220,168 @@ const RequestActivitySection: React.FC<RequestActivitySectionProps> = ({
       <Box
         sx={{
           p: isHorizontal ? 1.5 : 2,
-          background: "linear-gradient(90deg, rgba(135, 193, 51, 0.1) 0%, rgba(104, 201, 242, 0.1) 100%)",
-          borderBottom: "1px solid rgba(0,0,0,0.05)",
+          background:
+            "linear-gradient(90deg, rgba(135, 193, 51, 0.1) 0%, rgba(104, 201, 242, 0.1) 100%)",
+          borderBottom: expanded ? "1px solid rgba(0,0,0,0.05)" : "none",
           display: "flex",
           alignItems: "center",
+          justifyContent: "space-between",
           gap: 1,
+          cursor: isMobile ? "pointer" : "default",
         }}
+        onClick={isMobile ? handleToggleExpand : undefined}
       >
-        <History sx={{ fontSize: 20, color: "rgba(104, 201, 242, 1)" }} />
-        <Typography variant="subtitle1" sx={{ fontWeight: 600, fontSize: "14px" }}>
-          Aktivitätsverlauf
-        </Typography>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <History sx={{ fontSize: 20, color: "rgba(104, 201, 242, 1)" }} />
+          <Typography
+            variant="subtitle1"
+            sx={{ fontWeight: 600, fontSize: "14px" }}
+          >
+            Aktivitätsverlauf
+          </Typography>
+          {isMobile && !expanded && steps.length > 0 && (
+            <Typography
+              variant="caption"
+              sx={{
+                color: "text.secondary",
+                fontSize: "12px",
+                ml: 1,
+              }}
+            >
+              ({steps.length} {steps.length === 1 ? "Eintrag" : "Einträge"})
+            </Typography>
+          )}
+        </Box>
+        {isMobile && (
+          <IconButton
+            size="small"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleToggleExpand();
+            }}
+            sx={{
+              color: "rgba(104, 201, 242, 1)",
+              p: 0.5,
+            }}
+            aria-label={
+              expanded
+                ? "Aktivitätsverlauf einklappen"
+                : "Aktivitätsverlauf ausklappen"
+            }
+          >
+            {expanded ? <ExpandLess /> : <ExpandMore />}
+          </IconButton>
+        )}
       </Box>
 
-      {/* Activity Timeline */}
-      <Box sx={{ p: isHorizontal ? 2 : 2.5 }}>
-        <Stepper
-          orientation={isHorizontal ? "horizontal" : "vertical"}
-          activeStep={steps.length}
-          connector={isHorizontal ? <HorizontalConnector /> : <VerticalConnector />}
-          alternativeLabel={isHorizontal}
-          sx={{
-            "& .MuiStepLabel-root": {
-              padding: 0,
-            },
-            "& .MuiStep-root": {
-              marginBottom: 0,
-            },
-            ...(isHorizontal && {
+      {/* Activity Timeline - Collapsible on mobile */}
+      <Collapse in={!isMobile || expanded} timeout="auto">
+        <Box sx={{ p: isHorizontal ? 2 : 2.5 }}>
+          <Stepper
+            orientation={isHorizontal && !isMobile ? "horizontal" : "vertical"}
+            activeStep={steps.length}
+            connector={
+              isHorizontal && !isMobile ? (
+                <HorizontalConnector />
+              ) : (
+                <VerticalConnector />
+              )
+            }
+            alternativeLabel={isHorizontal && !isMobile}
+            sx={{
+              "& .MuiStepLabel-root": {
+                padding: 0,
+              },
               "& .MuiStep-root": {
-                flex: 1,
-                paddingLeft: 0,
-                paddingRight: 0,
+                marginBottom: 0,
               },
-              "& .MuiStepLabel-iconContainer": {
-                paddingRight: 0,
-              },
-            }),
-          }}
-        >
-          {steps.map((step, index) => (
-            <Step key={`${step.key}-${index}`} completed={true}>
-              <StepLabel
-                slots={{
-                  stepIcon: () => (
-                    <CustomStepIcon
-                      icon={step.icon}
-                      active={false}
-                      completed={true}
-                      rejected={step.isRejected}
-                    />
-                  ),
-                }}
-                sx={{
-                  "& .MuiStepLabel-labelContainer": {
-                    marginLeft: isHorizontal ? 0 : 1,
+              ...(isHorizontal &&
+                !isMobile && {
+                  "& .MuiStep-root": {
+                    flex: 1,
+                    paddingLeft: 0,
+                    paddingRight: 0,
                   },
-                }}
-              >
-                <Box
+                  "& .MuiStepLabel-iconContainer": {
+                    paddingRight: 0,
+                  },
+                }),
+            }}
+          >
+            {steps.map((step, index) => (
+              <Step key={`${step.key}-${index}`} completed={true}>
+                <StepLabel
+                  slots={{
+                    stepIcon: () => (
+                      <CustomStepIcon
+                        icon={step.icon}
+                        active={false}
+                        completed={true}
+                        rejected={step.isRejected}
+                      />
+                    ),
+                  }}
                   sx={{
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: isHorizontal ? "center" : "flex-start",
-                    gap: 0.25,
+                    "& .MuiStepLabel-labelContainer": {
+                      marginLeft: isHorizontal && !isMobile ? 0 : 1,
+                    },
                   }}
                 >
-                  <Typography
-                    variant="body2"
+                  <Box
                     sx={{
-                      fontWeight: 600,
-                      color: step.isRejected ? "#DC3545" : "text.primary",
-                      fontSize: isHorizontal ? "11px" : "13px",
-                      textAlign: isHorizontal ? "center" : "left",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems:
+                        isHorizontal && !isMobile ? "center" : "flex-start",
+                      gap: 0.25,
                     }}
                   >
-                    {step.label}
-                  </Typography>
-                  {step.timestamp && (
                     <Typography
-                      variant="caption"
+                      variant="body2"
                       sx={{
-                        fontSize: isHorizontal ? "10px" : "11px",
-                        color: "text.secondary",
-                        textAlign: isHorizontal ? "center" : "left",
-                        fontVariantNumeric: "tabular-nums",
+                        fontWeight: 600,
+                        color: step.isRejected ? "#DC3545" : "text.primary",
+                        fontSize: isHorizontal && !isMobile ? "11px" : "13px",
+                        textAlign:
+                          isHorizontal && !isMobile ? "center" : "left",
                       }}
                     >
-                      {step.timestamp}
+                      {step.label}
                     </Typography>
-                  )}
-                  {step.actorName && step.actorName !== "Unknown" && (
-                    <Typography
-                      variant="caption"
-                      sx={{
-                        fontSize: isHorizontal ? "9px" : "10px",
-                        color: "text.disabled",
-                        textAlign: isHorizontal ? "center" : "left",
-                      }}
-                    >
-                      {step.actorName}
-                    </Typography>
-                  )}
-                </Box>
-              </StepLabel>
-            </Step>
-          ))}
-        </Stepper>
-      </Box>
+                    {step.timestamp && (
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          fontSize: isHorizontal && !isMobile ? "10px" : "11px",
+                          color: "text.secondary",
+                          textAlign:
+                            isHorizontal && !isMobile ? "center" : "left",
+                          fontVariantNumeric: "tabular-nums",
+                        }}
+                      >
+                        {step.timestamp}
+                      </Typography>
+                    )}
+                    {step.actorName && step.actorName !== "Unknown" && (
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          fontSize: isHorizontal && !isMobile ? "9px" : "10px",
+                          color: "text.disabled",
+                          textAlign:
+                            isHorizontal && !isMobile ? "center" : "left",
+                        }}
+                      >
+                        {step.actorName}
+                      </Typography>
+                    )}
+                  </Box>
+                </StepLabel>
+              </Step>
+            ))}
+          </Stepper>
+        </Box>
+      </Collapse>
     </Paper>
   );
 };

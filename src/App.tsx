@@ -1,5 +1,4 @@
-import React from "react";
-import { Route, Routes, useLocation, Navigate } from "react-router-dom";
+import { Route, Routes, useLocation } from "react-router-dom";
 import "./App.css";
 import Layout from "./components/Layout";
 
@@ -26,14 +25,17 @@ import EditRejectedRequest from "./pages/Requests/EditRejectedRequest";
 import AdminDashboard from "./pages/Admin";
 import OperationsManagement from "./pages/Admin/OperationsManagement";
 import MaterialsManagement from "./pages/Admin/MaterialsManagement";
-import OptionsManagement from "./pages/Admin/OptionsManagement";
+import ProceduresManagement from "./pages/Admin/ProceduresManagement";
 import CategoriesManagement from "./pages/Admin/CategoriesManagement";
+import LaborzettelManagement from "./pages/Admin/LaborzettelManagement";
 import EditPatient from "./pages/Patients/EditPatient";
 import EditDoctor from "./pages/Doctors/EditDoctor";
 import EditClinic from "./pages/Clinics/EditClinic";
 import EditUser from "./pages/Users/EditUser";
 import { LabWorkQueue, LabRequestDetail } from "./pages/Lab";
 import LaborzettelForm from "./pages/Lab/LaborzettelForm";
+import LaborzettelList from "./pages/Lab/LaborzettelList";
+import LaborzettelDetail from "./pages/Lab/LaborzettelDetail";
 import {
   InventoryMaterials,
   InventoryLots,
@@ -43,7 +45,6 @@ import LabTechnicians from "./pages/LabTechnicians";
 import CreateLabTechnician from "./pages/LabTechnicians/CreateLabTechnician";
 import LabTechnicianDetails from "./pages/LabTechnicians/LabTechnicianDetails";
 import EditLabTechnician from "./pages/LabTechnicians/EditLabTechnician";
-import { useAuth } from "./context/AuthContext";
 
 function App() {
   const { pathname } = useLocation();
@@ -110,13 +111,21 @@ function App() {
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/admin/operations" element={<OperationsManagement />} />
           <Route path="/admin/materials" element={<MaterialsManagement />} />
-          <Route path="/admin/options" element={<OptionsManagement />} />
+          <Route path="/admin/procedures" element={<ProceduresManagement />} />
           <Route path="/admin/categories" element={<CategoriesManagement />} />
+          <Route
+            path="/admin/laborzettel"
+            element={<LaborzettelManagement />}
+          />
 
           {/* Lab technician routes - restricted to lab_technician and superadmin roles */}
           <Route path="/lab/queue" element={<LabWorkQueue />} />
           <Route path="/lab/requests/:id" element={<LabRequestDetail />} />
           <Route path="/lab/:id/laborzettel" element={<LaborzettelForm />} />
+
+          {/* Laborzettel routes */}
+          <Route path="/laborzettel" element={<LaborzettelList />} />
+          <Route path="/laborzettel/:id" element={<LaborzettelDetail />} />
 
           {/* Inventory routes - restricted to lab_technician and superadmin roles */}
           <Route path="/inventory/materials" element={<InventoryMaterials />} />

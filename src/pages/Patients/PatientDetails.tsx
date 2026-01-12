@@ -11,6 +11,11 @@ import {
   Chip,
   Pagination as MuiPagination,
   Skeleton,
+  CircularProgress,
+  useMediaQuery,
+  useTheme,
+  Fab,
+  IconButton,
 } from "@mui/material";
 import {
   CalendarToday,
@@ -20,10 +25,11 @@ import {
   Add,
   MedicalServices,
   Science,
+  ArrowBack,
 } from "@mui/icons-material";
 import ButtonBlock from "../../components/atoms/ButtonBlock";
 import { useNavigate, useParams } from "react-router-dom";
-import { useDeletePatient, useGetPatientById } from "../../api/patients/hooks";
+import { useGetPatientById } from "../../api/patients/hooks";
 import { useGetTreatmentRequests } from "../../api/treatment-requests/hooks";
 import LoadingSpinner from "../../components/atoms/LoadingSpinner";
 import { isoDateToAge } from "../../utils/dateToAge";
@@ -53,13 +59,14 @@ export default function PatientDetails() {
   const params = useParams();
   const navigate = useNavigate();
   const patientId = params?.id;
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const [tabValue, setTabValue] = useState(0);
   const [page, setPage] = useState(1);
   const limit = 6;
 
   const { data: patient, isLoading } = useGetPatientById(patientId || "");
-  const { mutate: deletePatient } = useDeletePatient();
 
   const { data: requestsData, isLoading: isLoadingRequests } =
     useGetTreatmentRequests({
@@ -71,16 +78,6 @@ export default function PatientDetails() {
     });
 
   if (isLoading) return <LoadingSpinner />;
-
-  const handleDeletePatient = () => {
-    if (patientId) {
-      deletePatient(patientId, {
-        onSuccess() {
-          navigate("/patients");
-        },
-      });
-    }
-  };
 
   const handleEditPatient = () => {
     if (patientId) {
@@ -105,33 +102,73 @@ export default function PatientDetails() {
   return (
     <Box display="flex" flexDirection="column" gap="20px" width="100%">
       <Stack direction="row" justifyContent="space-between" alignItems="center">
-        <Typography
-          variant="h2"
-          sx={{
-            fontWeight: "600",
-            fontSize: "24px",
-            color: "rgba(146, 146, 146, 1)",
-          }}
-        >
-          Patientenprofil
-        </Typography>
-        <ButtonBlock
-          startIcon={<Add />}
-          sx={{
-            borderRadius: "40px",
-            textTransform: "none",
-            background: "linear-gradient(90deg, #87C133 0%, #68C9F2 100%)",
-            color: "white",
-            px: "16px",
-            fontWeight: "500",
-            fontSize: "16px",
-            height: "40px",
-          }}
-          onClick={() => navigate(`/patients/${patientId}/requests/create`)}
-        >
-          Neuer Auftrag
-        </ButtonBlock>
+        <Stack direction="row" alignItems="center" gap={1}>
+          <IconButton
+            onClick={handleGoBackToPatients}
+            sx={{
+              backgroundColor: "white",
+              boxShadow: "0px 2px 4px rgba(0,0,0,0.1)",
+              "&:hover": { backgroundColor: "rgba(245,245,245,1)" },
+            }}
+          >
+            <ArrowBack />
+          </IconButton>
+          <Typography
+            variant="h2"
+            sx={{
+              fontWeight: "600",
+              fontSize: "24px",
+              color: "rgba(146, 146, 146, 1)",
+            }}
+          >
+            Patientenprofil
+          </Typography>
+        </Stack>
+        {/* Desktop/Tablet: Regular button */}
+        {!isMobile && (
+          <ButtonBlock
+            startIcon={<Add />}
+            sx={{
+              borderRadius: "40px",
+              textTransform: "none",
+              background: "linear-gradient(90deg, #87C133 0%, #68C9F2 100%)",
+              color: "white",
+              px: "16px",
+              fontWeight: "500",
+              fontSize: "16px",
+              height: "40px",
+            }}
+            onClick={() => navigate(`/patients/${patientId}/requests/create`)}
+          >
+            Neuer Auftrag
+          </ButtonBlock>
+        )}
       </Stack>
+
+      {/* Mobile: Floating Action Button with label */}
+      {isMobile && (
+        <Fab
+          variant="extended"
+          color="primary"
+          aria-label="Neuer Auftrag"
+          onClick={() => navigate(`/patients/${patientId}/requests/create`)}
+          sx={{
+            position: "fixed",
+            bottom: 80, // Above bottom navigation
+            right: 16,
+            background: "linear-gradient(90deg, #87C133 0%, #68C9F2 100%)",
+            "&:hover": {
+              background: "linear-gradient(90deg, #7AB02E 0%, #5BB8E0 100%)",
+            },
+            zIndex: 1000,
+            gap: 1,
+            color: "white",
+          }}
+        >
+          <Add />
+          Neuer Auftrag
+        </Fab>
+      )}
 
       <Paper
         sx={{
@@ -143,13 +180,18 @@ export default function PatientDetails() {
         <Tabs
           value={tabValue}
           onChange={handleTabChange}
+          variant={isMobile ? "scrollable" : "standard"}
+          scrollButtons={isMobile ? "auto" : false}
+          allowScrollButtonsMobile
           sx={{
             borderBottom: "1px solid #e0e0e0",
             "& .MuiTab-root": {
-              fontSize: "16px",
+              fontSize: { xs: "14px", sm: "16px" },
               fontWeight: 500,
               textTransform: "none",
               minHeight: 56,
+              minWidth: { xs: "auto", sm: 160 },
+              px: { xs: 2, sm: 3 },
             },
             "& .Mui-selected": {
               color: "rgba(10, 77, 130, 1) !important",
@@ -157,23 +199,39 @@ export default function PatientDetails() {
             "& .MuiTabs-indicator": {
               backgroundColor: "rgba(10, 77, 130, 1)",
             },
+            "& .MuiTabs-scrollButtons": {
+              color: "rgba(10, 77, 130, 1)",
+            },
           }}
         >
           <Tab label="Patientendaten" icon={<Person />} iconPosition="start" />
           <Tab
-            label={`Aufträge (${requestsData?.pagination?.totalItems || 0})`}
+            label={
+              isLoadingRequests ? (
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  Aufträge{" "}
+                  <CircularProgress size={14} sx={{ color: "inherit" }} />
+                </Box>
+              ) : (
+                `Aufträge (${requestsData?.pagination?.totalItems || 0})`
+              )
+            }
             icon={<Assignment />}
             iconPosition="start"
           />
         </Tabs>
 
         <TabPanel value={tabValue} index={0}>
-          <Box sx={{ padding: "26px 40px" }}>
-            <Stack gap="32px">
+          <Box sx={{ padding: { xs: "16px", sm: "26px 40px" } }}>
+            <Stack gap={{ xs: "24px", sm: "32px" }}>
               {[
                 {
                   label: "Patientenname",
                   value: `${patient?.firstName} ${patient?.lastName}`,
+                },
+                {
+                  label: "Patientennummer",
+                  value: patient?.patientNumber || "-",
                 },
                 {
                   label: "Geschlecht",
@@ -191,33 +249,12 @@ export default function PatientDetails() {
                   ),
                 },
                 {
-                  label: "Liefertermin",
-                  value: patient?.dueDate ? (
-                    <DateText date={patient.dueDate} />
-                  ) : (
-                    "-"
-                  ),
-                },
-                {
                   label: "Versicherungsart",
-                  value:
-                    patient?.patientType === "private"
-                      ? "Privatversichert"
-                      : "Gesetzlich versichert",
+                  value: patient?.patientType === "private" ? "Privat" : "GKV",
                 },
                 {
-                  label: "Behandelnder Zahnarzt",
-                  value: patient?.doctor
-                    ? `${patient.doctor.firstName} ${patient.doctor.lastName}`
-                    : "-",
-                },
-                {
-                  label: "Patientennummer",
-                  value: patient?.patientNumber || "-",
-                },
-                {
-                  label: "Anmerkungen",
-                  value: patient?.notes || "Keine Anmerkungen vorhanden",
+                  label: "Notizen",
+                  value: patient?.notes || "-",
                 },
               ].map(({ label, value }) => (
                 <Stack gap="8px" key={label}>
@@ -225,7 +262,7 @@ export default function PatientDetails() {
                     variant="h4"
                     sx={{
                       fontWeight: "600",
-                      fontSize: "14px",
+                      fontSize: { xs: "12px", sm: "14px" },
                       color: "rgba(10, 77, 130, 1)",
                       textTransform: "uppercase",
                       letterSpacing: "0.5px",
@@ -237,7 +274,7 @@ export default function PatientDetails() {
                     variant="body1"
                     sx={{
                       fontWeight: "500",
-                      fontSize: "18px",
+                      fontSize: { xs: "16px", sm: "18px" },
                       color: "rgba(0, 0, 0, 0.75)",
                     }}
                   >
@@ -247,39 +284,18 @@ export default function PatientDetails() {
               ))}
             </Stack>
 
-            <Stack flexDirection="row" justifyContent="space-between" mt="32px">
-              <ButtonBlock
-                onClick={handleGoBackToPatients}
-                style={{
-                  borderRadius: "40px",
-                  height: "44px",
-                  color: "rgba(107, 107, 107, 1)",
-                  width: "160px",
-                  fontSize: "16px",
-                  fontWeight: "500",
-                  boxShadow: "1px 2px 1px 0px rgba(0, 0, 0, 0.25)",
-                }}
+            <Stack
+              flexDirection={{ xs: "column", sm: "row" }}
+              justifyContent="flex-end"
+              alignItems={{ xs: "stretch", sm: "center" }}
+              gap={{ xs: 2, sm: 0 }}
+              mt={{ xs: "24px", sm: "32px" }}
+            >
+              <Stack
+                direction={{ xs: "column", sm: "row" }}
+                gap={{ xs: "12px", sm: "10px" }}
+                sx={{ width: { xs: "100%", sm: "auto" } }}
               >
-                Zurück
-              </ButtonBlock>
-
-              <Box sx={{ display: "flex" }} gap="10px">
-                <ButtonBlock
-                  type="submit"
-                  style={{
-                    background: "rgba(247, 107, 107, 1)",
-                    boxShadow: "1px 2px 1px 0px rgba(0, 0, 0, 0.25)",
-                    borderRadius: "40px",
-                    height: "44px",
-                    color: "white",
-                    width: "160px",
-                    fontSize: "16px",
-                    fontWeight: "500",
-                  }}
-                  onClick={handleDeletePatient}
-                >
-                  Löschen
-                </ButtonBlock>
                 <ButtonBlock
                   onClick={handleEditPatient}
                   style={{
@@ -288,14 +304,16 @@ export default function PatientDetails() {
                     borderRadius: "40px",
                     height: "44px",
                     color: "white",
-                    width: "160px",
                     fontSize: "16px",
                     fontWeight: "500",
+                  }}
+                  sx={{
+                    width: { xs: "100%", sm: "160px" },
                   }}
                 >
                   Bearbeiten
                 </ButtonBlock>
-              </Box>
+              </Stack>
             </Stack>
           </Box>
         </TabPanel>
@@ -383,12 +401,12 @@ export default function PatientDetails() {
                         }}
                         onClick={() => navigate(`/requests/${request._id}`)}
                       >
-                        <CardContent sx={{ p: 3 }}>
+                        <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
                           <Stack
-                            direction="row"
+                            direction={{ xs: "column", sm: "row" }}
                             justifyContent="space-between"
-                            alignItems="flex-start"
-                            gap={3}
+                            alignItems={{ xs: "stretch", sm: "flex-start" }}
+                            gap={{ xs: 2, sm: 3 }}
                           >
                             {/* Teeth Selection Visualization */}
                             <Box
@@ -396,8 +414,8 @@ export default function PatientDetails() {
                                 border: "2px solid rgba(10, 77, 130, 0.3)",
                                 borderRadius: "10px",
                                 padding: "12px",
-                                width: "140px",
-                                height: "140px",
+                                width: { xs: "100%", sm: "140px" },
+                                height: { xs: "120px", sm: "140px" },
                                 display: "flex",
                                 alignItems: "center",
                                 justifyContent: "center",
@@ -424,85 +442,85 @@ export default function PatientDetails() {
                             <Stack
                               direction={"column"}
                               justifyContent={"space-between"}
-                              sx={{ flex: 1 }}
+                              sx={{ flex: 1, width: "100%" }}
                             >
+                              {/* Request Number and Operations */}
+                              <Box mb={1.5}>
+                                <Typography
+                                  variant="h6"
+                                  sx={{
+                                    fontWeight: 600,
+                                    fontSize: { xs: "16px", sm: "18px" },
+                                    color: "rgba(10, 77, 130, 1)",
+                                  }}
+                                >
+                                  {request.requestNumber}
+                                </Typography>
+                                <Typography
+                                  variant="h6"
+                                  sx={{
+                                    fontWeight: 600,
+                                    fontSize: { xs: "14px", sm: "18px" },
+                                    color: "rgba(10, 77, 130, 1)",
+                                  }}
+                                >
+                                  {request.operations
+                                    ?.map((op) => op.operation?.name)
+                                    .filter(Boolean)
+                                    .join(", ") || "Keine Vorgänge"}
+                                </Typography>
+                              </Box>
+
+                              {/* Status Chips - separate row on mobile and tablet */}
                               <Stack
                                 direction="row"
-                                justifyContent="space-between"
-                                alignItems="flex-start"
+                                gap={1}
+                                flexWrap="wrap"
                                 mb={1.5}
                               >
-                                <Box>
-                                  <Typography
-                                    variant="h6"
-                                    sx={{
-                                      fontWeight: 600,
-                                      fontSize: "18px",
-                                      color: "rgba(10, 77, 130, 1)",
-                                    }}
-                                  >
-                                    {request.requestNumber}
-                                  </Typography>
-                                  <Typography
-                                    variant="h6"
-                                    sx={{
-                                      fontWeight: 600,
-                                      fontSize: "18px",
-                                      color: "rgba(10, 77, 130, 1)",
-                                    }}
-                                  >
-                                    {request.operations
-                                      ?.map((op) => op.operation?.name)
-                                      .filter(Boolean)
-                                      .join(", ") || "Keine Vorgänge"}
-                                  </Typography>
-                                </Box>
-                                <Stack direction="row" gap={1} flexWrap="wrap">
+                                <Chip
+                                  icon={
+                                    <MedicalServices
+                                      sx={{
+                                        fontSize: 14,
+                                        color: `${statusConfig.textColor} !important`,
+                                      }}
+                                    />
+                                  }
+                                  label={`Stand: ${statusConfig.label}`}
+                                  size="small"
+                                  sx={{
+                                    backgroundColor: statusConfig.bgColor,
+                                    color: statusConfig.textColor,
+                                    fontWeight: 500,
+                                    fontSize: "12px",
+                                  }}
+                                />
+                                {labStatusConfig && (
                                   <Chip
                                     icon={
-                                      <MedicalServices
+                                      <Science
                                         sx={{
                                           fontSize: 14,
-                                          color: `${statusConfig.textColor} !important`,
+                                          color: `${labStatusConfig.textColor} !important`,
                                         }}
                                       />
                                     }
-                                    label={`Stand: ${statusConfig.label}`}
+                                    label={`Labor: ${labStatusConfig.label}`}
                                     size="small"
                                     sx={{
-                                      backgroundColor: statusConfig.bgColor,
-                                      color: statusConfig.textColor,
+                                      backgroundColor: labStatusConfig.bgColor,
+                                      color: labStatusConfig.textColor,
                                       fontWeight: 500,
                                       fontSize: "12px",
                                     }}
                                   />
-                                  {labStatusConfig && (
-                                    <Chip
-                                      icon={
-                                        <Science
-                                          sx={{
-                                            fontSize: 14,
-                                            color: `${labStatusConfig.textColor} !important`,
-                                          }}
-                                        />
-                                      }
-                                      label={`Labor: ${labStatusConfig.label}`}
-                                      size="small"
-                                      sx={{
-                                        backgroundColor:
-                                          labStatusConfig.bgColor,
-                                        color: labStatusConfig.textColor,
-                                        fontWeight: 500,
-                                        fontSize: "12px",
-                                      }}
-                                    />
-                                  )}
-                                </Stack>
+                                )}
                               </Stack>
 
                               <Stack
-                                direction="row"
-                                gap={3}
+                                direction={{ xs: "column", sm: "row" }}
+                                gap={{ xs: 1, sm: 3 }}
                                 flexWrap="wrap"
                                 sx={{ mt: 2 }}
                               >

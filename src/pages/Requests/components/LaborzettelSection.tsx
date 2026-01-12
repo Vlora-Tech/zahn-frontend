@@ -5,12 +5,11 @@ import {
   Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableHead,
   TableRow,
   CircularProgress,
 } from "@mui/material";
-import { Print, Description } from "@mui/icons-material";
+import { Print, Assignment } from "@mui/icons-material";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -173,7 +172,6 @@ const LaborzettelSection: React.FC<LaborzettelSectionProps> = ({
         background: "white",
         boxShadow: "0px 2px 8px rgba(0, 0, 0, 0.08)",
         border: "1px solid rgba(0,0,0,0.05)",
-        overflow: "hidden",
       }}
     >
       {/* Header */}
@@ -184,19 +182,15 @@ const LaborzettelSection: React.FC<LaborzettelSectionProps> = ({
             "linear-gradient(90deg, rgba(92, 107, 192, 0.1) 0%, rgba(121, 134, 203, 0.1) 100%)",
           borderBottom: "1px solid rgba(0,0,0,0.05)",
           display: "flex",
+          flexDirection: { xs: "column", sm: "row" },
           justifyContent: "space-between",
-          alignItems: "center",
+          alignItems: { xs: "flex-start", sm: "center" },
+          gap: 1.5,
         }}
       >
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-          <Description sx={{ fontSize: 20, color: "#5C6BC0" }} />
+          <Assignment sx={{ fontSize: 20, color: "#5C6BC0" }} />
           <Box>
-            <Typography
-              variant="subtitle1"
-              sx={{ fontWeight: 600, fontSize: "14px", lineHeight: 1.2 }}
-            >
-              Laborzettel
-            </Typography>
             {laborzettel.laborzettelNumber && (
               <Typography
                 variant="caption"
@@ -223,6 +217,7 @@ const LaborzettelSection: React.FC<LaborzettelSectionProps> = ({
             fontSize: "12px",
             fontWeight: "600",
             padding: "0 16px",
+            width: "auto",
           }}
         >
           PDF drucken
@@ -271,14 +266,15 @@ const LaborzettelSection: React.FC<LaborzettelSectionProps> = ({
           </Box>
 
           {/* Items Table */}
-          <TableContainer>
-            <Table size="small">
+          <Box sx={{ overflowX: "auto" }}>
+            <Table size="small" sx={{ minWidth: 400 }}>
               <TableHead>
                 <TableRow>
                   <TableCell
                     sx={{
                       fontWeight: 600,
-                      width: 80,
+                      width: 70,
+                      minWidth: 70,
                       fontSize: "11px",
                       py: 0.5,
                     }}
@@ -286,14 +282,21 @@ const LaborzettelSection: React.FC<LaborzettelSectionProps> = ({
                     L-Nr.
                   </TableCell>
                   <TableCell
-                    sx={{ fontWeight: 600, fontSize: "11px", py: 0.5 }}
+                    sx={{
+                      fontWeight: 600,
+                      fontSize: "11px",
+                      py: 0.5,
+                      minWidth: 260,
+                    }}
                   >
                     Leistung
                   </TableCell>
                   <TableCell
+                    align="center"
                     sx={{
                       fontWeight: 600,
-                      width: 60,
+                      width: 70,
+                      minWidth: 70,
                       fontSize: "11px",
                       py: 0.5,
                       textAlign: "center",
@@ -320,8 +323,8 @@ const LaborzettelSection: React.FC<LaborzettelSectionProps> = ({
                       {item.name}
                     </TableCell>
                     <TableCell
+                      align="center"
                       sx={{
-                        textAlign: "center",
                         fontWeight: 500,
                         fontSize: "11px",
                         py: 0.5,
@@ -333,7 +336,7 @@ const LaborzettelSection: React.FC<LaborzettelSectionProps> = ({
                 ))}
               </TableBody>
             </Table>
-          </TableContainer>
+          </Box>
         </Box>
       ))}
     </Paper>

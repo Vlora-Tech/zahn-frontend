@@ -16,9 +16,69 @@ export interface InventoryLotUsage {
   quantityUsed: number;
 }
 
+// Populated patient data
+export interface PopulatedPatient {
+  _id: string;
+  firstName: string;
+  lastName: string;
+  patientNumber?: string;
+  gender?: string;
+  birthDate?: string;
+}
+
+// Populated doctor data
+export interface PopulatedDoctor {
+  _id: string;
+  firstName: string;
+  lastName: string;
+}
+
+// Populated clinic data
+export interface PopulatedClinic {
+  _id: string;
+  name: string;
+}
+
+// Populated operation data
+export interface PopulatedOperation {
+  _id: string;
+  name: string;
+  color?: string;
+}
+
+// Populated request data
+export interface PopulatedRequest {
+  _id: string;
+  requestNumber: string;
+  deliveryDate?: string;
+  patient?: PopulatedPatient;
+  doctor?: PopulatedDoctor;
+  clinic?: PopulatedClinic;
+  operations?: {
+    operation?: PopulatedOperation;
+    selectedTeeth?: number[];
+  }[];
+}
+
+// Populated lab technician data
+export interface PopulatedLabTechnician {
+  _id: string;
+  firstName: string;
+  lastName: string;
+}
+
+// Populated lab request data
+export interface PopulatedLabRequest {
+  _id: string;
+  labStatus: string;
+  request?: PopulatedRequest;
+  assignedTechnician?: PopulatedLabTechnician;
+  assignedTechnicianName?: string;
+}
+
 export interface Laborzettel {
   _id: string;
-  labRequest: string;
+  labRequest: string | PopulatedLabRequest;
   laborzettelNumber: string;
   lotNr: string;
   sections: LeistungSection[];

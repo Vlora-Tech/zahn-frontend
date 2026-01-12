@@ -1,15 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   Box,
   Typography,
   Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Button,
   IconButton,
   Dialog,
   DialogTitle,
@@ -18,14 +11,12 @@ import {
   TextField,
   Stack,
   Chip,
-  CircularProgress,
   InputAdornment,
-  createTheme,
-  ThemeProvider,
   Pagination,
-  Checkbox,
-  TableSortLabel,
   Alert,
+  useTheme,
+  useMediaQuery,
+  Fab,
 } from "@mui/material";
 import {
   Add,
@@ -35,6 +26,7 @@ import {
   Print,
   Refresh,
   Settings,
+  ArrowBack,
 } from "@mui/icons-material";
 import { Formik, Form } from "formik";
 import * as Yup from "yup";
@@ -46,34 +38,14 @@ import {
 } from "../../api/materials/hooks";
 import { MaterialRequestBody } from "../../api/materials/types";
 import { useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import S3FileUpload, { S3UploadResponse } from "../../components/S3FileUpload";
 import ButtonBlock from "../../components/atoms/ButtonBlock";
-import { formatDateDE } from "../../utils/formatDate";
 import DateText from "../../components/atoms/DateText";
-
-// Define a theme to match the app's color scheme
-const theme = createTheme({
-  palette: {
-    primary: {
-      main: "#4caf50",
-    },
-    secondary: {
-      main: "#2e7d32",
-    },
-    background: {
-      default: "#f5f5f5",
-    },
-    text: {
-      primary: "#333",
-    },
-  },
-  typography: {
-    fontFamily: "Roboto, sans-serif",
-  },
-});
+import ResponsiveTable, { ColumnDef } from "../../components/ResponsiveTable";
 
 const validationSchema = Yup.object({
-  name: Yup.string().required("Name is required"),
+  name: Yup.string().required("Name ist erforderlich"),
 });
 
 interface Material {
@@ -100,17 +72,98 @@ interface MaterialsApiResponse {
   };
 }
 
+// Mobile card renderer for materials
+const MaterialMobileCard = ({
+  material,
+  onEdit,
+  onDelete,
+}: {
+  material: Material;
+  onEdit: (material: Material) => void;
+  onDelete: (material: Material) => void;
+}) => {
+  return (
+    <Box>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-start",
+          mb: 1,
+        }}
+      >
+        <Typography
+          variant="subtitle1"
+          sx={{ fontWeight: 600, color: "rgba(51, 51, 51, 1)" }}
+        >
+          {material.name}
+        </Typography>
+        <Box sx={{ display: "flex", gap: 0.5 }}>
+          <IconButton
+            size="small"
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit(material);
+            }}
+            sx={{ color: "rgba(104, 201, 242, 1)" }}
+          >
+            <Edit fontSize="small" />
+          </IconButton>
+          <IconButton
+            size="small"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(material);
+            }}
+            sx={{ color: "#d32f2f" }}
+          >
+            <Delete fontSize="small" />
+          </IconButton>
+        </Box>
+      </Box>
+      <Stack direction="row" spacing={0.5} flexWrap="wrap" sx={{ mb: 1 }}>
+        {material.operations?.slice(0, 2).map((operation, index) => (
+          <Chip
+            key={index}
+            label={operation.name}
+            size="small"
+            sx={{
+              backgroundColor: "#e8f5e9",
+              color: "#2e7d32",
+              fontSize: "12px",
+            }}
+          />
+        ))}
+        {material.operations?.length > 2 && (
+          <Chip
+            label={`+${material.operations.length - 2} mehr`}
+            size="small"
+            variant="outlined"
+            sx={{ fontSize: "12px" }}
+          />
+        )}
+      </Stack>
+      <Typography variant="caption" sx={{ color: "rgba(146, 146, 146, 1)" }}>
+        Erstellt: <DateText date={material.createdAt} />
+      </Typography>
+    </Box>
+  );
+};
+
 const MaterialsManagement: React.FC = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const navigate = useNavigate();
+
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingMaterial, setEditingMaterial] = useState<Material | null>(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [materialToDelete, setMaterialToDelete] = useState<Material | null>(
-    null
+    null,
   );
   const [uploadedFile, setUploadedFile] = useState<S3UploadResponse | null>(
-    null
+    null,
   );
-  const [selected, setSelected] = useState<string[]>([]);
   const [order, setOrder] = useState<"asc" | "desc">("asc");
   const [orderBy, setOrderBy] = useState<string>("name");
   const [searchTerm, setSearchTerm] = useState("");
@@ -118,9 +171,13 @@ const MaterialsManagement: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const queryClient = useQueryClient();
-  const { data: materialsResponse, isLoading } = useGetMaterials({
+  const {
+    data: materialsResponse,
+    isLoading,
+    refetch,
+  } = useGetMaterials({
     page,
-    limit: 10,
+    limit: 15,
     sortBy: orderBy,
     sortOrder: order,
   });
@@ -128,10 +185,16 @@ const MaterialsManagement: React.FC = () => {
   const updateMutation = useUpdateMaterial();
   const deleteMutation = useDeleteMaterial();
 
-  // Cast the response to the correct type since the API returns different structure
   const typedResponse = materialsResponse as unknown as MaterialsApiResponse;
   const materials = typedResponse?.data || [];
   const pagination = typedResponse?.pagination;
+
+  // Filter materials by search term (client-side)
+  const filteredMaterials = useMemo(() => {
+    if (!searchTerm.trim()) return materials;
+    const term = searchTerm.toLowerCase();
+    return materials.filter((mat) => mat.name.toLowerCase().includes(term));
+  }, [materials, searchTerm]);
 
   const handleOpenDialog = (material?: Material) => {
     setEditingMaterial(material || null);
@@ -146,37 +209,27 @@ const MaterialsManagement: React.FC = () => {
   };
 
   const handleSubmit = async (values: { name: string }) => {
-    console.log("Form submitted with values:", values);
-    console.log("Uploaded file:", uploadedFile);
-
     try {
       const materialData: MaterialRequestBody = {
         name: values.name,
         image: uploadedFile?.url || "",
       };
 
-      console.log("Material data to be sent:", materialData);
-
       if (editingMaterial) {
-        console.log("Updating material:", editingMaterial._id);
-        const result = await updateMutation.mutateAsync({
+        await updateMutation.mutateAsync({
           materialId: editingMaterial._id,
           data: materialData,
         });
-        console.log("Update result:", result);
       } else {
-        console.log("Creating new material");
-        const result = await createMutation.mutateAsync(materialData);
-        console.log("Create result:", result);
+        await createMutation.mutateAsync(materialData);
       }
 
       queryClient.invalidateQueries({ queryKey: ["materials"] });
       handleCloseDialog();
-      console.log("Material saved successfully");
-    } catch (error) {
-      console.error("Error saving material:", error);
-      // Show error to user
-      setError("Failed to save material. Please try again.");
+    } catch {
+      setError(
+        "Fehler beim Speichern des Materials. Bitte versuchen Sie es erneut.",
+      );
     }
   };
 
@@ -192,8 +245,8 @@ const MaterialsManagement: React.FC = () => {
         queryClient.invalidateQueries({ queryKey: ["materials"] });
         setDeleteConfirmOpen(false);
         setMaterialToDelete(null);
-      } catch (error) {
-        console.error("Error deleting material:", error);
+      } catch {
+        setError("Fehler beim Löschen des Materials.");
       }
     }
   };
@@ -206,440 +259,374 @@ const MaterialsManagement: React.FC = () => {
     setUploadedFile(null);
   };
 
-  const handleSelectAllClick = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.checked) {
-      const newSelected = materials.map((material: Material) => material._id);
-      setSelected(newSelected);
-      return;
-    }
-    setSelected([]);
-  };
-
-  const handleClick = (id: string) => {
-    const selectedIndex = selected.indexOf(id);
-    let newSelected: string[] = [];
-
-    if (selectedIndex === -1) {
-      newSelected = newSelected.concat(selected, id);
-    } else if (selectedIndex === 0) {
-      newSelected = newSelected.concat(selected.slice(1));
-    } else if (selectedIndex === selected.length - 1) {
-      newSelected = newSelected.concat(selected.slice(0, -1));
-    } else if (selectedIndex > 0) {
-      newSelected = newSelected.concat(
-        selected.slice(0, selectedIndex),
-        selected.slice(selectedIndex + 1)
-      );
-    }
-    setSelected(newSelected);
-  };
-
-  const isSelected = (id: string) => selected.indexOf(id) !== -1;
-
-  const handleRequestSort = (property: string) => {
+  const handleSort = (property: string) => {
     const isAsc = orderBy === property && order === "asc";
     setOrder(isAsc ? "desc" : "asc");
     setOrderBy(property);
   };
 
-  // Server-side filtering and sorting is now handled by the API
-  const filteredMaterials = materials;
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(event.target.value);
+  };
+
+  const mobileCardRenderer = (material: Material) => (
+    <MaterialMobileCard
+      material={material}
+      onEdit={handleOpenDialog}
+      onDelete={handleDeleteClick}
+    />
+  );
+
+  const columns: ColumnDef<Material>[] = [
+    {
+      id: "name",
+      label: "Materialname",
+      accessor: (mat) => (
+        <Typography variant="body2" fontWeight={500}>
+          {mat.name}
+        </Typography>
+      ),
+      sortable: true,
+      width: 200,
+    },
+  ];
 
   const initialValues = {
     name: editingMaterial?.name || "",
   };
 
-  if (isLoading) {
-    return (
-      <ThemeProvider theme={theme}>
-        <Box
-          display="flex"
-          justifyContent="center"
-          alignItems="center"
-          minHeight="400px"
-        >
-          <CircularProgress />
-        </Box>
-      </ThemeProvider>
-    );
-  }
+  const hasData = filteredMaterials.length > 0;
 
   return (
-    <ThemeProvider theme={theme}>
-      <Box sx={{ p: 3 }}>
-        <Stack spacing={3}>
-          {/* Header */}
-          <Box
-            display="flex"
-            justifyContent="space-between"
-            alignItems="center"
-          >
-            <Box>
-              <Typography
-                variant="h4"
-                sx={{
-                  fontWeight: 600,
-                  color: "#333",
-                  fontSize: "28px",
-                }}
-              >
-                Materials Management
-              </Typography>
-              <Typography
-                variant="body1"
-                sx={{
-                  color: "#666",
-                  mt: 0.5,
-                }}
-              >
-                Manage dental materials and supplies
-              </Typography>
-            </Box>
-            <ButtonBlock
-              onClick={() => handleOpenDialog()}
-              style={{
-                background: "linear-gradient(90deg, #87C133 0%, #68C9F2 100%)",
-                borderRadius: "40px",
-                height: "40px",
-                color: "white",
-                fontSize: "16px",
-                fontWeight: "500",
-                padding: "0 20px",
-              }}
-            >
-              <Add sx={{ mr: 1 }} />
-              Add Material
-            </ButtonBlock>
-          </Box>
+    <Stack
+      flex="1"
+      gap="20px"
+      height="100%"
+      sx={{ overflow: "hidden", minWidth: 0 }}
+    >
+      <Stack direction="row" alignItems="center" spacing={1}>
+        <IconButton
+          onClick={() => navigate("/admin")}
+          sx={{ color: "rgba(146, 146, 146, 1)" }}
+        >
+          <ArrowBack />
+        </IconButton>
+        <Typography variant="h2" sx={{ color: "rgba(146, 146, 146, 1)" }}>
+          Materialien
+        </Typography>
+      </Stack>
 
-          {/* Search and Actions */}
+      {error && (
+        <Alert severity="error" onClose={() => setError(null)} sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
+
+      <Paper
+        sx={{
+          borderRadius: { xs: 0, sm: "10px" },
+          background: "rgba(255, 255, 255, 1)",
+          display: "flex",
+          flexDirection: "column",
+          flex: "1",
+          overflow: "hidden",
+          maxWidth: "100%",
+        }}
+      >
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: { xs: "column", sm: "row" },
+            justifyContent: "space-between",
+            alignItems: { xs: "stretch", sm: "center" },
+            gap: { xs: 2, sm: 2 },
+            p: { xs: "12px 16px", sm: "16px 28px" },
+          }}
+        >
           <Box
-            display="flex"
-            justifyContent="space-between"
-            alignItems="center"
+            sx={{
+              display: "flex",
+              gap: 2,
+              alignItems: "center",
+              flexWrap: "wrap",
+              flex: 1,
+            }}
           >
             <TextField
-              placeholder="Search materials..."
+              size="small"
+              placeholder="Material suchen..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Search />
-                  </InputAdornment>
-                ),
-              }}
+              onChange={handleSearchChange}
               sx={{
-                width: "300px",
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: "25px",
-                  height: "40px",
+                minWidth: { xs: "100%", sm: 200, md: 300 },
+                width: { xs: "100%", sm: "auto" },
+                flexShrink: 1,
+                "& .MuiInputBase-root": {
+                  minHeight: { xs: "44px", sm: "40px" },
+                },
+              }}
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Search fontSize="small" />
+                    </InputAdornment>
+                  ),
                 },
               }}
             />
-            <Stack direction="row" spacing={1}>
+          </Box>
+          <Box
+            sx={{
+              display: { xs: "none", sm: "flex" },
+              justifyContent: "flex-end",
+              alignItems: "center",
+              flexShrink: 0,
+              flex: { xs: "none", sm: 1 },
+            }}
+          >
+            <ButtonBlock
+              startIcon={<Add />}
+              sx={{
+                borderRadius: "40px",
+                textTransform: "none",
+                background: "linear-gradient(90deg, #87C133 0%, #68C9F2 100%)",
+                color: "white",
+                px: { xs: "16px", sm: "12px" },
+                fontWeight: "500",
+                fontSize: { xs: "14px", sm: "16px" },
+                height: { xs: "44px", sm: "37px" },
+                minHeight: "44px",
+                marginRight: { xs: 0, md: "26px" },
+              }}
+              onClick={() => handleOpenDialog()}
+            >
+              Material hinzufügen
+            </ButtonBlock>
+            <Box sx={{ display: { xs: "none", md: "flex" } }}>
               <IconButton>
                 <Print />
               </IconButton>
-              <IconButton>
+              <IconButton onClick={() => refetch()} title="Aktualisieren">
                 <Refresh />
               </IconButton>
               <IconButton>
                 <Settings />
               </IconButton>
-            </Stack>
+            </Box>
           </Box>
-
-          {/* Table */}
-          <Paper
-            sx={{
-              borderRadius: "10px",
-              overflow: "hidden",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-            }}
+        </Box>
+        <Box
+          sx={{
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+            overflow: "hidden",
+            minWidth: 0,
+          }}
+        >
+          <Box
+            sx={{ flex: 1, overflowX: "auto", overflowY: "auto", minWidth: 0 }}
           >
-            <TableContainer>
-              <Table>
-                <TableHead sx={{ backgroundColor: "#f8f9fa" }}>
-                  <TableRow>
-                    <TableCell padding="checkbox">
-                      <Checkbox
-                        color="primary"
-                        indeterminate={
-                          selected.length > 0 &&
-                          selected.length < materials.length
-                        }
-                        checked={
-                          materials.length > 0 &&
-                          selected.length === materials.length
-                        }
-                        onChange={handleSelectAllClick}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <TableSortLabel
-                        active={orderBy === "name"}
-                        direction={orderBy === "name" ? order : "asc"}
-                        onClick={() => handleRequestSort("name")}
-                        sx={{ fontWeight: 600 }}
-                      >
-                        Material Name
-                      </TableSortLabel>
-                    </TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>Operations</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>Created Date</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>Actions</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {filteredMaterials.map((material: Material) => {
-                    const isItemSelected = isSelected(material._id);
-                    return (
-                      <TableRow
-                        key={material._id}
-                        hover
-                        onClick={() => handleClick(material._id)}
-                        role="checkbox"
-                        aria-checked={isItemSelected}
-                        selected={isItemSelected}
-                        sx={{ cursor: "pointer" }}
-                      >
-                        <TableCell padding="checkbox">
-                          <Checkbox color="primary" checked={isItemSelected} />
-                        </TableCell>
-                        <TableCell>
-                          <Typography variant="body2" fontWeight={500}>
-                            {material.name}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
-                          <Stack direction="row" spacing={0.5} flexWrap="wrap">
-                            {material.operations
-                              ?.slice(0, 2)
-                              .map(
-                                (
-                                  operation: {
-                                    _id: string;
-                                    name: string;
-                                    category: string;
-                                  },
-                                  index: number
-                                ) => (
-                                  <Chip
-                                    key={index}
-                                    label={operation.name}
-                                    size="small"
-                                    sx={{
-                                      backgroundColor: "#e8f5e9",
-                                      color: "#2e7d32",
-                                      fontSize: "12px",
-                                    }}
-                                  />
-                                )
-                              )}
-                            {material.operations?.length > 2 && (
-                              <Chip
-                                label={`+${
-                                  material.operations.length - 2
-                                } more`}
-                                size="small"
-                                variant="outlined"
-                                sx={{ fontSize: "12px" }}
-                              />
-                            )}
-                          </Stack>
-                        </TableCell>
-                        <TableCell>
-                          <Typography variant="body2" color="text.secondary">
-                            <DateText date={material.createdAt} />
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
-                          <Stack direction="row" spacing={1}>
-                            <IconButton
-                              size="small"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleOpenDialog(material);
-                              }}
-                              sx={{ color: "#4caf50" }}
-                            >
-                              <Edit />
-                            </IconButton>
-                            <IconButton
-                              size="small"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteClick(material);
-                              }}
-                              sx={{ color: "#d32f2f" }}
-                            >
-                              <Delete />
-                            </IconButton>
-                          </Stack>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </Paper>
-
-          {/* Pagination */}
-          {pagination && (
-            <Box display="flex" justifyContent="center">
+            <ResponsiveTable<Material>
+              data={filteredMaterials}
+              columns={columns}
+              mobileCardRenderer={mobileCardRenderer}
+              isLoading={isLoading}
+              emptyMessage={
+                searchTerm
+                  ? "Keine Materialien gefunden"
+                  : "Keine Materialien vorhanden. Fügen Sie ein neues Material hinzu."
+              }
+              getItemId={(mat) => mat._id}
+              sortBy={orderBy}
+              sortOrder={order}
+              onSort={handleSort}
+            />
+          </Box>
+          {hasData && pagination && (
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "center",
+                p: { xs: "16px", sm: "24px" },
+                pb: { xs: "80px", sm: "24px" },
+                flexShrink: 0,
+              }}
+            >
               <Pagination
-                count={pagination.totalPages}
-                page={page}
-                onChange={(event, value) => setPage(value)}
+                count={pagination.totalPages || 1}
+                page={pagination.currentPage || 1}
+                onChange={(_, value) => setPage(value)}
                 color="primary"
+                size={isMobile ? "small" : "medium"}
               />
             </Box>
           )}
+        </Box>
+      </Paper>
 
-          {/* Error Display */}
-          {error && (
-            <Alert severity="error" onClose={() => setError(null)}>
-              {error}
-            </Alert>
-          )}
-        </Stack>
-
-        {/* Add/Edit Dialog */}
-        <Dialog
-          open={dialogOpen}
-          onClose={handleCloseDialog}
-          maxWidth="sm"
-          fullWidth
+      {/* Add/Edit Dialog */}
+      <Dialog
+        open={dialogOpen}
+        onClose={handleCloseDialog}
+        maxWidth="sm"
+        fullWidth
+        fullScreen={isMobile}
+      >
+        <DialogTitle sx={{ fontWeight: 600 }}>
+          {editingMaterial ? "Material bearbeiten" : "Neues Material"}
+        </DialogTitle>
+        <Formik
+          initialValues={initialValues}
+          validationSchema={validationSchema}
+          onSubmit={handleSubmit}
+          enableReinitialize
         >
-          <DialogTitle sx={{ fontWeight: 600 }}>
-            {editingMaterial ? "Edit Material" : "Add New Material"}
-          </DialogTitle>
-          <Formik
-            initialValues={initialValues}
-            validationSchema={validationSchema}
-            onSubmit={handleSubmit}
-            enableReinitialize
-          >
-            {({
-              values,
-              errors,
-              touched,
-              handleChange,
-              handleBlur,
-              isSubmitting,
-            }) => (
-              <Form>
-                <DialogContent>
-                  <Stack spacing={3}>
-                    <TextField
-                      fullWidth
-                      name="name"
-                      label="Material Name"
-                      value={values.name}
-                      onChange={handleChange}
-                      onBlur={handleBlur}
-                      error={touched.name && Boolean(errors.name)}
-                      helperText={touched.name && errors.name}
-                      sx={{
-                        "& .MuiOutlinedInput-root": {
-                          borderRadius: "8px",
-                        },
-                      }}
+          {({
+            values,
+            errors,
+            touched,
+            handleChange,
+            handleBlur,
+            isSubmitting,
+          }) => (
+            <Form>
+              <DialogContent>
+                <Stack spacing={3}>
+                  <TextField
+                    fullWidth
+                    name="name"
+                    label="Materialname"
+                    value={values.name}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    error={touched.name && Boolean(errors.name)}
+                    helperText={touched.name && errors.name}
+                  />
+                  <Box>
+                    <Typography
+                      variant="subtitle2"
+                      sx={{ mb: 1, fontWeight: 600 }}
+                    >
+                      Materialbild (Optional)
+                    </Typography>
+                    <S3FileUpload
+                      onUploadSuccess={handleFileUpload}
+                      onUploadError={(err) =>
+                        console.error("Upload error:", err)
+                      }
+                      acceptedFileTypes="image/*"
+                      maxFileSize={5 * 1024 * 1024}
+                      currentFile={uploadedFile}
+                      onRemove={handleFileRemove}
+                      label="Materialbild hochladen"
                     />
+                  </Box>
+                </Stack>
+              </DialogContent>
+              <DialogActions sx={{ p: 2 }}>
+                <ButtonBlock
+                  onClick={handleCloseDialog}
+                  style={{
+                    borderRadius: "40px",
+                    height: "40px",
+                    color: "rgba(107, 107, 107, 1)",
+                    fontSize: "14px",
+                    fontWeight: "500",
+                  }}
+                >
+                  Abbrechen
+                </ButtonBlock>
+                <ButtonBlock
+                  type="submit"
+                  disabled={isSubmitting}
+                  style={{
+                    background:
+                      "linear-gradient(90deg, #87C133 0%, #68C9F2 100%)",
+                    borderRadius: "40px",
+                    height: "40px",
+                    color: "white",
+                    fontSize: "14px",
+                    fontWeight: "500",
+                  }}
+                >
+                  {isSubmitting ? "Speichern..." : "Speichern"}
+                </ButtonBlock>
+              </DialogActions>
+            </Form>
+          )}
+        </Formik>
+      </Dialog>
 
-                    <Box>
-                      <Typography
-                        variant="subtitle2"
-                        sx={{ mb: 1, fontWeight: 600 }}
-                      >
-                        Material Image (Optional)
-                      </Typography>
-                      <S3FileUpload
-                        onUploadSuccess={handleFileUpload}
-                        onUploadError={(error) =>
-                          console.error("Upload error:", error)
-                        }
-                        acceptedFileTypes="image/*"
-                        maxFileSize={5 * 1024 * 1024} // 5MB
-                        currentFile={uploadedFile}
-                        onRemove={handleFileRemove}
-                        label="Upload Material Image"
-                      />
-                    </Box>
-                  </Stack>
-                </DialogContent>
-                <DialogActions sx={{ p: 3 }}>
-                  <Button
-                    onClick={handleCloseDialog}
-                    sx={{
-                      borderRadius: "20px",
-                      textTransform: "none",
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                  <ButtonBlock
-                    type="submit"
-                    disabled={isSubmitting}
-                    style={{
-                      background:
-                        "linear-gradient(90deg, #87C133 0%, #68C9F2 100%)",
-                      borderRadius: "20px",
-                      height: "36px",
-                      color: "white",
-                      fontSize: "14px",
-                      fontWeight: "500",
-                      padding: "0 20px",
-                    }}
-                  >
-                    {isSubmitting ? "Saving..." : "Save"}
-                  </ButtonBlock>
-                </DialogActions>
-              </Form>
-            )}
-          </Formik>
-        </Dialog>
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={deleteConfirmOpen}
+        onClose={() => setDeleteConfirmOpen(false)}
+        fullScreen={isMobile}
+      >
+        <DialogTitle sx={{ fontWeight: 600 }}>Löschen bestätigen</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Sind Sie sicher, dass Sie das Material "{materialToDelete?.name}"
+            löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <ButtonBlock
+            onClick={() => setDeleteConfirmOpen(false)}
+            style={{
+              borderRadius: "40px",
+              height: "40px",
+              color: "rgba(107, 107, 107, 1)",
+              fontSize: "14px",
+              fontWeight: "500",
+            }}
+          >
+            Abbrechen
+          </ButtonBlock>
+          <ButtonBlock
+            onClick={handleDeleteConfirm}
+            disabled={deleteMutation.isPending}
+            style={{
+              background: "rgba(247, 107, 107, 1)",
+              borderRadius: "40px",
+              height: "40px",
+              color: "white",
+              fontSize: "14px",
+              fontWeight: "500",
+            }}
+          >
+            {deleteMutation.isPending ? "Löschen..." : "Löschen"}
+          </ButtonBlock>
+        </DialogActions>
+      </Dialog>
 
-        {/* Delete Confirmation Dialog */}
-        <Dialog
-          open={deleteConfirmOpen}
-          onClose={() => setDeleteConfirmOpen(false)}
+      {/* Mobile: Floating Action Button with label */}
+      {isMobile && (
+        <Fab
+          variant="extended"
+          color="primary"
+          aria-label="Material hinzufügen"
+          onClick={() => handleOpenDialog()}
+          sx={{
+            position: "fixed",
+            bottom: 80,
+            right: 16,
+            background: "linear-gradient(90deg, #87C133 0%, #68C9F2 100%)",
+            "&:hover": {
+              background: "linear-gradient(90deg, #7AB02E 0%, #5BB8E0 100%)",
+            },
+            zIndex: 1000,
+            gap: 1,
+            color: "white",
+          }}
         >
-          <DialogTitle sx={{ fontWeight: 600 }}>Confirm Delete</DialogTitle>
-          <DialogContent>
-            <Typography>
-              Are you sure you want to delete the material "
-              {materialToDelete?.name}"? This action cannot be undone.
-            </Typography>
-          </DialogContent>
-          <DialogActions sx={{ p: 3 }}>
-            <Button
-              onClick={() => setDeleteConfirmOpen(false)}
-              sx={{
-                borderRadius: "20px",
-                textTransform: "none",
-              }}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleDeleteConfirm}
-              color="error"
-              variant="contained"
-              disabled={deleteMutation.isPending}
-              sx={{
-                borderRadius: "20px",
-                textTransform: "none",
-              }}
-            >
-              {deleteMutation.isPending ? "Deleting..." : "Delete"}
-            </Button>
-          </DialogActions>
-        </Dialog>
-      </Box>
-    </ThemeProvider>
+          <Add />
+          Material hinzufügen
+        </Fab>
+      )}
+    </Stack>
   );
 };
 

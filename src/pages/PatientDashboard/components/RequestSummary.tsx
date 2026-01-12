@@ -18,8 +18,11 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import TeethSelection from "../../../components/TeethSelection";
+import ZoomableTeethSelection from "../../../components/ZoomableTeethSelection";
 import PatientInfoCard from "./ui/PatientInfoCard";
 import ValueFieldBlock from "../../../components/molecules/form-fields/ValueFieldBlock";
 import { Delete, Edit, ExpandMore, HorizontalRule } from "@mui/icons-material";
@@ -46,6 +49,9 @@ const RequestSummary = (props) => {
     notes,
     setNotes,
   } = props;
+
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm")); // < 600px
 
   // State for delete confirmation dialog
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -81,7 +87,11 @@ const RequestSummary = (props) => {
           setNotes={setNotes}
         />
       )}
-      <Stack flexDirection={"row"} flex={1} gap={"20px"}>
+      <Stack
+        flexDirection={{ xs: "column-reverse", md: "row" }}
+        flex={1}
+        gap={"20px"}
+      >
         <Stack flexDirection={"column"} gap={"20px"} flex={1}>
           {configuredOperations?.map((configuredOperation: OperationSchema) => (
             <Accordion
@@ -299,7 +309,7 @@ const RequestSummary = (props) => {
               borderRadius: "10px",
               background: "rgba(255, 255, 255, 1)",
               boxShadow: "0px 4px 8px 0px rgba(0, 0, 0, 0.25)",
-              padding: "26px 40px",
+              padding: isMobile ? "16px" : "26px 40px",
               display: "flex",
               flexDirection: "column",
               gap: "20px",
@@ -309,13 +319,24 @@ const RequestSummary = (props) => {
               pointerEvents: "none",
             }}
           >
-            <TeethSelection
-              selectedOperation={configuredOperations?.[0]?.operation}
-              selectedTeeth={selectedTeethRequest}
-              selectedConnectors={selectedConnectorsRequest}
-              teethColorMap={teethRequestColorMap}
-              connectorsColorMap={connectorsRequestColorMap}
-            />
+            {isMobile ? (
+              <ZoomableTeethSelection
+                selectedOperation={configuredOperations?.[0]?.operation}
+                selectedTeeth={selectedTeethRequest}
+                selectedConnectors={selectedConnectorsRequest}
+                teethColorMap={teethRequestColorMap}
+                connectorsColorMap={connectorsRequestColorMap}
+                readOnly
+              />
+            ) : (
+              <TeethSelection
+                selectedOperation={configuredOperations?.[0]?.operation}
+                selectedTeeth={selectedTeethRequest}
+                selectedConnectors={selectedConnectorsRequest}
+                teethColorMap={teethRequestColorMap}
+                connectorsColorMap={connectorsRequestColorMap}
+              />
+            )}
             <Stack
               flexDirection={"row"}
               justifyContent={"space-around"}

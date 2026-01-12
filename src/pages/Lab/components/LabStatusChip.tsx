@@ -23,6 +23,12 @@ const LabStatusChip: React.FC<LabStatusChipProps> = ({
         fontWeight: 500,
         fontSize: "0.75rem",
         height: "24px",
+        maxWidth: { xs: "100%", sm: "none" },
+        "& .MuiChip-label": {
+          whiteSpace: { xs: "normal", sm: "nowrap" },
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+        },
         ...sx,
       }}
       {...props}

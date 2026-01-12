@@ -5,8 +5,18 @@ import {
   getLaborzettelById,
   updateLaborzettel,
   deleteLaborzettel,
+  getAllLaborzettel,
+  GetLaborzettelParams,
 } from "./requests";
 import { CreateLaborzettelDto, UpdateLaborzettelDto } from "./types";
+
+// Get all Laborzettel with pagination
+export const useGetAllLaborzettel = (params: GetLaborzettelParams = {}) => {
+  return useQuery({
+    queryKey: ["laborzettel", "list", params],
+    queryFn: () => getAllLaborzettel(params),
+  });
+};
 
 // Get Laborzettel by lab request ID
 export const useLaborzettelByLabRequest = (labRequestId: string) => {

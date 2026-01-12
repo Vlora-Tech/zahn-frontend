@@ -2,7 +2,7 @@ import axios, { AxiosInstance } from "axios";
 
 // Environment variables
 //const apiBaseUrl = import.meta.env.VITE_APP_API_BASE_URL;
-const apiBaseUrl =  "https://zahn-care.zahnder.com/api";
+const apiBaseUrl = "http://localhost:3000/api";
 // Create an Axios instance with default configurations
 const client: AxiosInstance = axios.create({
   baseURL: apiBaseUrl,
@@ -23,7 +23,7 @@ client.interceptors.request.use(
   },
   (error) => {
     return Promise.reject(error);
-  }
+  },
 );
 
 // Response interceptor to handle responses and errors
@@ -51,7 +51,7 @@ client.interceptors.response.use(
     }
 
     return Promise.reject(error);
-  }
+  },
 );
 
 export default client;

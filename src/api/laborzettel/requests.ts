@@ -5,6 +5,39 @@ import {
   UpdateLaborzettelDto,
 } from "./types";
 
+export interface LaborzettelListResponse {
+  data: Laborzettel[];
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    totalItems: number;
+    itemsPerPage: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+  };
+}
+
+export interface GetLaborzettelParams {
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
+  search?: string;
+  operation?: string;
+  doctor?: string;
+  labTechnician?: string;
+}
+
+// Get all Laborzettel with pagination
+export const getAllLaborzettel = async (
+  params: GetLaborzettelParams = {},
+): Promise<LaborzettelListResponse> => {
+  const response = await client.get<LaborzettelListResponse>("/laborzettel", {
+    params,
+  });
+  return response.data;
+};
+
 // Create a new Laborzettel
 export const createLaborzettel = async (
   data: CreateLaborzettelDto,

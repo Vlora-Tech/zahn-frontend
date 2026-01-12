@@ -3,13 +3,12 @@ import {
   TextField,
   InputAdornment,
   styled,
+  useTheme,
+  useMediaQuery,
   type TextFieldProps,
 } from "@mui/material";
 
-const StyledTextField = styled(TextField)({
-  // "label + &": {
-  //   marginTop: "20px",
-  // },
+const StyledTextField = styled(TextField)(({ theme }) => ({
   "& label.Mui-focused": {
     color: "#A0AAB4",
   },
@@ -17,8 +16,11 @@ const StyledTextField = styled(TextField)({
     borderBottomColor: "#B2BAC2",
   },
   "& .MuiOutlinedInput-root": {
-    // padding: '0px',
     padding: "8px 16px",
+    // Mobile: ensure minimum 44px height for touch targets
+    [theme.breakpoints.down("sm")]: {
+      minHeight: "44px",
+    },
     "& fieldset": {
       borderColor: "#E0E3E7",
     },
@@ -45,7 +47,7 @@ const StyledTextField = styled(TextField)({
     backgroundColor: "transparent",
   },
   "& .MuiFormHelperText-root": {
-    backgroundColor: "transparent", // Set the background color to transparent
+    backgroundColor: "transparent",
   },
   "&.MuiTextField-root": {
     backgroundColor: "transparent",
@@ -55,23 +57,32 @@ const StyledTextField = styled(TextField)({
     borderRadius: "8px",
   },
   "& .MuiInputBase-input": {
-    // padding: "8px 16px",
     padding: 0,
+    // Mobile: ensure adequate font size to prevent zoom on iOS
+    [theme.breakpoints.down("sm")]: {
+      fontSize: "16px",
+    },
   },
-});
+}));
 
 export interface InputBlockProps extends Omit<TextFieldProps, "variant"> {
   startIcon?: React.ReactNode;
   endIcon?: React.ReactNode;
   variant?: "outlined" | "filled" | "standard";
+  mobileFullWidth?: boolean;
 }
 
 const InputBlock: React.FC<InputBlockProps> = ({
   startIcon,
   endIcon,
   variant = "outlined",
+  mobileFullWidth = true,
+  sx,
   ...props
 }) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
   return (
     <StyledTextField
       id="bootstrap-input"
@@ -87,6 +98,11 @@ const InputBlock: React.FC<InputBlockProps> = ({
         },
       }}
       variant={variant}
+      sx={{
+        // Mobile: full width by default
+        ...(isMobile && mobileFullWidth && { width: "100%" }),
+        ...sx,
+      }}
       {...props}
     />
   );

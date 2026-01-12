@@ -9,14 +9,14 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
+  useTheme,
+  useMediaQuery,
 } from "@mui/material";
 import { ArrowBack } from "@mui/icons-material";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 
-import {
-  useGetTreatmentRequestById,
-} from "../../api/treatment-requests/hooks";
+import { useGetTreatmentRequestById } from "../../api/treatment-requests/hooks";
 import {
   useLabRequestByRequestId,
   useResubmitLabRequest,
@@ -31,6 +31,8 @@ const EditRejectedRequest: React.FC = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { openSnackbar } = useSnackbar();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
 
@@ -65,7 +67,8 @@ const EditRejectedRequest: React.FC = () => {
     if (labRequest && !isRejected) {
       openSnackbar({
         type: "error",
-        message: "Dieser Auftrag ist nicht abgelehnt und kann nicht bearbeitet werden.",
+        message:
+          "Dieser Auftrag ist nicht abgelehnt und kann nicht bearbeitet werden.",
       });
       navigate(`/requests/${requestId}`);
     }
@@ -109,15 +112,20 @@ const EditRejectedRequest: React.FC = () => {
   }
 
   return (
-    <Stack flex="1" gap="20px" height="100%">
+    <Stack flex="1" gap="20px" height="100%" px={{ xs: 2, sm: 0 }}>
       {/* Header with back button */}
-      <Box display="flex" alignItems="center" gap={2}>
+      <Box
+        display="flex"
+        flexDirection={{ xs: "column", sm: "row" }}
+        alignItems={{ xs: "flex-start", sm: "center" }}
+        gap={2}
+      >
         <ButtonBlock
           startIcon={<ArrowBack />}
           onClick={handleGoBack}
-          style={{
+          sx={{
             borderRadius: "40px",
-            height: "36px",
+            height: { xs: "44px", sm: "36px" },
             color: "rgba(107, 107, 107, 1)",
             fontSize: "14px",
             fontWeight: "500",
@@ -126,7 +134,13 @@ const EditRejectedRequest: React.FC = () => {
         >
           Zurück
         </ButtonBlock>
-        <Typography variant="h2" sx={{ color: "rgba(146, 146, 146, 1)" }}>
+        <Typography
+          variant="h2"
+          sx={{
+            color: "rgba(146, 146, 146, 1)",
+            fontSize: { xs: "18px", sm: "24px" },
+          }}
+        >
           Abgelehnten Auftrag bearbeiten & erneut einreichen
         </Typography>
       </Box>
@@ -140,7 +154,7 @@ const EditRejectedRequest: React.FC = () => {
       />
 
       {/* Info Alert */}
-      <Alert severity="info" sx={{ borderRadius: "10px" }}>
+      <Alert severity="info" sx={{ borderRadius: { xs: 0, sm: "10px" } }}>
         <Typography variant="body2">
           Bitte korrigieren Sie die Angaben entsprechend dem Ablehnungsgrund und
           reichen Sie den Auftrag erneut ein. Nach der erneuten Einreichung wird
@@ -163,21 +177,25 @@ const EditRejectedRequest: React.FC = () => {
           dem Speichern der Änderungen können Sie den Auftrag erneut einreichen.
         </Typography>
 
-        <Stack direction="row" gap={2}>
+        <Stack
+          direction={{ xs: "column", sm: "row" }}
+          gap={2}
+          sx={{ width: { xs: "100%", sm: "auto" } }}
+        >
           <ButtonBlock
             onClick={() => {
               if (treatmentRequest?.patient?._id) {
                 navigate(
-                  `/patients/${treatmentRequest.patient._id}/requests/edit/${requestId}`
+                  `/patients/${treatmentRequest.patient._id}/requests/edit/${requestId}`,
                 );
               }
             }}
-            style={{
+            sx={{
               borderRadius: "40px",
-              height: "40px",
+              height: { xs: "44px", sm: "40px" },
               color: "white",
               background: "linear-gradient(90deg, #87C133 0%, #68C9F2 100%)",
-              width: "fit-content",
+              width: { xs: "100%", sm: "fit-content" },
               padding: "0 24px",
               fontSize: "14px",
               fontWeight: "500",
@@ -190,14 +208,14 @@ const EditRejectedRequest: React.FC = () => {
           <ButtonBlock
             onClick={() => setConfirmDialogOpen(true)}
             disabled={resubmitMutation.isPending}
-            style={{
+            sx={{
               borderRadius: "40px",
-              height: "40px",
+              height: { xs: "44px", sm: "40px" },
               color: "white",
               background: resubmitMutation.isPending
                 ? "rgba(0, 0, 0, 0.12)"
                 : "linear-gradient(90deg, #4CAF50 0%, #45A049 100%)",
-              width: "fit-content",
+              width: { xs: "100%", sm: "fit-content" },
               padding: "0 24px",
               fontSize: "14px",
               fontWeight: "500",
@@ -220,6 +238,7 @@ const EditRejectedRequest: React.FC = () => {
         aria-labelledby="resubmit-dialog-title"
         maxWidth="sm"
         fullWidth
+        fullScreen={isMobile}
       >
         <DialogTitle id="resubmit-dialog-title">
           Auftrag erneut einreichen
@@ -231,17 +250,25 @@ const EditRejectedRequest: React.FC = () => {
             Einreichung benachrichtigt.
           </DialogContentText>
         </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2 }}>
+        <DialogActions
+          sx={{
+            px: 3,
+            pb: 2,
+            flexDirection: { xs: "column", sm: "row" },
+            gap: { xs: 1, sm: 0 },
+          }}
+        >
           <ButtonBlock
             onClick={() => setConfirmDialogOpen(false)}
             disabled={resubmitMutation.isPending}
-            style={{
+            sx={{
               borderRadius: "40px",
-              height: "40px",
+              height: { xs: "44px", sm: "40px" },
               color: "rgba(107, 107, 107, 1)",
-              width: "120px",
+              width: { xs: "100%", sm: "120px" },
               fontSize: "14px",
               fontWeight: "500",
+              order: { xs: 2, sm: 1 },
             }}
           >
             Abbrechen
@@ -278,16 +305,17 @@ const EditRejectedRequest: React.FC = () => {
               }
             }}
             disabled={resubmitMutation.isPending}
-            style={{
+            sx={{
               borderRadius: "40px",
-              height: "40px",
+              height: { xs: "44px", sm: "40px" },
               color: "white",
               background: resubmitMutation.isPending
                 ? "rgba(0, 0, 0, 0.12)"
                 : "linear-gradient(90deg, #4CAF50 0%, #45A049 100%)",
-              width: "120px",
+              width: { xs: "100%", sm: "120px" },
               fontSize: "14px",
               fontWeight: "500",
+              order: { xs: 1, sm: 2 },
             }}
           >
             {resubmitMutation.isPending ? "..." : "Einreichen"}

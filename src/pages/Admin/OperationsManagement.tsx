@@ -1,15 +1,8 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   Box,
   Typography,
   Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Button,
   IconButton,
   Dialog,
   DialogTitle,
@@ -20,9 +13,11 @@ import {
   Chip,
   InputAdornment,
   Pagination,
-  Checkbox,
-  TableSortLabel,
   Autocomplete,
+  useTheme,
+  useMediaQuery,
+  Alert,
+  Fab,
 } from "@mui/material";
 import {
   Add,
@@ -32,6 +27,7 @@ import {
   Print,
   Refresh,
   Settings,
+  ArrowBack,
 } from "@mui/icons-material";
 import { Formik, Form } from "formik";
 import * as Yup from "yup";
@@ -44,8 +40,9 @@ import {
 import { useGetMaterials } from "../../api/materials/hooks";
 import { useGetCategories } from "../../api/categories/hooks";
 import { useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import ButtonBlock from "../../components/atoms/ButtonBlock";
-import LoadingSpinner from "../../components/atoms/LoadingSpinner";
+import ResponsiveTable, { ColumnDef } from "../../components/ResponsiveTable";
 import DynamicFormCreator from "./DynamicForm";
 
 export type OptionsSchema = {
@@ -129,48 +126,160 @@ interface MaterialsApiResponse {
 }
 
 const validationSchema = Yup.object({
-  name: Yup.string().required("Name is required"),
+  name: Yup.string().required("Name ist erforderlich"),
   description: Yup.string(),
-  category: Yup.string().required("Category is required"),
-  color: Yup.string().required("Color is required"),
+  category: Yup.string().required("Kategorie ist erforderlich"),
+  color: Yup.string().required("Farbe ist erforderlich"),
   materials: Yup.array().of(Yup.string()),
   optionSchema: Yup.mixed<OptionsSchema>()
     .required()
     .test(
       "has-mode",
-      "Options must include a mode",
-      (v) => !!v && !!(v as OptionsSchema).mode
+      "Optionen müssen einen Modus enthalten",
+      (v) => !!v && !!(v as OptionsSchema).mode,
     )
     .test(
       "has-parents",
-      "Options must include parents",
-      (v) => !!v && Array.isArray((v as OptionsSchema).parents)
+      "Optionen müssen Parents enthalten",
+      (v) => !!v && Array.isArray((v as OptionsSchema).parents),
     ),
 });
 
+// Mobile card renderer for operations
+const OperationMobileCard = ({
+  operation,
+  onEdit,
+  onDelete,
+}: {
+  operation: Operation;
+  onEdit: (operation: Operation) => void;
+  onDelete: (operation: Operation) => void;
+}) => {
+  return (
+    <Box>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-start",
+          mb: 1,
+        }}
+      >
+        <Box sx={{ flex: 1 }}>
+          <Typography
+            variant="subtitle1"
+            sx={{ fontWeight: 600, color: "rgba(51, 51, 51, 1)" }}
+          >
+            {operation.name}
+          </Typography>
+          {operation.category?.name && (
+            <Chip
+              label={operation.category.name}
+              size="small"
+              sx={{
+                backgroundColor: "#e3f2fd",
+                color: "#1976d2",
+                fontSize: "11px",
+                mt: 0.5,
+              }}
+            />
+          )}
+        </Box>
+        <Box sx={{ display: "flex", gap: 0.5 }}>
+          <IconButton
+            size="small"
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit(operation);
+            }}
+            sx={{ color: "rgba(104, 201, 242, 1)" }}
+          >
+            <Edit fontSize="small" />
+          </IconButton>
+          <IconButton
+            size="small"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(operation);
+            }}
+            sx={{ color: "#d32f2f" }}
+          >
+            <Delete fontSize="small" />
+          </IconButton>
+        </Box>
+      </Box>
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+        {operation.color && (
+          <Box
+            sx={{
+              width: 16,
+              height: 16,
+              borderRadius: "4px",
+              backgroundColor: operation.color,
+              border: "1px solid rgba(0,0,0,0.1)",
+            }}
+          />
+        )}
+      </Box>
+      {operation.materials?.length > 0 && (
+        <Stack direction="row" spacing={0.5} flexWrap="wrap" gap={0.5}>
+          {operation.materials.slice(0, 2).map((material, index) => (
+            <Chip
+              key={index}
+              label={material.name}
+              size="small"
+              sx={{
+                backgroundColor: "#e8f5e9",
+                color: "#2e7d32",
+                fontSize: "11px",
+              }}
+            />
+          ))}
+          {operation.materials.length > 2 && (
+            <Chip
+              label={`+${operation.materials.length - 2}`}
+              size="small"
+              variant="outlined"
+              sx={{ fontSize: "11px" }}
+            />
+          )}
+        </Stack>
+      )}
+    </Box>
+  );
+};
+
 const OperationsManagement: React.FC = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const navigate = useNavigate();
+
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingOperation, setEditingOperation] = useState<Operation | null>(
-    null
+    null,
   );
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [operationToDelete, setOperationToDelete] = useState<Operation | null>(
-    null
+    null,
   );
-  const [selected, setSelected] = useState<string[]>([]);
   const [order, setOrder] = useState<"asc" | "desc">("asc");
   const [orderBy, setOrderBy] = useState<string>("name");
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
+  const [error, setError] = useState<string | null>(null);
 
   const queryClient = useQueryClient();
-  const { data: operationsResponse, isLoading } = useGetOperations({
+  const {
+    data: operationsResponse,
+    isLoading,
+    refetch,
+  } = useGetOperations({
     page,
-    limit: 10,
+    limit: 15,
     sortBy: orderBy,
     sortOrder: order,
   });
-  const { data: materialsResponse } = useGetMaterials({ page: 1, limit: 100 }); // Get all materials for dropdown
+  const { data: materialsResponse } = useGetMaterials({ page: 1, limit: 100 });
   const { data: categoriesResponse } = useGetCategories({
     page: 1,
     limit: 100,
@@ -179,7 +288,6 @@ const OperationsManagement: React.FC = () => {
   const updateMutation = useUpdateOperation();
   const deleteMutation = useDeleteOperation();
 
-  // Cast responses to correct types
   const typedOperationsResponse =
     operationsResponse as unknown as OperationsApiResponse;
   const operations = typedOperationsResponse?.data || [];
@@ -187,14 +295,24 @@ const OperationsManagement: React.FC = () => {
 
   const typedMaterialsResponse =
     materialsResponse as unknown as MaterialsApiResponse;
-
   const allMaterials = typedMaterialsResponse?.data || [];
 
   const typedCategoriesResponse = categoriesResponse as unknown as {
     data: Category[];
   };
-
   const allCategories = typedCategoriesResponse?.data || [];
+
+  // Filter operations by search term
+  const filteredOperations = useMemo(() => {
+    if (!searchTerm.trim()) return operations;
+    const term = searchTerm.toLowerCase();
+    return operations.filter(
+      (op) =>
+        op.name.toLowerCase().includes(term) ||
+        op.description?.toLowerCase().includes(term) ||
+        op.category?.name?.toLowerCase().includes(term),
+    );
+  }, [operations, searchTerm]);
 
   const handleOpenDialog = (operation?: Operation) => {
     setEditingOperation(operation || null);
@@ -214,10 +332,6 @@ const OperationsManagement: React.FC = () => {
     materials: string[];
     optionSchema: OptionsSchema;
   }) => {
-    console.log("=== FORM SUBMISSION STARTED ===");
-    console.log("Form submitted with values:", values);
-    console.log("Editing operation:", editingOperation);
-
     try {
       const operationData = {
         name: values.name,
@@ -228,48 +342,24 @@ const OperationsManagement: React.FC = () => {
         optionSchema: values.optionSchema,
       };
 
-      console.log("Operation data to be sent:", operationData);
-      console.log("Create mutation:", createMutation);
-      console.log("Update mutation:", updateMutation);
-
       if (editingOperation) {
-        console.log("Updating operation:", editingOperation._id);
-        const result = await updateMutation.mutateAsync({
+        await updateMutation.mutateAsync({
           operationId: editingOperation._id,
           data: operationData,
         });
-        console.log("Update result:", result);
       } else {
-        console.log("Creating new operation");
-        console.log("About to call createMutation.mutateAsync");
-        // For create, we'll cast to unknown first then to the expected type since the API structure is different
-        const result = await createMutation.mutateAsync(
+        await createMutation.mutateAsync(
           operationData as unknown as Parameters<
             typeof createMutation.mutateAsync
-          >[0]
+          >[0],
         );
-        console.log("Create result:", result);
       }
 
-      console.log("Invalidating queries...");
       queryClient.invalidateQueries({ queryKey: ["operations"] });
-      console.log("Closing dialog...");
       handleCloseDialog();
-      console.log("Operation saved successfully");
-    } catch (error) {
-      console.error("=== ERROR SAVING OPERATION ===");
-      console.error("Error details:", error);
-      console.error(
-        "Error message:",
-        error instanceof Error ? error.message : "Unknown error"
-      );
-      console.error(
-        "Error stack:",
-        error instanceof Error ? error.stack : "No stack trace"
-      );
-      alert(
-        "Failed to save operation: " +
-          (error instanceof Error ? error.message : "Unknown error")
+    } catch (err) {
+      setError(
+        "Fehler beim Speichern des Vorgangs. Bitte versuchen Sie es erneut.",
       );
     }
   };
@@ -286,52 +376,141 @@ const OperationsManagement: React.FC = () => {
         queryClient.invalidateQueries({ queryKey: ["operations"] });
         setDeleteConfirmOpen(false);
         setOperationToDelete(null);
-      } catch (error) {
-        console.error("Error deleting operation:", error);
+      } catch (err) {
+        setError("Fehler beim Löschen des Vorgangs.");
       }
     }
   };
 
-  const handleSelectAllClick = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.checked) {
-      const newSelected = operations.map(
-        (operation: Operation) => operation._id
-      );
-      setSelected(newSelected);
-      return;
-    }
-    setSelected([]);
-  };
-
-  const handleClick = (id: string) => {
-    const selectedIndex = selected.indexOf(id);
-    let newSelected: string[] = [];
-
-    if (selectedIndex === -1) {
-      newSelected = newSelected.concat(selected, id);
-    } else if (selectedIndex === 0) {
-      newSelected = newSelected.concat(selected.slice(1));
-    } else if (selectedIndex === selected.length - 1) {
-      newSelected = newSelected.concat(selected.slice(0, -1));
-    } else if (selectedIndex > 0) {
-      newSelected = newSelected.concat(
-        selected.slice(0, selectedIndex),
-        selected.slice(selectedIndex + 1)
-      );
-    }
-    setSelected(newSelected);
-  };
-
-  const isSelected = (id: string) => selected.indexOf(id) !== -1;
-
-  const handleRequestSort = (property: string) => {
+  const handleSort = (property: string) => {
     const isAsc = orderBy === property && order === "asc";
     setOrder(isAsc ? "desc" : "asc");
     setOrderBy(property);
   };
 
-  // Server-side filtering and sorting is now handled by the API
-  const filteredOperations = operations;
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(event.target.value);
+  };
+
+  const mobileCardRenderer = (operation: Operation) => (
+    <OperationMobileCard
+      operation={operation}
+      onEdit={handleOpenDialog}
+      onDelete={handleDeleteClick}
+    />
+  );
+
+  const columns: ColumnDef<Operation>[] = [
+    {
+      id: "name",
+      label: "Vorgangsname",
+      accessor: (op) => (
+        <Typography variant="body2" fontWeight={500}>
+          {op.name}
+        </Typography>
+      ),
+      sortable: true,
+      width: 180,
+    },
+    {
+      id: "color",
+      label: "Farbe",
+      accessor: (op) => (
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Box
+            sx={{
+              width: 20,
+              height: 20,
+              borderRadius: "4px",
+              backgroundColor: op.color || "#ccc",
+              border: "1px solid rgba(0,0,0,0.1)",
+            }}
+          />
+          <Typography
+            variant="body2"
+            sx={{ fontFamily: "monospace", fontSize: "12px" }}
+          >
+            {op.color || "-"}
+          </Typography>
+        </Box>
+      ),
+      width: 120,
+    },
+    {
+      id: "category",
+      label: "Kategorie",
+      accessor: (op) => (
+        <Chip
+          label={op.category?.name || "Keine"}
+          size="small"
+          sx={{
+            backgroundColor: "#e3f2fd",
+            color: "#1976d2",
+            fontSize: "12px",
+          }}
+        />
+      ),
+      width: 150,
+    },
+    {
+      id: "materials",
+      label: "Materialien",
+      accessor: (op) => (
+        <Stack direction="row" spacing={0.5} flexWrap="wrap">
+          {op.materials?.slice(0, 2).map((material, index) => (
+            <Chip
+              key={index}
+              label={material.name}
+              size="small"
+              sx={{
+                backgroundColor: "#e8f5e9",
+                color: "#2e7d32",
+                fontSize: "11px",
+              }}
+            />
+          ))}
+          {op.materials?.length > 2 && (
+            <Chip
+              label={`+${op.materials.length - 2}`}
+              size="small"
+              variant="outlined"
+              sx={{ fontSize: "11px" }}
+            />
+          )}
+        </Stack>
+      ),
+      width: 180,
+    },
+    {
+      id: "actions",
+      label: "",
+      accessor: (op) => (
+        <Box sx={{ display: "flex", gap: 1 }}>
+          <IconButton
+            size="small"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleOpenDialog(op);
+            }}
+            sx={{ color: "rgba(104, 201, 242, 1)" }}
+          >
+            <Edit fontSize="small" />
+          </IconButton>
+          <IconButton
+            size="small"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDeleteClick(op);
+            }}
+            sx={{ color: "#d32f2f" }}
+          >
+            <Delete fontSize="small" />
+          </IconButton>
+        </Box>
+      ),
+      width: 100,
+    },
+  ];
 
   const initialValues = {
     name: editingOperation?.name || "",
@@ -340,255 +519,169 @@ const OperationsManagement: React.FC = () => {
     color: editingOperation?.color || "",
     materials: editingOperation?.materials?.map((m) => m._id) || [],
     optionSchema: editingOperation?.optionSchema || {
-      mode: "multi",
+      mode: "multi" as const,
       parents: [],
     },
   };
 
-  if (isLoading) {
-    return <LoadingSpinner />;
-  }
+  const hasData = filteredOperations.length > 0;
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Stack spacing={3}>
-        {/* Header */}
-        <Box display="flex" justifyContent="space-between" alignItems="center">
-          <Box>
-            <Typography
-              variant="h4"
-              sx={{
-                fontWeight: 600,
-                color: "#333",
-                fontSize: "28px",
-              }}
-            >
-              Operations Management
-            </Typography>
-            <Typography
-              variant="body1"
-              sx={{
-                color: "#666",
-                mt: 0.5,
-              }}
-            >
-              Manage dental operations and procedures
-            </Typography>
-          </Box>
-          <ButtonBlock
-            onClick={() => handleOpenDialog()}
-            style={{
-              background: "linear-gradient(90deg, #87C133 0%, #68C9F2 100%)",
-              borderRadius: "40px",
-              height: "40px",
-              color: "white",
-              fontSize: "16px",
-              fontWeight: "500",
-              padding: "0 20px",
-            }}
-          >
-            <Add sx={{ mr: 1 }} />
-            Add Operation
-          </ButtonBlock>
-        </Box>
+    <Stack
+      flex="1"
+      gap="20px"
+      height="100%"
+      sx={{ overflow: "hidden", minWidth: 0 }}
+    >
+      <Stack direction="row" alignItems="center" spacing={1}>
+        <IconButton
+          onClick={() => navigate("/admin")}
+          sx={{ color: "rgba(146, 146, 146, 1)" }}
+        >
+          <ArrowBack />
+        </IconButton>
+        <Typography variant="h2" sx={{ color: "rgba(146, 146, 146, 1)" }}>
+          Vorgänge
+        </Typography>
+      </Stack>
 
-        {/* Search and Actions */}
-        <Box display="flex" justifyContent="space-between" alignItems="center">
+      {error && (
+        <Alert severity="error" onClose={() => setError(null)} sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
+
+      <Paper
+        sx={{
+          borderRadius: { xs: 0, sm: "10px" },
+          background: "rgba(255, 255, 255, 1)",
+          display: "flex",
+          flexDirection: "column",
+          flex: "1",
+          overflow: "hidden",
+          maxWidth: "100%",
+        }}
+      >
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: { xs: "column", sm: "row" },
+            justifyContent: "space-between",
+            alignItems: { xs: "stretch", sm: "center" },
+            gap: { xs: 2, sm: 2 },
+            p: { xs: "12px 16px", sm: "16px 28px" },
+          }}
+        >
           <TextField
-            placeholder="Search operations..."
+            size="small"
+            placeholder="Vorgang suchen..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <Search />
-                </InputAdornment>
-              ),
-            }}
+            onChange={handleSearchChange}
             sx={{
-              width: "300px",
-              "& .MuiOutlinedInput-root": {
-                borderRadius: "25px",
-                height: "40px",
+              minWidth: { xs: "100%", sm: 200, md: 300 },
+              width: { xs: "100%", sm: "auto" },
+              flexShrink: 1,
+              "& .MuiInputBase-root": { minHeight: { xs: "44px", sm: "40px" } },
+            }}
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Search fontSize="small" />
+                  </InputAdornment>
+                ),
               },
             }}
           />
-          <Stack direction="row" spacing={1}>
-            <IconButton>
-              <Print />
-            </IconButton>
-            <IconButton>
-              <Refresh />
-            </IconButton>
-            <IconButton>
-              <Settings />
-            </IconButton>
-          </Stack>
+          <Box
+            sx={{
+              display: { xs: "none", sm: "flex" },
+              justifyContent: "flex-end",
+              alignItems: "center",
+              flexShrink: 0,
+              flex: { xs: "none", sm: 1 },
+            }}
+          >
+            <ButtonBlock
+              startIcon={<Add />}
+              sx={{
+                borderRadius: "40px",
+                textTransform: "none",
+                background: "linear-gradient(90deg, #87C133 0%, #68C9F2 100%)",
+                color: "white",
+                px: { xs: "16px", sm: "12px" },
+                fontWeight: "500",
+                fontSize: { xs: "14px", sm: "16px" },
+                height: { xs: "44px", sm: "37px" },
+                minHeight: "44px",
+                marginRight: { xs: 0, md: "26px" },
+              }}
+              onClick={() => handleOpenDialog()}
+            >
+              Vorgang hinzufügen
+            </ButtonBlock>
+            <Box sx={{ display: { xs: "none", md: "flex" } }}>
+              <IconButton>
+                <Print />
+              </IconButton>
+              <IconButton onClick={() => refetch()} title="Aktualisieren">
+                <Refresh />
+              </IconButton>
+              <IconButton>
+                <Settings />
+              </IconButton>
+            </Box>
+          </Box>
         </Box>
-
-        {/* Table */}
-        <Paper
+        <Box
           sx={{
-            borderRadius: "10px",
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
             overflow: "hidden",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+            minWidth: 0,
           }}
         >
-          <TableContainer>
-            <Table>
-              <TableHead sx={{ backgroundColor: "#f8f9fa" }}>
-                <TableRow>
-                  <TableCell padding="checkbox">
-                    <Checkbox
-                      color="primary"
-                      indeterminate={
-                        selected.length > 0 &&
-                        selected.length < operations.length
-                      }
-                      checked={
-                        operations.length > 0 &&
-                        selected.length === operations.length
-                      }
-                      onChange={handleSelectAllClick}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <TableSortLabel
-                      active={orderBy === "name"}
-                      direction={orderBy === "name" ? order : "asc"}
-                      onClick={() => handleRequestSort("name")}
-                      sx={{ fontWeight: 600 }}
-                    >
-                      Operation Name
-                    </TableSortLabel>
-                  </TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>Color</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>Category</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>Description</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>Materials</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {filteredOperations.map((operation: Operation) => {
-                  const isItemSelected = isSelected(operation._id);
-                  return (
-                    <TableRow
-                      key={operation._id}
-                      hover
-                      onClick={() => handleClick(operation._id)}
-                      role="checkbox"
-                      aria-checked={isItemSelected}
-                      selected={isItemSelected}
-                      sx={{ cursor: "pointer" }}
-                    >
-                      <TableCell padding="checkbox">
-                        <Checkbox color="primary" checked={isItemSelected} />
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2" fontWeight={500}>
-                          {operation.name}
-                        </Typography>
-                      </TableCell>
-                      <TableCell sx={{ fontWeight: 600 }}>
-                        <Chip
-                          label={operation.color || "No color"}
-                          size="small"
-                          sx={{
-                            backgroundColor: operation.color
-                              ? operation.color
-                              : "#e3f2fd",
-                            color: operation.color ? "white" : "#1976d2",
-                            fontSize: "12px",
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          label={operation.category?.name || "No category"}
-                          size="small"
-                          sx={{
-                            backgroundColor: "#e3f2fd",
-                            color: "#1976d2",
-                            fontSize: "12px",
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2" color="text.secondary">
-                          {operation.description || "No description"}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Stack direction="row" spacing={0.5} flexWrap="wrap">
-                          {operation.materials
-                            ?.slice(0, 2)
-                            .map((material: Material, index: number) => (
-                              <Chip
-                                key={index}
-                                label={material.name}
-                                size="small"
-                                sx={{
-                                  backgroundColor: "#e8f5e9",
-                                  color: "#2e7d32",
-                                  fontSize: "12px",
-                                }}
-                              />
-                            ))}
-                          {operation.materials?.length > 2 && (
-                            <Chip
-                              label={`+${operation.materials.length - 2} more`}
-                              size="small"
-                              variant="outlined"
-                              sx={{ fontSize: "12px" }}
-                            />
-                          )}
-                        </Stack>
-                      </TableCell>
-                      <TableCell>
-                        <Stack direction="row" spacing={1}>
-                          <IconButton
-                            size="small"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleOpenDialog(operation);
-                            }}
-                            sx={{ color: "#4caf50" }}
-                          >
-                            <Edit />
-                          </IconButton>
-                          <IconButton
-                            size="small"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteClick(operation);
-                            }}
-                            sx={{ color: "#d32f2f" }}
-                          >
-                            <Delete />
-                          </IconButton>
-                        </Stack>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </Paper>
-
-        {/* Pagination */}
-        {pagination && (
-          <Box display="flex" justifyContent="center">
-            <Pagination
-              count={pagination.totalPages}
-              page={page}
-              onChange={(event, value) => setPage(value)}
-              color="primary"
+          <Box
+            sx={{ flex: 1, overflowX: "auto", overflowY: "auto", minWidth: 0 }}
+          >
+            <ResponsiveTable<Operation>
+              data={filteredOperations}
+              columns={columns}
+              mobileCardRenderer={mobileCardRenderer}
+              isLoading={isLoading}
+              emptyMessage={
+                searchTerm
+                  ? "Keine Vorgänge gefunden"
+                  : "Keine Vorgänge vorhanden. Fügen Sie einen neuen Vorgang hinzu."
+              }
+              getItemId={(op) => op._id}
+              sortBy={orderBy}
+              sortOrder={order}
+              onSort={handleSort}
             />
           </Box>
-        )}
-      </Stack>
+          {hasData && pagination && (
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "center",
+                p: { xs: "16px", sm: "24px" },
+                pb: { xs: "80px", sm: "24px" },
+                flexShrink: 0,
+              }}
+            >
+              <Pagination
+                count={pagination.totalPages || 1}
+                page={pagination.currentPage || 1}
+                onChange={(_, value) => setPage(value)}
+                color="primary"
+                size={isMobile ? "small" : "medium"}
+              />
+            </Box>
+          )}
+        </Box>
+      </Paper>
 
       {/* Add/Edit Dialog */}
       <Dialog
@@ -596,9 +689,10 @@ const OperationsManagement: React.FC = () => {
         onClose={handleCloseDialog}
         maxWidth="md"
         fullWidth
+        fullScreen={isMobile}
       >
         <DialogTitle sx={{ fontWeight: 600 }}>
-          {editingOperation ? "Edit Operation" : "Add New Operation"}
+          {editingOperation ? "Vorgang bearbeiten" : "Neuer Vorgang"}
         </DialogTitle>
         <Formik
           initialValues={initialValues}
@@ -616,105 +710,71 @@ const OperationsManagement: React.FC = () => {
             setFieldValue,
           }) => (
             <Form>
-              <DialogContent>
+              <DialogContent sx={{ overflow: "auto" }}>
                 <Stack spacing={3}>
                   <TextField
                     fullWidth
                     name="name"
-                    label="Operation Name"
+                    label="Vorgangsname"
                     value={values.name}
                     onChange={handleChange}
                     onBlur={handleBlur}
                     error={touched.name && Boolean(errors.name)}
                     helperText={touched.name && errors.name}
-                    sx={{
-                      "& .MuiOutlinedInput-root": {
-                        borderRadius: "8px",
-                      },
-                    }}
                   />
                   <Autocomplete
                     options={allCategories}
                     getOptionLabel={(option: Category) => option.name}
                     value={
                       allCategories.find(
-                        (category) => category._id === values.category
+                        (category) => category._id === values.category,
                       ) || null
                     }
-                    onChange={(event, newValue) => {
-                      setFieldValue("category", newValue?._id || "");
-                    }}
+                    onChange={(_, newValue) =>
+                      setFieldValue("category", newValue?._id || "")
+                    }
                     renderInput={(params) => (
                       <TextField
                         {...params}
                         fullWidth
                         name="category"
-                        label="Category"
+                        label="Kategorie"
                         error={touched.category && Boolean(errors.category)}
                         helperText={touched.category && errors.category}
-                        sx={{
-                          "& .MuiOutlinedInput-root": {
-                            borderRadius: "8px",
-                          },
-                        }}
                       />
                     )}
                   />
                   <TextField
                     fullWidth
-                    name="description"
-                    label="Description"
-                    multiline
-                    rows={3}
-                    value={values.description}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    error={touched.description && Boolean(errors.description)}
-                    helperText={touched.description && errors.description}
-                    sx={{
-                      "& .MuiOutlinedInput-root": {
-                        borderRadius: "8px",
-                      },
-                    }}
-                  />
-
-                  <TextField
-                    fullWidth
                     name="color"
-                    label="Color"
+                    label="Farbe (Hex-Code)"
                     value={values.color}
                     onChange={handleChange}
                     onBlur={handleBlur}
                     error={touched.color && Boolean(errors.color)}
                     helperText={touched.color && errors.color}
-                    sx={{
-                      "& .MuiOutlinedInput-root": {
-                        borderRadius: "8px",
-                      },
-                    }}
+                    placeholder="#FF5733"
                   />
-
-                  {/* Materials Selection */}
                   <Box>
                     <Typography
                       variant="subtitle2"
                       sx={{ mb: 1, fontWeight: 600 }}
                     >
-                      Materials
+                      Materialien
                     </Typography>
                     <Autocomplete
                       multiple
                       options={allMaterials}
                       getOptionLabel={(option: Material) => option.name}
                       value={allMaterials.filter((material) =>
-                        values.materials.includes(material._id)
+                        values.materials.includes(material._id),
                       )}
-                      onChange={(event, newValue) => {
+                      onChange={(_, newValue) =>
                         setFieldValue(
                           "materials",
-                          newValue.map((material) => material._id)
-                        );
-                      }}
+                          newValue.map((material) => material._id),
+                        )
+                      }
                       renderTags={(value: Material[], getTagProps) =>
                         value.map((option: Material, index: number) => (
                           <Chip
@@ -733,24 +793,11 @@ const OperationsManagement: React.FC = () => {
                       renderInput={(params) => (
                         <TextField
                           {...params}
-                          placeholder="Select materials..."
-                          sx={{
-                            "& .MuiOutlinedInput-root": {
-                              borderRadius: "8px",
-                            },
-                          }}
+                          placeholder="Materialien auswählen..."
                         />
                       )}
-                      sx={{
-                        "& .MuiAutocomplete-tag": {
-                          backgroundColor: "#e8f5e9",
-                          color: "#2e7d32",
-                        },
-                      }}
                     />
                   </Box>
-
-                  {/* Option Schema Editing */}
                   <Box
                     sx={{
                       backgroundColor: "#e3f2fd",
@@ -775,32 +822,33 @@ const OperationsManagement: React.FC = () => {
                   </Box>
                 </Stack>
               </DialogContent>
-              <DialogActions sx={{ p: 3 }}>
-                <Button
+              <DialogActions sx={{ p: 2 }}>
+                <ButtonBlock
                   onClick={handleCloseDialog}
-                  sx={{
-                    borderRadius: "20px",
-                    textTransform: "none",
-                    marginRight: "auto",
+                  style={{
+                    borderRadius: "40px",
+                    height: "40px",
+                    color: "rgba(107, 107, 107, 1)",
+                    fontSize: "14px",
+                    fontWeight: "500",
                   }}
                 >
-                  Cancel
-                </Button>
+                  Abbrechen
+                </ButtonBlock>
                 <ButtonBlock
                   type="submit"
                   disabled={isSubmitting}
                   style={{
                     background:
                       "linear-gradient(90deg, #87C133 0%, #68C9F2 100%)",
-                    borderRadius: "20px",
-                    height: "36px",
+                    borderRadius: "40px",
+                    height: "40px",
                     color: "white",
                     fontSize: "14px",
                     fontWeight: "500",
-                    padding: "0 20px",
                   }}
                 >
-                  {isSubmitting ? "Saving..." : "Save"}
+                  {isSubmitting ? "Speichern..." : "Speichern"}
                 </ButtonBlock>
               </DialogActions>
             </Form>
@@ -812,39 +860,70 @@ const OperationsManagement: React.FC = () => {
       <Dialog
         open={deleteConfirmOpen}
         onClose={() => setDeleteConfirmOpen(false)}
+        fullScreen={isMobile}
       >
-        <DialogTitle sx={{ fontWeight: 600 }}>Confirm Delete</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 600 }}>Löschen bestätigen</DialogTitle>
         <DialogContent>
           <Typography>
-            Are you sure you want to delete the operation "
-            {operationToDelete?.name}"? This action cannot be undone.
+            Sind Sie sicher, dass Sie den Vorgang "{operationToDelete?.name}"
+            löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.
           </Typography>
         </DialogContent>
-        <DialogActions sx={{ p: 3 }}>
-          <Button
+        <DialogActions sx={{ p: 2 }}>
+          <ButtonBlock
             onClick={() => setDeleteConfirmOpen(false)}
-            sx={{
-              borderRadius: "20px",
-              textTransform: "none",
+            style={{
+              borderRadius: "40px",
+              height: "40px",
+              color: "rgba(107, 107, 107, 1)",
+              fontSize: "14px",
+              fontWeight: "500",
             }}
           >
-            Cancel
-          </Button>
-          <Button
+            Abbrechen
+          </ButtonBlock>
+          <ButtonBlock
             onClick={handleDeleteConfirm}
-            color="error"
-            variant="contained"
             disabled={deleteMutation.isPending}
-            sx={{
-              borderRadius: "20px",
-              textTransform: "none",
+            style={{
+              background: "rgba(247, 107, 107, 1)",
+              borderRadius: "40px",
+              height: "40px",
+              color: "white",
+              fontSize: "14px",
+              fontWeight: "500",
             }}
           >
-            {deleteMutation.isPending ? "Deleting..." : "Delete"}
-          </Button>
+            {deleteMutation.isPending ? "Löschen..." : "Löschen"}
+          </ButtonBlock>
         </DialogActions>
       </Dialog>
-    </Box>
+
+      {/* Mobile: Floating Action Button with label */}
+      {isMobile && (
+        <Fab
+          variant="extended"
+          color="primary"
+          aria-label="Vorgang hinzufügen"
+          onClick={() => handleOpenDialog()}
+          sx={{
+            position: "fixed",
+            bottom: 80,
+            right: 16,
+            background: "linear-gradient(90deg, #87C133 0%, #68C9F2 100%)",
+            "&:hover": {
+              background: "linear-gradient(90deg, #7AB02E 0%, #5BB8E0 100%)",
+            },
+            zIndex: 1000,
+            gap: 1,
+            color: "white",
+          }}
+        >
+          <Add />
+          Vorgang hinzufügen
+        </Fab>
+      )}
+    </Stack>
   );
 };
 
