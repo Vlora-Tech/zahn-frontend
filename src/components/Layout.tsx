@@ -382,7 +382,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       )}
 
       {isAuthRoute ? (
-        <Stack component="main" sx={{ flex: 1, p: 3 }}>
+        <Stack component="main" sx={{ flex: 1, p: { xs: 0, sm: 3 } }}>
           {children}
         </Stack>
       ) : (

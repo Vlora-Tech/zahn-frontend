@@ -1,6 +1,9 @@
 import { Form, Formik } from "formik";
 import headerLogo from "../../assets/zahn-care-logo-wide.png";
 import { Box, Paper, Stack, useTheme, useMediaQuery } from "@mui/material";
+import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
+import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
+import LoginIcon from "@mui/icons-material/Login";
 import TextFieldBlock from "../../components/molecules/form-fields/TextFieldBlock";
 import ButtonBlock from "../../components/atoms/ButtonBlock";
 import { useNavigate } from "react-router-dom";
@@ -46,20 +49,26 @@ export default function Login() {
             <Box
               display="flex"
               gap="20px"
-              px={{ xs: 2, sm: 0 }}
-              minHeight={{ xs: "100vh", sm: "auto" }}
               alignItems={{ xs: "flex-start", sm: "center" }}
-              pt={{ xs: 4, sm: 0 }}
+              sx={{
+                minHeight: { xs: "100vh", sm: "auto" },
+                background: {
+                  xs: "rgba(255, 255, 255, 0.8)",
+                  sm: "transparent",
+                },
+              }}
             >
               <Paper
                 sx={{
-                  width: { xs: "100%", sm: "738px" },
-                  maxWidth: "738px",
-                  height: { xs: "auto", sm: "800px" },
-                  minHeight: { xs: "auto", sm: "800px" },
-                  borderRadius: { xs: "10px", sm: "10px" },
-                  background: "rgba(244, 244, 244, 1)",
-                  padding: { xs: "24px 20px", sm: "26px 40px" },
+                  width: { xs: "100%", sm: "487px" },
+                  height: { xs: "100vh", sm: "738px" },
+                  borderRadius: { xs: 0, sm: "10px" },
+                  background: {
+                    xs: "transparent",
+                    sm: "rgba(244, 244, 244, 1)",
+                  },
+                  boxShadow: { xs: "none", sm: 1 },
+                  padding: { xs: "48px 36px", sm: "26px 40px" },
                   display: "flex",
                   flexDirection: "column",
                   justifyContent: "space-between",
@@ -75,7 +84,7 @@ export default function Login() {
                       <Box
                         sx={{
                           display: "flex",
-                          justifyContent: { xs: "center", sm: "flex-start" },
+                          justifyContent: "center",
                         }}
                       >
                         <img
@@ -89,30 +98,80 @@ export default function Login() {
                         />
                       </Box>
                       <Stack gap="30px" pt={{ xs: "40px", sm: "70px" }}>
-                        <TextFieldBlock name="username" label="Username" />
+                        <TextFieldBlock
+                          name="username"
+                          label="Username"
+                          startIcon={
+                            <PersonOutlineIcon
+                              sx={{ color: "rgba(10, 77, 130, 0.6)" }}
+                            />
+                          }
+                          labelSx={{ fontSize: "16px", fontWeight: 500 }}
+                          sx={{
+                            "& .MuiInputBase-input": {
+                              fontSize: "16px",
+                              fontWeight: 500,
+                            },
+                            "& .MuiOutlinedInput-root": {
+                              "& fieldset": {
+                                borderColor: "rgba(10, 77, 130, 1)",
+                              },
+                              "&:hover fieldset": {
+                                borderColor: "rgba(10, 77, 130, 1)",
+                              },
+                              "&.Mui-focused fieldset": {
+                                borderColor: "rgba(10, 77, 130, 1)",
+                              },
+                            },
+                          }}
+                        />
                         <TextFieldBlock
                           name="password"
                           label="Password"
                           type="password"
+                          startIcon={
+                            <LockOutlinedIcon
+                              sx={{ color: "rgba(10, 77, 130, 0.6)" }}
+                            />
+                          }
+                          labelSx={{ fontSize: "16px", fontWeight: 500 }}
+                          sx={{
+                            "& .MuiInputBase-input": {
+                              fontSize: "16px",
+                              fontWeight: 500,
+                            },
+                            "& .MuiOutlinedInput-root": {
+                              "& fieldset": {
+                                borderColor: "rgba(10, 77, 130, 1)",
+                              },
+                              "&:hover fieldset": {
+                                borderColor: "rgba(10, 77, 130, 1)",
+                              },
+                              "&.Mui-focused fieldset": {
+                                borderColor: "rgba(10, 77, 130, 1)",
+                              },
+                            },
+                          }}
                         />
                       </Stack>
                     </Box>
                     <ButtonBlock
                       type="submit"
+                      startIcon={<LoginIcon />}
                       sx={{
                         background:
                           "linear-gradient(90deg, #87C133 0%, #68C9F2 100%)",
                         color: "white",
-                        height: { xs: "44px", sm: "40px" },
+                        height: { xs: "44px", sm: "48px" },
                         minHeight: "44px",
                         px: "28px",
                         borderRadius: "40px",
-                        alignSelf: { xs: "stretch", sm: "flex-end" },
-                        justifySelf: "flex-end",
-                        width: { xs: "100%", sm: "auto" },
+                        width: "100%",
+                        fontSize: "16px",
+                        fontWeight: 600,
                       }}
                     >
-                      Absenden
+                      Anmelden
                     </ButtonBlock>
                   </Fragment>
                 )}

@@ -1,4 +1,9 @@
-import { FormControl, FormLabel } from "@mui/material";
+import {
+  FormControl,
+  FormLabel,
+  type SxProps,
+  type Theme,
+} from "@mui/material";
 import { useField } from "formik";
 import InputBlock, { type InputBlockProps } from "../../atoms/InputBlock";
 
@@ -8,6 +13,7 @@ interface TextFieldBlockProps extends InputBlockProps {
   name: string;
   placeholder?: string;
   readOnly?: boolean;
+  labelSx?: SxProps<Theme>;
 }
 
 const TextFieldBlock: React.FC<TextFieldBlockProps> = ({
@@ -15,6 +21,7 @@ const TextFieldBlock: React.FC<TextFieldBlockProps> = ({
   label,
   name,
   placeholder,
+  labelSx,
   ...props
 }) => {
   const [field, meta] = useField(name);
@@ -34,6 +41,7 @@ const TextFieldBlock: React.FC<TextFieldBlockProps> = ({
             fontWeight: "400",
             fontSize: "14px",
             color: "rgba(10, 77, 130, 1)",
+            ...labelSx,
           }}
         >
           {label}
