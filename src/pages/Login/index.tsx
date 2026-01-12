@@ -51,7 +51,6 @@ export default function Login() {
               gap="20px"
               alignItems={{ xs: "flex-start", sm: "center" }}
               sx={{
-                minHeight: { xs: "100vh", sm: "auto" },
                 background: {
                   xs: "rgba(255, 255, 255, 0.8)",
                   sm: "transparent",
@@ -169,6 +168,8 @@ export default function Login() {
                         width: "100%",
                         fontSize: "16px",
                         fontWeight: 600,
+                        marginTop: 3,
+                        marginBottom: "auto",
                       }}
                     >
                       Anmelden
