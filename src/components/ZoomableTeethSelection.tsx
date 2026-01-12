@@ -44,7 +44,7 @@ const ZoomableTeethSelection: React.FC<ZoomableTeethSelectionProps> = (
   const [initialScale, setInitialScale] = useState(1);
 
   // Calculate distance between two touch points
-  const getDistance = (touches: TouchList): number => {
+  const getDistance = (touches: React.TouchList): number => {
     if (touches.length < 2) return 0;
     const dx = touches[0].clientX - touches[1].clientX;
     const dy = touches[0].clientY - touches[1].clientY;

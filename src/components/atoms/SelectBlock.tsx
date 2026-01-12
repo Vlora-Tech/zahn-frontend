@@ -27,7 +27,7 @@ export const StyledSelect = styled(Select)(({ theme }) => ({
 interface ISelectBlockProps {
   label?: string;
   options: { label: string; value: any }[];
-  onChange: (event: SelectChangeEvent<string | number>) => void;
+  onChange: (event: SelectChangeEvent<unknown>) => void;
   [key: string]: any;
   value?: string;
   enableClear?: boolean;
