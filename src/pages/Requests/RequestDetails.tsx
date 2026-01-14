@@ -145,7 +145,7 @@ export default function RequestDetails() {
       id: patient._id,
       firstName: patient.firstName,
       lastName: patient.lastName,
-      type: treatmentRequest?.insurance === "private" ? "Privat" : "GKV",
+      type: patient.patientType,
       birthDate: patient.birthDate || "",
       gender: patient.gender || "Masculin",
       patientNumber: patient.patientNumber || "123",
@@ -154,7 +154,7 @@ export default function RequestDetails() {
       doctor: `${treatmentRequest.doctor?.firstName || ""} ${
         treatmentRequest.doctor?.lastName || ""
       }`.trim(),
-      insurance: treatmentRequest.insurance || "",
+      insurance: patient.patientType || "",
       notes: treatmentRequest.notes || "",
     };
   }, [treatmentRequest]);

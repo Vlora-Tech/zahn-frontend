@@ -12,6 +12,7 @@ export interface GetProceduresParams {
   limit?: number;
   sortBy?: string;
   sortOrder?: "asc" | "desc";
+  search?: string;
 }
 
 // Create procedure
@@ -32,6 +33,7 @@ export const getProcedures = async (
   if (params.limit) queryParams.append("limit", params.limit.toString());
   if (params.sortBy) queryParams.append("sortBy", params.sortBy);
   if (params.sortOrder) queryParams.append("sortOrder", params.sortOrder);
+  if (params.search) queryParams.append("search", params.search);
 
   const url = `/procedures${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
   const response = await client.get<GetProceduresResponse>(url);

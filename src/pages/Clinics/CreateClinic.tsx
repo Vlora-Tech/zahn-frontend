@@ -7,7 +7,7 @@ import {
   Paper,
   Typography,
 } from "@mui/material";
-import { ArrowBack } from "@mui/icons-material";
+import { ArrowBack, Save } from "@mui/icons-material";
 import * as yup from "yup";
 import TextFieldBlock from "../../components/molecules/form-fields/TextFieldBlock";
 import { useCreateClinic } from "../../api/clinics/hooks";
@@ -189,22 +189,21 @@ export default function CreateClinic() {
             >
               <ButtonBlock
                 type="submit"
+                disabled={isPending}
+                startIcon={<Save />}
                 style={{
-                  background:
-                    "linear-gradient(90deg, #87C133 0%, #68C9F2 100%)",
                   borderRadius: "40px",
                   height: "44px",
                   color: "white",
-                  fontSize: "16px",
-                  fontWeight: "500",
+                  background:
+                    "linear-gradient(90deg, #87C133 0%, #68C9F2 100%)",
+                  fontSize: "14px",
+                  fontWeight: "600",
+                  boxShadow: "0px 2px 4px rgba(76, 175, 80, 0.3)",
+                  padding: "0 24px",
                 }}
-                sx={{
-                  width: { xs: "100%", sm: "143px" },
-                  minHeight: "44px",
-                }}
-                disabled={isPending}
               >
-                Absenden
+                Speichern
               </ButtonBlock>
             </Box>
           </Paper>

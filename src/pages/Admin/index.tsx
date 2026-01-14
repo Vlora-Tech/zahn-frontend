@@ -23,6 +23,7 @@ import { useGetOperations } from "../../api/operations/hooks";
 import { useGetMaterials } from "../../api/materials/hooks";
 import { useGetCategories } from "../../api/categories/hooks";
 import { useGetProcedures } from "../../api/procedures/hooks";
+import { useGetLaborzettelTemplateCount } from "../../api/laborzettel-templates/hooks";
 
 const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -47,6 +48,8 @@ const AdminDashboard: React.FC = () => {
       page: 1,
       limit: 100,
     });
+  const { data: templatesCount, isLoading: isLoadingTemplates } =
+    useGetLaborzettelTemplateCount();
 
   // Cast responses to get counts
   const operationsCount = (operationsResponse as any)?.data?.length || 0;
@@ -100,11 +103,11 @@ const AdminDashboard: React.FC = () => {
       title: "Laborzettel-Vorlagen",
       description: "Verwalten Sie Laborzettel-Vorlagen und Konfigurationen",
       icon: <Description sx={{ fontSize: 32 }} />,
-      path: "/admin/laborzettel",
+      path: "/admin/laborzettel-templates",
       color: "#00796b",
       bgColor: "#e0f2f1",
-      count: "-",
-      isLoading: false,
+      count: templatesCount ?? 0,
+      isLoading: isLoadingTemplates,
     },
   ];
 

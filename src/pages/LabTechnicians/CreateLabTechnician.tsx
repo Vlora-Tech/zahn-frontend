@@ -8,7 +8,7 @@ import {
   useTheme,
   useMediaQuery,
 } from "@mui/material";
-import { ArrowBack } from "@mui/icons-material";
+import { ArrowBack, Save } from "@mui/icons-material";
 import * as yup from "yup";
 import TextFieldBlock from "../../components/molecules/form-fields/TextFieldBlock";
 import ButtonBlock from "../../components/atoms/ButtonBlock";
@@ -212,19 +212,21 @@ export default function CreateLabTechnician() {
             >
               <ButtonBlock
                 type="submit"
-                sx={{
+                disabled={isPending}
+                startIcon={<Save />}
+                style={{
+                  borderRadius: "40px",
+                  height: "44px",
+                  color: "white",
                   background:
                     "linear-gradient(90deg, #87C133 0%, #68C9F2 100%)",
-                  borderRadius: "40px",
-                  height: { xs: "44px", sm: "40px" },
-                  color: "white",
-                  width: { xs: "100%", sm: "143px" },
-                  fontSize: "16px",
-                  fontWeight: "500",
+                  fontSize: "14px",
+                  fontWeight: "600",
+                  boxShadow: "0px 2px 4px rgba(76, 175, 80, 0.3)",
+                  padding: "0 24px",
                 }}
-                disabled={isPending}
               >
-                Absenden
+                Speichern
               </ButtonBlock>
             </Box>
           </Paper>

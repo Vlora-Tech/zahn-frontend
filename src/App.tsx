@@ -28,6 +28,8 @@ import MaterialsManagement from "./pages/Admin/MaterialsManagement";
 import ProceduresManagement from "./pages/Admin/ProceduresManagement";
 import CategoriesManagement from "./pages/Admin/CategoriesManagement";
 import LaborzettelManagement from "./pages/Admin/LaborzettelManagement";
+import LaborzettelTemplateManagement from "./pages/Admin/LaborzettelTemplateManagement";
+import LaborzettelTemplateForm from "./pages/Admin/LaborzettelTemplateForm";
 import EditPatient from "./pages/Patients/EditPatient";
 import EditDoctor from "./pages/Doctors/EditDoctor";
 import EditClinic from "./pages/Clinics/EditClinic";
@@ -116,6 +118,18 @@ function App() {
           <Route
             path="/admin/laborzettel"
             element={<LaborzettelManagement />}
+          />
+          <Route
+            path="/admin/laborzettel-templates"
+            element={<LaborzettelTemplateManagement />}
+          />
+          <Route
+            path="/admin/laborzettel-templates/new"
+            element={<LaborzettelTemplateForm />}
+          />
+          <Route
+            path="/admin/laborzettel-templates/edit/:id"
+            element={<LaborzettelTemplateForm />}
           />
 
           {/* Lab technician routes - restricted to lab_technician and superadmin roles */}

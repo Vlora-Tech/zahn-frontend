@@ -54,14 +54,6 @@ import LabStatusChip from "./components/LabStatusChip";
 import RequestSummary from "../PatientDashboard/components/RequestSummary";
 import { OperationSchema } from "../PatientDashboard";
 
-// Import the laborzettel data for structure
-import laborzettelData from "../../data/krone-gkv.json";
-
-interface LaborzettelSectionData {
-  section: string;
-  items: { number: string; name: string; defaultValue: string }[];
-}
-
 interface TabPanelProps {
   children?: React.ReactNode;
   index: number;
@@ -103,17 +95,6 @@ const LaborzettelDetail = () => {
   const patient = request?.patient;
   const doctor = request?.doctor;
   const clinic = request?.clinic;
-
-  // Build menge values map from laborzettel sections
-  const mengeValues = useMemo(() => {
-    const values: Record<string, string> = {};
-    laborzettel?.sections?.forEach((section) => {
-      section.items.forEach((item) => {
-        values[item.number] = item.menge;
-      });
-    });
-    return values;
-  }, [laborzettel]);
 
   // Transform operations for display
   const configuredOperations = useMemo((): OperationSchema[] => {
@@ -248,7 +229,7 @@ const LaborzettelDetail = () => {
     }
 
     // Sections with items
-    (laborzettelData as LaborzettelSectionData[]).forEach((section) => {
+    laborzettel.sections?.forEach((section) => {
       if (yPos > 250) {
         doc.addPage();
         yPos = 20;
@@ -264,7 +245,7 @@ const LaborzettelDetail = () => {
       const tableData = section.items.map((item) => [
         item.number,
         item.name,
-        mengeValues[item.number] || item.defaultValue,
+        item.menge,
       ]);
 
       autoTable(doc, {
@@ -896,7 +877,7 @@ const LaborzettelDetail = () => {
           {/* Tab 1: Leistungen */}
           <TabPanel value={activeTab} index={0}>
             <Stack gap={2}>
-              {(laborzettelData as LaborzettelSectionData[]).map((section) => (
+              {laborzettel?.sections?.map((section) => (
                 <Paper
                   key={section.section}
                   sx={{
@@ -958,7 +939,7 @@ const LaborzettelDetail = () => {
                             <TableCell
                               sx={{ textAlign: "center", fontWeight: 500 }}
                             >
-                              {mengeValues[item.number] || item.defaultValue}
+                              {item.menge}
                             </TableCell>
                           </TableRow>
                         ))}

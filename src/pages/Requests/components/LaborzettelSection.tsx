@@ -69,7 +69,7 @@ const LaborzettelSection: React.FC<LaborzettelSectionProps> = ({
       ["Auftrag Nr.", request?.requestNumber || "-"],
       ["Abformung", request?.impression || "-"],
       ["Zahnfarbe", request?.shade || "-"],
-      ["Versicherung", request?.insurance === "private" ? "Privat" : "GKV"],
+      ["Versicherung", patient.patientType],
     ];
 
     autoTable(doc, {

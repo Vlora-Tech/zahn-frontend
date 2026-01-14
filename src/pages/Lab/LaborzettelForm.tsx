@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Stack,
   Typography,
@@ -16,6 +16,7 @@ import {
   CircularProgress,
   Autocomplete,
   Chip,
+  Alert,
 } from "@mui/material";
 import {
   ArrowBack,
@@ -24,6 +25,8 @@ import {
   Edit,
   Inventory2,
   Delete,
+  Description,
+  Warning,
 } from "@mui/icons-material";
 import { useParams, useNavigate } from "react-router-dom";
 import jsPDF from "jspdf";
@@ -41,14 +44,21 @@ import {
 } from "../../api/laborzettel/types";
 import { useLots } from "../../api/inventory/hooks";
 import { InventoryLot, InventoryMaterial } from "../../api/inventory/types";
+import {
+  LaborzettelTemplate,
+  PatientType,
+  ImpressionType,
+  ProcedureItem,
+  TemplateMatchQuery,
+} from "../../api/laborzettel-templates/types";
+import { useFindMatchingTemplate } from "../../api/laborzettel-templates/hooks";
+import { Procedure } from "../../api/procedures/types";
 import LoadingSpinner from "../../components/atoms/LoadingSpinner";
 import ButtonBlock from "../../components/atoms/ButtonBlock";
 import { formatDateDE } from "../../utils/formatDate";
 
-// Import the laborzettel data
-import laborzettelData from "../../data/krone-gkv.json";
-
 interface LaborzettelItem {
+  procedureId?: string;
   number: string;
   name: string;
   defaultValue: string;
@@ -64,6 +74,30 @@ interface SelectedLotWithQuantity {
   lot: InventoryLot;
   quantityUsed: number;
 }
+
+// Helper to get procedure name from procedure item
+const getProcedureName = (procedureItem: ProcedureItem): string => {
+  if (typeof procedureItem.procedure === "string") {
+    return procedureItem.procedure;
+  }
+  return (procedureItem.procedure as Procedure).name || "Unbekannt";
+};
+
+// Helper to get procedure number from procedure item
+const getProcedureNumber = (procedureItem: ProcedureItem): string => {
+  if (typeof procedureItem.procedure === "string") {
+    return "";
+  }
+  return (procedureItem.procedure as Procedure).number || "";
+};
+
+// Helper to get procedure ID from procedure item
+const getProcedureId = (procedureItem: ProcedureItem): string | undefined => {
+  if (typeof procedureItem.procedure === "string") {
+    return procedureItem.procedure;
+  }
+  return (procedureItem.procedure as Procedure)._id;
+};
 
 const LaborzettelForm = () => {
   const { id } = useParams<{ id: string }>();
@@ -84,10 +118,19 @@ const LaborzettelForm = () => {
   // State for Lot Nr. (primary lot number - manual entry)
   const [lotNr, setLotNr] = useState("");
 
+  // State for selected template
+  const [selectedTemplate, setSelectedTemplate] =
+    useState<LaborzettelTemplate | null>(null);
+
   // State for selected inventory lots with quantities
   const [selectedLotsWithQuantity, setSelectedLotsWithQuantity] = useState<
     SelectedLotWithQuantity[]
   >([]);
+
+  // State for sections data (from template or manual)
+  const [sectionsData, setSectionsData] = useState<LaborzettelSectionData[]>(
+    [],
+  );
 
   // Fetch available lots from inventory
   const { data: availableLots } = useLots({ inStockOnly: true });
@@ -97,6 +140,30 @@ const LaborzettelForm = () => {
     labRequest?.request?.operations?.reduce((total: number, op: any) => {
       return total + (op.selectedTeeth?.length || 0);
     }, 0) || 0;
+
+  // Extract template matching parameters from request
+  const firstOperation = labRequest?.request?.operations?.[0];
+  const operationId = firstOperation?.operation?._id || "";
+  const materialId = firstOperation?.material?._id || "";
+  const patientType = labRequest?.request?.patient?.patientType as PatientType;
+  const impressionType = labRequest?.request?.impression as ImpressionType;
+
+  // Build query for template matching
+  const matchQuery: TemplateMatchQuery | null =
+    operationId && patientType && impressionType && materialId
+      ? { operationId, patientType, impressionType, materialId }
+      : null;
+
+  // Fetch matched template
+  const {
+    data: matchedTemplate,
+    isLoading: isMatchLoading,
+    error: matchError,
+  } = useFindMatchingTemplate(matchQuery);
+
+  // Check if all required fields are provided for template matching
+  const hasAllTemplateFields =
+    operationId && patientType && impressionType && materialId;
 
   // Helper to get the actual default value (replacing "teethCount" with actual count)
   const getDefaultValue = (defaultValue: string): string => {
@@ -109,33 +176,82 @@ const LaborzettelForm = () => {
   // State for Menge values - keyed by item number
   const [mengeValues, setMengeValues] = useState<Record<string, string>>({});
 
-  // Initialize menge values when labRequest is loaded (to get teethCount)
-  useEffect(() => {
-    if (labRequest && !existingLaborzettel) {
-      const initial: Record<string, string> = {};
-      const currentTeethCount =
-        labRequest?.request?.operations?.reduce((total: number, op: any) => {
-          return total + (op.selectedTeeth?.length || 0);
-        }, 0) || 0;
+  // Convert template to sections data format
+  const convertTemplateToSections = useCallback(
+    (template: LaborzettelTemplate): LaborzettelSectionData[] => {
+      const sortedSections = [...template.sections].sort(
+        (a, b) => a.displayOrder - b.displayOrder,
+      );
 
-      (laborzettelData as LaborzettelSectionData[]).forEach((section) => {
-        section.items.forEach((item) => {
-          if (item.defaultValue === "teethCount") {
-            initial[item.number] = String(currentTeethCount);
-          } else {
-            initial[item.number] = item.defaultValue;
-          }
+      return sortedSections.map((section) => ({
+        section: section.sectionHeader,
+        items: section.procedures.map((proc) => ({
+          procedureId: getProcedureId(proc),
+          number: getProcedureNumber(proc),
+          name: getProcedureName(proc),
+          defaultValue: proc.defaultValue,
+        })),
+      }));
+    },
+    [],
+  );
+
+  // Handle template selection
+  const handleTemplateSelect = useCallback(
+    (template: LaborzettelTemplate | null) => {
+      setSelectedTemplate(template);
+
+      if (template) {
+        // Convert template to sections format
+        const newSections = convertTemplateToSections(template);
+        setSectionsData(newSections);
+
+        // Initialize menge values from template
+        const initial: Record<string, string> = {};
+        newSections.forEach((section) => {
+          section.items.forEach((item) => {
+            if (item.defaultValue === "teethCount") {
+              initial[item.number] = String(teethCount);
+            } else {
+              initial[item.number] = item.defaultValue;
+            }
+          });
         });
-      });
-      setMengeValues(initial);
+        setMengeValues(initial);
+      } else {
+        // No template - clear sections
+        setSectionsData([]);
+        setMengeValues({});
+      }
+    },
+    [convertTemplateToSections, teethCount],
+  );
+
+  // Update selected template when matched template changes
+  useEffect(() => {
+    if (matchedTemplate && !existingLaborzettel) {
+      handleTemplateSelect(matchedTemplate);
     }
-  }, [labRequest, existingLaborzettel]);
+  }, [matchedTemplate, existingLaborzettel, handleTemplateSelect]);
 
   // Load existing data when laborzettel is fetched
   useEffect(() => {
     if (existingLaborzettel) {
       setLotNr(existingLaborzettel.lotNr);
       setIsEditMode(false);
+
+      // Load sections from existing laborzettel
+      const loadedSections: LaborzettelSectionData[] =
+        existingLaborzettel.sections.map((section) => ({
+          section: section.section,
+          items: section.items.map((item) => ({
+            procedureId: item.procedureId,
+            number: item.number,
+            name: item.name,
+            defaultValue: item.menge,
+          })),
+        }));
+      setSectionsData(loadedSections);
 
       // Load menge values from existing laborzettel
       const loadedMengeValues: Record<string, string> = {};
@@ -181,9 +297,10 @@ const LaborzettelForm = () => {
   };
 
   const buildSectionsData = (): LeistungSection[] => {
-    return (laborzettelData as LaborzettelSectionData[]).map((section) => ({
+    return sectionsData.map((section) => ({
       section: section.section,
       items: section.items.map((item) => ({
+        procedureId: item.procedureId,
         number: item.number,
         name: item.name,
         menge: mengeValues[item.number] || getDefaultValue(item.defaultValue),
@@ -194,7 +311,7 @@ const LaborzettelForm = () => {
   const handleSave = () => {
     if (!id || !lotNr.trim()) return;
 
-    const sectionsData = buildSectionsData();
+    const sectionsToSave = buildSectionsData();
     const inventoryLotUsages: InventoryLotUsageDto[] = selectedLotsWithQuantity
       .filter((item) => item.quantityUsed > 0)
       .map((item) => ({
@@ -209,7 +326,7 @@ const LaborzettelForm = () => {
           id: existingLaborzettel._id,
           data: {
             lotNr,
-            sections: sectionsData,
+            sections: sectionsToSave,
             inventoryLotUsages,
           },
         },
@@ -220,13 +337,14 @@ const LaborzettelForm = () => {
         },
       );
     } else {
-      // Create new
+      // Create new with template reference if available
       createMutation.mutate(
         {
           labRequestId: id,
           lotNr,
-          sections: sectionsData,
+          sections: sectionsToSave,
           inventoryLotUsages,
+          templateId: selectedTemplate?._id,
         },
         {
           onSuccess: () => {
@@ -284,7 +402,7 @@ const LaborzettelForm = () => {
       ["Auftrag Nr.", request?.requestNumber || "-"],
       ["Abformung", request?.impression || "-"],
       ["Zahnfarbe", request?.shade || "-"],
-      ["Versicherung", request?.insurance === "private" ? "Privat" : "GKV"],
+      ["Versicherung", patient?.patientType || "-"],
     ];
 
     autoTable(doc, {
@@ -342,7 +460,7 @@ const LaborzettelForm = () => {
     }
 
     // Sections with items
-    (laborzettelData as LaborzettelSectionData[]).forEach((section) => {
+    sectionsData.forEach((section) => {
       // Check if we need a new page
       if (yPos > 250) {
         doc.addPage();
@@ -787,8 +905,92 @@ const LaborzettelForm = () => {
         </Stack>
       </Paper>
 
+      {/* Template Selector - only show when creating new Laborzettel */}
+      {!existingLaborzettel && isEditMode && (
+        <>
+          {!hasAllTemplateFields ? (
+            <Alert severity="info" sx={{ borderRadius: "8px" }}>
+              <Typography variant="body2">
+                Bitte wählen Sie Operation, Patientenart, Abformungsart und
+                Material aus, um eine passende Vorlage zu finden.
+              </Typography>
+            </Alert>
+          ) : (
+            <Paper
+              sx={{
+                borderRadius: "12px",
+                background: "white",
+                boxShadow: "0px 2px 8px rgba(0, 0, 0, 0.08)",
+                border: "1px solid rgba(0,0,0,0.05)",
+                overflow: "hidden",
+              }}
+            >
+              {/* Header */}
+              <Box
+                sx={{
+                  p: 2,
+                  background:
+                    "linear-gradient(90deg, rgba(92, 107, 192, 0.1) 0%, rgba(121, 134, 203, 0.1) 100%)",
+                  borderBottom: "1px solid rgba(0,0,0,0.05)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                }}
+              >
+                {isMatchLoading ? (
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 2,
+                      py: 2,
+                    }}
+                  >
+                    <CircularProgress size={24} />
+                  </Box>
+                ) : matchError || !matchedTemplate ? (
+                  /* No Match Found */
+                  <Alert
+                    severity="warning"
+                    icon={<Warning />}
+                    sx={{ borderRadius: "8px" }}
+                  >
+                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                      Keine passende Vorlage gefunden
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      Für diese Kombination aus Operation, Patientenart,
+                      Abformungsart und Material existiert keine Vorlage. Sie
+                      können manuell eine Vorlage auswählen oder die Leistungen
+                      manuell eingeben.
+                    </Typography>
+                  </Alert>
+                ) : (
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                    <Description sx={{ color: "rgba(92, 107, 192, 1)" }} />
+                    <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                      {matchedTemplate?.name}
+                    </Typography>
+                  </Box>
+                )}
+              </Box>
+            </Paper>
+          )}
+        </>
+      )}
+
+      {/* Template Info Alert - show when template is used */}
+      {/* {selectedTemplate && !existingLaborzettel && (
+        <Alert severity="info" sx={{ borderRadius: "8px" }}>
+          <Typography variant="body2">
+            Leistungen werden aus der Vorlage "{selectedTemplate.name}"
+            vorausgefüllt. Sie können die Werte vor dem Speichern anpassen.
+          </Typography>
+        </Alert>
+      )} */}
+
       {/* Sections */}
-      {(laborzettelData as LaborzettelSectionData[]).map((section) => (
+      {sectionsData.map((section) => (
         <Paper
           key={section.section}
           sx={{
@@ -846,7 +1048,7 @@ const LaborzettelForm = () => {
                       {item.number}
                     </TableCell>
                     <TableCell>{item.name}</TableCell>
-                    <TableCell>
+                    <TableCell sx={{ textAlign: "center" }}>
                       {isEditMode ? (
                         <TextField
                           value={mengeValues[item.number] || ""}

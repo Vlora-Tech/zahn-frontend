@@ -1,6 +1,8 @@
 import { InventoryLot } from "../inventory/types";
+import { LaborzettelTemplate } from "../laborzettel-templates/types";
 
 export interface LeistungItem {
+  procedureId?: string;
   number: string;
   name: string;
   menge: string;
@@ -84,6 +86,7 @@ export interface Laborzettel {
   sections: LeistungSection[];
   inventoryLots?: InventoryLot[];
   inventoryLotUsages?: InventoryLotUsage[];
+  template?: string | LaborzettelTemplate;
   createdBy: string;
   createdByModel: string;
   updatedBy?: string;
@@ -103,6 +106,7 @@ export interface CreateLaborzettelDto {
   sections: LeistungSection[];
   inventoryLotIds?: string[];
   inventoryLotUsages?: InventoryLotUsageDto[];
+  templateId?: string;
 }
 
 export interface UpdateLaborzettelDto {
