@@ -4,10 +4,10 @@ import { Operation } from "../operations/types";
 import { Procedure } from "../procedures/types";
 
 // Patient type enum values
-export type PatientType = "gkv" | "private";
+export type PatientType = "gkv" | "private" | "";
 
 // Impression type enum values
-export type ImpressionType = "scan" | "abdruck";
+export type ImpressionType = "scan" | "abdruck" | "";
 
 /**
  * ProcedureItem - Represents a procedure reference with a default value
